@@ -68,7 +68,7 @@
     </g>
 
     <!-- Window Body Text -->
-    <text x="24" y="145" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="14" font-weight="700">220+ digitally preserved retro &amp; modern games</text>
+    <text x="24" y="145" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="14" font-weight="700">270+ digitally preserved retro &amp; modern games</text>
     <text x="24" y="170" fill="#cbd5e1" font-family="-apple-system, sans-serif" font-size="13">with unblocked stealth proxy and live in-browser</text>
     <text x="24" y="192" fill="#cbd5e1" font-family="-apple-system, sans-serif" font-size="13">development environment. Pure performance, zero latency.</text>
 
@@ -84,7 +84,7 @@
   <g transform="translate(60, 520)">
     <rect x="0" y="0" width="245" height="70" rx="4" fill="#0c0e15" stroke="#252936"/>
     <text x="20" y="32" fill="#ff2a4b" font-size="20">🎮</text>
-    <text x="56" y="30" fill="#ffffff" font-family="'Courier New', monospace" font-size="16" font-weight="800">220+ GAMES</text>
+    <text x="56" y="30" fill="#ffffff" font-family="'Courier New', monospace" font-size="16" font-weight="800">270+ GAMES</text>
     <text x="56" y="48" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="11">Playable Retro Catalog</text>
 
     <rect x="270" y="0" width="245" height="70" rx="4" fill="#0c0e15" stroke="#252936"/>

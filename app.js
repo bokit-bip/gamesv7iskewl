@@ -208,6 +208,8 @@
       else if (filter === 'n64') matchesFilter = (g.system === 'N64' || g.core === 'n64' || (g.id && g.id.startsWith('n64-')));
       else if (filter === 'nds') matchesFilter = (g.system === 'Nintendo DS' || g.core === 'nds' || (g.id && g.id.startsWith('nds-')));
       else if (filter === 'ps1') matchesFilter = (g.system === 'PlayStation' || g.core === 'psx' || (g.id && g.id.startsWith('ps1-')));
+      else if (filter === 'gb') matchesFilter = (g.system === 'Game Boy' || g.system === 'Game Boy Color' || g.core === 'gb' || (g.id && g.id.startsWith('gb-')));
+      else if (filter === 'atari') matchesFilter = (g.system === 'Atari 2600' || g.core === 'atari2600' || (g.id && g.id.startsWith('atari-')));
       else if (filter === 'html5') matchesFilter = (!g.isEmulator && !g.isFlash);
       else if (filter === 'flash') matchesFilter = (g.isFlash || (g.category && g.category.includes('Flash')));
 

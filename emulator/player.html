@@ -96,6 +96,23 @@
       background: linear-gradient(135deg, #003791, #0070d1);
       color: #fff;
     }
+    .badge-gb {
+      background: linear-gradient(135deg, #4b6528, #8bac0f);
+      color: #0b1404;
+      font-weight: 900;
+    }
+    .badge-gbc {
+      background: linear-gradient(135deg, #6c2d82, #9b59b6);
+      color: #fff;
+    }
+    .badge-gba {
+      background: linear-gradient(135deg, #271e68, #4834d4);
+      color: #fff;
+    }
+    .badge-atari {
+      background: linear-gradient(135deg, #b03a08, #e67e22);
+      color: #fff;
+    }
     .badge-generic {
       background: linear-gradient(135deg, #5865f2, #7289da);
     }
@@ -465,6 +482,26 @@
         systemName = systemName || 'PlayStation';
         badgeClass = 'badge-ps1';
         themeColor = '#003791';
+      } else if (rawCore === 'gb' || rawCore === 'gameboy') {
+        systemName = systemName || 'Game Boy';
+        badgeClass = 'badge-gb';
+        themeColor = '#8bac0f';
+      } else if (rawCore === 'gbc') {
+        systemName = systemName || 'Game Boy Color';
+        badgeClass = 'badge-gbc';
+        themeColor = '#9b59b6';
+      } else if (rawCore === 'gba') {
+        systemName = systemName || 'Game Boy Advance';
+        badgeClass = 'badge-gba';
+        themeColor = '#4834d4';
+      } else if (rawCore === 'atari2600' || rawCore === 'atari') {
+        systemName = systemName || 'Atari 2600';
+        badgeClass = 'badge-atari';
+        themeColor = '#e67e22';
+      } else if (rawCore === 'atari7800') {
+        systemName = systemName || 'Atari 7800';
+        badgeClass = 'badge-atari';
+        themeColor = '#d35400';
       }
 
       // Update UI elements
@@ -574,6 +611,8 @@
       let ejsCore = rawCore;
       if (rawCore === 'ds') ejsCore = 'nds';
       if (rawCore === 'ps1') ejsCore = 'psx';
+      if (rawCore === 'gameboy') ejsCore = 'gb';
+      if (rawCore === 'atari') ejsCore = 'atari2600';
 
       // Configure EmulatorJS
       window.EJS_player = '#game';
