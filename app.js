@@ -419,18 +419,50 @@
       let loaded = false;
       for (const candUrl of candidates) {
         try {
-          const r = await fetch(candUrl);
+          let currentUrl = candUrl;
+          let r = await fetch(currentUrl);
           if (r.ok) {
-            const html = await r.text();
+            let html = await r.text();
             // Validate response isn't a CDN package limit error or 404 message
             if (html.includes('Package size exceeded') || html.includes('Cannot find "') || html.trim().startsWith('404')) {
               continue;
             }
-            const targetBase = new URL('./', candUrl).href;
+
+            // Follow client-side redirect chains (meta refresh or location.replace)
+            for (let hop = 0; hop < 5; hop++) {
+              const metaMatch = html.match(/<meta[^>]*http-equiv=["']?refresh["']?[^>]*content=["']?[^"'>]*url=([^"'>\s]+)/i);
+              const jsMatch = html.match(/(?:window\.)?location(?:\.replace|\.href\s*=)?\s*\(\s*["']([^"']+)["']\s*\)/i) ||
+                              html.match(/(?:window\.)?location(?:\.href)?\s*=\s*["']([^"']+)["']/i);
+              const targetRel = (metaMatch && metaMatch[1]) || (jsMatch && jsMatch[1]);
+              if (!targetRel || targetRel.startsWith('blob:') || targetRel.startsWith('javascript:')) break;
+
+              try {
+                const nextUrl = new URL(targetRel, currentUrl).href;
+                console.log(`Unwrapping game redirect hop #${hop + 1} to ${nextUrl}`);
+                const nextRes = await fetch(nextUrl);
+                if (nextRes.ok) {
+                  const nextHtml = await nextRes.text();
+                  if (!nextHtml.includes('Package size exceeded') && !nextHtml.trim().startsWith('404')) {
+                    html = nextHtml;
+                    currentUrl = nextUrl;
+                    continue;
+                  }
+                }
+              } catch (e) {}
+              break;
+            }
+
+            // Neutralize any residual meta refresh or location redirect code
+            html = html.replace(/<meta[^>]*http-equiv=["']?refresh["']?[^>]*>/gi, '');
+            html = html.replace(/(?:window\.)?location\.replace\s*\([^)]*\);?/gi, '// redirected');
+            html = html.replace(/(?:window\.)?location(?:\.href)?\s*=\s*["'][^"']+["'];?/gi, '// redirected');
+
+            const targetBase = new URL('./', currentUrl).href;
             const baseTag = '<base href="' + targetBase + '">';
+            const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
             const fullHtml = html.includes('<head>')
-              ? html.replace('<head>', '<head>' + baseTag)
-              : (baseTag + html);
+              ? html.replace('<head>', '<head>' + baseTag + shimScript)
+              : (baseTag + shimScript + html);
             const blob = new Blob([fullHtml], { type: 'text/html' });
             iframe.src = URL.createObjectURL(blob);
             iframe.srcdoc = fullHtml;
