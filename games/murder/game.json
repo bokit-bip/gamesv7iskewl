@@ -1,0 +1,11 @@
+{
+  "id": "murder",
+  "title": "Murder",
+  "category": "Action",
+  "type": "Stealth Casual Strategy",
+  "icon": "\ud83d\udc51",
+  "description": "Creep up behind the King to take the crown\u2014then watch your back as King to catch whoever is plotting to assassinate you next!",
+  "cover": "covers/murder.jpg",
+  "isFlash": false,
+  "isPapas": false
+}

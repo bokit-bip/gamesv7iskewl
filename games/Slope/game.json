@@ -1,0 +1,11 @@
+{
+  "id": "slope",
+  "title": "Slope",
+  "category": "Action",
+  "type": "High-Speed 3D Runner",
+  "icon": "\u26a1",
+  "description": "The legendary high-speed 3D neon runner by Y8! Roll a ball down a steep randomized course, dodging red blocks and flying off gravity-defying ramps.",
+  "cover": "covers/slope.jpg",
+  "isFlash": false,
+  "isPapas": false
+}

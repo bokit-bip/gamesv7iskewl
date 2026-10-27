@@ -1,0 +1,11 @@
+{
+  "id": "city-car-driving",
+  "title": "City Car Driving: Stunt Master",
+  "category": "Driving",
+  "type": "3D Open World Driving",
+  "icon": "\ud83c\udfce\ufe0f",
+  "description": "Speed through open city streets, hit massive stunt ramps, drift around sharp corners, and customize high-performance sports cars in full 3D!",
+  "cover": "covers/city-car-driving.jpg",
+  "isFlash": false,
+  "isPapas": false
+}

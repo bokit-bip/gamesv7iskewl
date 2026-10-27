@@ -1,0 +1,11 @@
+{
+  "id": "unicycle-hero",
+  "title": "Unicycle Hero",
+  "category": "Action",
+  "type": "Ragdoll Physics Sports",
+  "icon": "\ud83d\udeb4",
+  "description": "Hilarious physics-based Olympic unicycle sports game! Balance, pedal, throw spears, jump hurdles, and fling objects while staying on one wheel.",
+  "cover": "covers/unicycle-hero.jpg",
+  "isFlash": false,
+  "isPapas": false
+}

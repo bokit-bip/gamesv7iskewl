@@ -320,7 +320,7 @@
     }).join('');
   }
 
-  window.playGame = function (gameId) {
+  window.playGame = async function (gameId) {
     playRetroBeep(640, 'triangle', 0.08);
     const game = state.games.find(g => (g.id || g.folder) === gameId);
     if (!game) return;
@@ -337,36 +337,87 @@
     const isEmulator = game.isEmulator || (game.url && (game.url.includes('/emulator/') || game.url.includes('player.')));
 
     if (isEmulator) {
-      // Execute via Blob URL to bypass CDN text/plain restrictions
+      // Execute Emulator via Blob URL to bypass CDN text/plain restrictions
       const queryIdx = (game.url || '').indexOf('?');
       const queryStr = queryIdx !== -1 ? game.url.slice(queryIdx + 1) : '';
-      const playerPath = new URL('emulator/player.html', base).href;
+      const playerCandidates = [
+        new URL('emulator/player.html', base).href,
+        new URL('../emulator/player.html', base).href,
+        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html',
+        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html'
+      ];
 
-      fetch(playerPath)
-        .then(r => {
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.text();
-        })
-        .then(html => {
-          const baseTag = '<base href="' + new URL('./', playerPath).href + '">';
-          const injectScript = '<script>window.__INJECTED_QUERY__ = ' + JSON.stringify(queryStr) + ';<' + '/script>';
-          const fullHtml = html.includes('<head>')
-            ? html.replace('<head>', '<head>' + baseTag + injectScript)
-            : (baseTag + injectScript + html);
-          const blob = new Blob([fullHtml], { type: 'text/html' });
-          iframe.src = URL.createObjectURL(blob);
-        })
-        .catch(err => {
-          console.warn('Blob execution fallback to player.svg:', err);
-          iframe.src = new URL('emulator/player.svg?' + queryStr, base).href;
-        });
-    } else {
-      // Standalone HTML5 / Flash Game
-      let gameUrl = game.url || `/games/${encodeURIComponent(gameId)}/index.html`;
-      if (!gameUrl.startsWith('http')) {
-        gameUrl = new URL(gameUrl.replace(/^\//, ''), base).href;
+      let playerHtml = null;
+      let targetPlayerUrl = playerCandidates[0];
+
+      for (const p of playerCandidates) {
+        try {
+          const r = await fetch(p);
+          if (r.ok) {
+            playerHtml = await r.text();
+            targetPlayerUrl = p;
+            break;
+          }
+        } catch (e) {}
       }
-      iframe.src = gameUrl;
+
+      if (playerHtml) {
+        const baseTag = '<base href="' + new URL('./', targetPlayerUrl).href + '">';
+        const injectScript = '<script>window.__INJECTED_QUERY__ = ' + JSON.stringify(queryStr) + ';<' + '/script>';
+        const fullHtml = playerHtml.includes('<head>')
+          ? playerHtml.replace('<head>', '<head>' + baseTag + injectScript)
+          : (baseTag + injectScript + playerHtml);
+        const blob = new Blob([fullHtml], { type: 'text/html; charset=utf-8' });
+        iframe.src = URL.createObjectURL(blob);
+      } else {
+        iframe.src = new URL('emulator/player.svg?' + queryStr, base).href;
+      }
+    } else {
+      // Standalone HTML5 / Flash Game — Always load via Blob URL with Multi-Tier Fallback
+      const folder = game.folder || game.id || gameId;
+      const enc = encodeURIComponent(folder);
+      const gid = game.id || gameId;
+
+      let explicitUrl = game.url;
+      if (explicitUrl && !explicitUrl.startsWith('http')) {
+        explicitUrl = new URL(explicitUrl.replace(/^\//, ''), base).href;
+      }
+
+      const candidates = [];
+      if (explicitUrl) candidates.push(explicitUrl);
+      candidates.push(
+        new URL(`games/${enc}/index.html`, base).href,
+        new URL(`../games/${enc}/index.html`, base).href,
+        `https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/${enc}/index.html`,
+        `https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/${enc}/index.html`,
+        `https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/${encodeURIComponent(gid)}.html`,
+        `http://localhost:3000/games/${enc}/index.html`,
+        `https://pop-leave.tailcb4af7.ts.net/games/${enc}/index.html`
+      );
+
+      let loaded = false;
+      for (const candUrl of candidates) {
+        try {
+          const r = await fetch(candUrl);
+          if (r.ok) {
+            const html = await r.text();
+            const targetBase = new URL('./', candUrl).href;
+            const baseTag = '<base href="' + targetBase + '">';
+            const fullHtml = html.includes('<head>')
+              ? html.replace('<head>', '<head>' + baseTag)
+              : (baseTag + html);
+            const blob = new Blob([fullHtml], { type: 'text/html; charset=utf-8' });
+            iframe.src = URL.createObjectURL(blob);
+            loaded = true;
+            break;
+          }
+        } catch (err) {}
+      }
+
+      if (!loaded) {
+        console.warn('All game fetch candidates failed, using direct URL fallback:', candidates[0]);
+        iframe.src = candidates[0];
+      }
     }
   };
 

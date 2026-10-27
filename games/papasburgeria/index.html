@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Papa's Burgeria</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0b0e14;
+      display: flex;
+      flex-direction: column;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+    }
+
+    /* Top Bar with Easter Egg Buttons */
+    #top-bar {
+      height: 48px;
+      background: #141720;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      color: #e2e8f0;
+      z-index: 20;
+    }
+    .game-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .status-badge {
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #94a3b8;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+    .status-badge.active {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+      font-weight: 700;
+    }
+
+    /* Easter Egg Combo Buttons */
+    .easter-egg-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .combo-hint {
+      font-size: 12px;
+      color: #64748b;
+      margin-right: 4px;
+    }
+    .egg-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: #1e2330;
+      color: #ffffff;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .egg-btn:hover {
+      background: #283042;
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: scale(1.08);
+    }
+    .egg-btn:active, .egg-btn.pressed {
+      transform: scale(0.92);
+      background: #f59e0b;
+      border-color: #fbbf24;
+    }
+
+    /* Game Container */
+    #game-container {
+      flex: 1;
+      width: 100%;
+      height: calc(100% - 48px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    ruffle-player {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* Loading Overlay */
+    #loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: #0b0e14;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: #9ba1b0;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 10;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #f59e0b;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Notification Banner */
+    #cheat-toast {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 2px solid #f59e0b;
+      color: #fef3c7;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(245, 158, 11, 0.4);
+      z-index: 30;
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #cheat-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Confetti Canvas */
+    #confetti-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 25;
+    }
+  </style>
+  <script src="/ruffle/ruffle.js"></script>
+</head>
+<body>
+  <div id="top-bar">
+    <div class="game-title-group">
+      <span>🍔 Papa's Burgeria</span>
+      <span id="cheat-badge" class="status-badge">Normal</span>
+    </div>
+
+    <div class="easter-egg-bar">
+      <span class="combo-hint">Easter Egg:</span>
+      <button class="egg-btn" data-key="chef" title="Chef Hat">👨‍🍳</button>
+      <button class="egg-btn" data-key="food" title="Burger">🍔</button>
+      <button class="egg-btn" data-key="star" title="Star Review">⭐</button>
+      <button class="egg-btn" data-key="perfect" title="100% Score">💯</button>
+    </div>
+  </div>
+
+  <div id="game-container">
+    <canvas id="confetti-canvas"></canvas>
+    <div id="cheat-toast">✨ EASTER EGG UNLOCKED: 100% CUSTOMER SATISFACTION ACTIVATED! ✨</div>
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div>Loading Papa's Burgeria via Ruffle...</div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // Configuration & Easter Egg Combo
+      const REQUIRED_COMBO = ['chef', 'food', 'star', 'perfect'];
+      let currentComboInput = [];
+      let is100PercentCheatActive = false;
+      let rufflePlayer = null;
+
+      window.RufflePlayer = window.RufflePlayer || {};
+      window.RufflePlayer.config = {
+        letterbox: "on",
+        autoplay: "on",
+        splashScreen: false,
+        unmuteOverlay: "hidden",
+        upgradeToHttps: false,
+        warnOnUnsupportedContent: false,
+        contextMenu: "rightClick"
+      };
+
+      // Sound synthesizer for fanfare
+      function playChime(success = true) {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const now = ctx.currentTime;
+          if (success) {
+            // Ascending major arpeggio
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(freq, now + i * 0.1);
+              gain.gain.setValueAtTime(0.18, now + i * 0.1);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.35);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start(now + i * 0.1);
+              osc.stop(now + i * 0.1 + 0.4);
+            });
+          } else {
+            // Click pop
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.setValueAtTime(440, now);
+            gain.gain.setValueAtTime(0.08, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.06);
+          }
+        } catch(e) {}
+      }
+
+      // Confetti animation
+      function triggerConfetti() {
+        const canvas = document.getElementById('confetti-canvas');
+        if (!canvas) return;
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+        const ctx = canvas.getContext('2d');
+        const particles = [];
+        const colors = ['#f59e0b', '#fbbf24', '#f43f5e', '#10b981', '#3b82f6', '#ffffff'];
+
+        for (let i = 0; i < 90; i++) {
+          particles.push({
+            x: canvas.width / 2 + (Math.random() - 0.5) * 100,
+            y: canvas.height / 3,
+            vx: (Math.random() - 0.5) * 14,
+            vy: -7 - Math.random() * 8,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            size: 6 + Math.random() * 8,
+            rot: Math.random() * 360,
+            rotSpeed: (Math.random() - 0.5) * 10,
+            gravity: 0.35,
+            alpha: 1.0
+          });
+        }
+
+        let animId;
+        function update() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          let alive = false;
+          particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity;
+            p.rot += p.rotSpeed;
+            p.alpha -= 0.012;
+            if (p.alpha > 0) {
+              alive = true;
+              ctx.save();
+              ctx.translate(p.x, p.y);
+              ctx.rotate(p.rot * Math.PI / 180);
+              ctx.fillStyle = p.color;
+              ctx.globalAlpha = Math.max(0, p.alpha);
+              ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+              ctx.restore();
+            }
+          });
+          if (alive) {
+            animId = requestAnimationFrame(update);
+          } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
+        }
+        update();
+      }
+
+      function showToast(msg) {
+        const toast = document.getElementById('cheat-toast');
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 4000);
+      }
+
+      function toggle100PercentCheat() {
+        is100PercentCheatActive = !is100PercentCheatActive;
+        const badge = document.getElementById('cheat-badge');
+        
+        if (is100PercentCheatActive) {
+          playChime(true);
+          triggerConfetti();
+          badge.textContent = '✨ 100% Perfect Cheat Active ✨';
+          badge.classList.add('active');
+          showToast('🌟 EASTER EGG UNLOCKED! Customers Will Always Award 100% Scores! 🌟');
+
+          // Hot-swap to 100% patched SWF
+          if (rufflePlayer) {
+            rufflePlayer.load('game_100.swf').catch(e => console.error(e));
+          }
+        } else {
+          playChime(false);
+          badge.textContent = 'Normal';
+          badge.classList.remove('active');
+          showToast('Standard mode restored.');
+
+          if (rufflePlayer) {
+            rufflePlayer.load('game.swf').catch(e => console.error(e));
+          }
+        }
+      }
+
+      // Handle Easter egg button clicks
+      document.querySelectorAll('.egg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-key');
+          btn.classList.add('pressed');
+          setTimeout(() => btn.classList.remove('pressed'), 200);
+
+          currentComboInput.push(key);
+          playChime(false);
+
+          // Verify prefix match
+          const idx = currentComboInput.length - 1;
+          if (currentComboInput[idx] !== REQUIRED_COMBO[idx]) {
+            // Reset combo if wrong button
+            currentComboInput = key === REQUIRED_COMBO[0] ? [key] : [];
+          }
+
+          // Complete combo
+          if (currentComboInput.length === REQUIRED_COMBO.length) {
+            currentComboInput = [];
+            toggle100PercentCheat();
+          }
+        });
+      });
+
+      // Keyboard Easter Egg: Typing '100' or 'papa'
+      let keyBuffer = '';
+      window.addEventListener('keydown', (e) => {
+        keyBuffer += e.key.toLowerCase();
+        if (keyBuffer.length > 8) keyBuffer = keyBuffer.slice(-8);
+        if (keyBuffer.endsWith('100') || keyBuffer.endsWith('papa')) {
+          keyBuffer = '';
+          toggle100PercentCheat();
+        }
+      });
+
+      // Start Ruffle Player
+      function startRuffle() {
+        const container = document.getElementById('game-container');
+        const overlay = document.getElementById('loading-overlay');
+        
+        try {
+          const ruffle = window.RufflePlayer.newest ? window.RufflePlayer.newest() : window.RufflePlayer;
+          if (!ruffle || !ruffle.createPlayer) throw new Error("Ruffle player factory unavailable");
+          
+          rufflePlayer = ruffle.createPlayer();
+          rufflePlayer.id = "ruffle-player";
+          container.appendChild(rufflePlayer);
+
+          const targetSwf = is100PercentCheatActive ? 'game_100.swf' : 'game.swf';
+          rufflePlayer.load(targetSwf).then(() => {
+            if (overlay) {
+              overlay.style.opacity = '0';
+              setTimeout(() => overlay.remove(), 400);
+            }
+          }).catch((err) => {
+            console.error("Error loading SWF:", err);
+            if (overlay) {
+              overlay.innerHTML = '<div style="color:#ed4245;font-weight:600;">Failed to load game SWF</div>';
+            }
+          });
+
+          window.addEventListener('click', () => {
+            try { rufflePlayer.focus(); } catch(e) {}
+          });
+        } catch (e) {
+          console.error("Failed to initialize Ruffle:", e);
+          if (overlay) {
+            overlay.innerHTML = '<div style="color:#ed4245;font-weight:600;">Error initializing Ruffle emulator</div>';
+          }
+        }
+      }
+
+      if (typeof window.RufflePlayer !== 'undefined' && window.RufflePlayer.newest) {
+        startRuffle();
+      } else {
+        const s = document.createElement('script');
+        s.src = "/ruffle/ruffle.js";
+        s.onload = () => setTimeout(startRuffle, 50);
+        document.head.appendChild(s);
+      }
+    })();
+  </script>
+</body>
+</html>

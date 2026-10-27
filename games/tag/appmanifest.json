@@ -1,0 +1,14 @@
+{
+  "name": "Tag",
+  "short_name": "Tag",
+  "start_url": "index.html",
+  "display": "fullscreen",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "cover.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
