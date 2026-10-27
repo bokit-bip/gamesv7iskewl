@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tattletail</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    #gameContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    /* Sleek Loading Overlay */
+    #loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, #181d28 0%, #080a0f 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      color: #f1f5f9;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+    }
+
+    .loading-box {
+      text-align: center;
+      max-width: 420px;
+      padding: 24px;
+    }
+
+    .tattle-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 16px rgba(244, 63, 94, 0.4));
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    .game-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .loading-hint {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #f43f5e, #fb7185);
+      border-radius: 999px;
+      transition: width 0.2s ease;
+    }
+
+    .progress-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .credits {
+      margin-top: 14px;
+      font-size: 11px;
+      color: #64748b;
+    }
+  </style>
+  <script src="Build/UnityLoader.js"></script>
+</head>
+<body>
+  <div id="gameContainer"></div>
+
+  <div id="loading-overlay">
+    <div class="loading-box">
+      <div class="tattle-icon">🧸</div>
+      <div class="game-title">TattleTail</div>
+      <div class="loading-hint">Loading 3D assets &amp; audio... Please wait a moment while the game decompresses.</div>
+      <div class="progress-bar-wrap">
+        <div id="progress-fill" class="progress-bar-fill"></div>
+      </div>
+      <div id="progress-label" class="progress-text">Preparing...</div>
+      <div class="credits">Made by Snubby &bull; Original game by Waygetter Electronics</div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const overlay = document.getElementById('loading-overlay');
+      const fill = document.getElementById('progress-fill');
+      const label = document.getElementById('progress-label');
+
+      function unityProgress(gameInstance, progress) {
+        if (!gameInstance.Module) return;
+        const pct = Math.min(100, Math.round(progress * 100));
+        if (fill) fill.style.width = pct + '%';
+        if (label) {
+          if (progress < 1) {
+            label.textContent = 'Loading ' + pct + '%...';
+          } else {
+            label.textContent = 'Starting engine...';
+          }
+        }
+        if (progress >= 1) {
+          setTimeout(() => {
+            if (overlay) {
+              overlay.style.opacity = '0';
+              setTimeout(() => overlay.remove(), 500);
+            }
+          }, 800);
+        }
+      }
+
+      window.gameInstance = UnityLoader.instantiate("gameContainer", "Build/WebGL.json", {
+        onProgress: unityProgress
+      });
+    })();
+  </script>
+</body>
+</html>

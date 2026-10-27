@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arthur's Nightmare</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #000;
+        width: 100vw;
+        height: 100vh;
+      }
+      .webgl-content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #gameContainer {
+        width: 100% !important;
+        height: 100% !important;
+      }
+    </style>
+    <script src="TemplateData/UnityProgress.js"></script>  
+    <script src="Build/UnityLoader.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        var gameInstance = UnityLoader.instantiate("gameContainer", "Build/web.json", {onProgress: UnityProgress});
+      });
+    </script>
+  </head>
+  <body>
+    <div class="webgl-content">
+      <div id="gameContainer"></div>
+      <div class="footer" style="display:none;">
+        <div class="webgl-logo"></div>
+        <div class="fullscreen" onclick="gameInstance.SetFullscreen(1)"></div>
+        <div class="title">Arthur's Nightmare</div>
+      </div>
+    </div>
+  </body>
+</html>
