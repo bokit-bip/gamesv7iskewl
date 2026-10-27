@@ -388,9 +388,11 @@
       candidates.push(
         new URL(`games/${enc}/index.html`, base).href,
         new URL(`../games/${enc}/index.html`, base).href,
+        `https://raw.githubusercontent.com/bokit-bip/gamesv7iskewl/main/games/${enc}/index.html`,
         `https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/${enc}/index.html`,
+        `https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/${enc}/index.html`,
         `https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/${enc}/index.html`,
-        `https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/${encodeURIComponent(gid)}.html`,
+        `https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/${encodeURIComponent(gid)}.html`,
         `http://localhost:3000/games/${enc}/index.html`,
         `https://pop-leave.tailcb4af7.ts.net/games/${enc}/index.html`
       );
@@ -401,6 +403,10 @@
           const r = await fetch(candUrl);
           if (r.ok) {
             const html = await r.text();
+            // Validate response isn't a CDN package limit error or 404 message
+            if (html.includes('Package size exceeded') || html.includes('Cannot find "')) {
+              continue;
+            }
             const targetBase = new URL('./', candUrl).href;
             const baseTag = '<base href="' + targetBase + '">';
             const fullHtml = html.includes('<head>')
@@ -415,8 +421,33 @@
       }
 
       if (!loaded) {
-        console.warn('All game fetch candidates failed, using direct URL fallback:', candidates[0]);
-        iframe.src = candidates[0];
+        console.warn('All game fetch candidates failed for', gid, '— generating fallback Blob player');
+        const fallbackTarget = candidates[0] || ('games/' + enc + '/index.html');
+        const fallbackHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base href="${new URL('./', fallbackTarget).href}">
+  <style>
+    body { margin:0; padding:20px; background:#07090e; color:#f1f5f9; font-family:monospace; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; box-sizing:border-box; text-align:center; }
+    .card { background:#0f172a; border:1px solid #1e293b; border-radius:10px; padding:24px; max-width:440px; box-shadow:0 12px 30px rgba(0,0,0,0.6); }
+    h3 { color:#38bdf8; margin:0 0 10px; font-size:18px; }
+    p { color:#94a3b8; font-size:13px; line-height:1.5; margin:0 0 16px; }
+    .btn { display:inline-block; padding:8px 16px; background:#38bdf8; color:#0b0e14; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-family:inherit; text-decoration:none; margin:4px; font-size:13px; }
+    .btn-outline { background:transparent; border:1px solid #38bdf8; color:#38bdf8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h3>${escapeHtml(game.title || gid)}</h3>
+    <p>Could not load files from any mirror. If you are offline, check your connection or launch from localhost.</p>
+    <button class="btn" onclick="location.reload()">Retry</button>
+    <a class="btn btn-outline" href="http://localhost:3000/games/${enc}/index.html" target="_blank">Try Localhost</a>
+  </div>
+</body>
+</html>`;
+        const blob = new Blob([fallbackHtml], { type: 'text/html; charset=utf-8' });
+        iframe.src = URL.createObjectURL(blob);
       }
     }
   };
@@ -448,9 +479,15 @@
 
   window.popoutCurrentGame = function () {
     if (!state.currentGame) return;
+    const iframe = document.getElementById('game-iframe');
+    if (iframe && iframe.src && iframe.src.startsWith('blob:')) {
+      window.open(iframe.src, '_blank');
+      return;
+    }
     const game = state.currentGame;
     const base = document.baseURI || window.location.href;
-    let popoutUrl = game.url;
+    const folder = game.folder || game.id;
+    let popoutUrl = game.url || ('games/' + encodeURIComponent(folder) + '/index.html');
 
     if (game.isEmulator || (popoutUrl && popoutUrl.includes('/emulator/'))) {
       const queryIdx = (popoutUrl || '').indexOf('?');
