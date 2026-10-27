@@ -333,7 +333,21 @@
     if (titleEl) titleEl.textContent = game.title || game.name || 'Retro Game';
     if (modal) modal.classList.remove('hidden');
 
-    const base = document.baseURI || window.location.href;
+    let base = document.baseURI || window.location.href;
+    if (!base || base.startsWith('blob:') || base.startsWith('about:')) {
+      try {
+        const clean = (base || '').replace(/^blob:/, '');
+        if (clean.startsWith('http')) {
+          const u = new URL(clean);
+          base = u.origin + u.pathname;
+          if (!base.endsWith('/')) base = base.substring(0, base.lastIndexOf('/') + 1);
+        } else {
+          base = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/';
+        }
+      } catch (e) {
+        base = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/';
+      }
+    }
     const isEmulator = game.isEmulator || (game.url && (game.url.includes('/emulator/') || game.url.includes('player.')));
 
     if (isEmulator) {
@@ -367,8 +381,9 @@
         const fullHtml = playerHtml.includes('<head>')
           ? playerHtml.replace('<head>', '<head>' + baseTag + injectScript)
           : (baseTag + injectScript + playerHtml);
-        const blob = new Blob([fullHtml], { type: 'text/html; charset=utf-8' });
+        const blob = new Blob([fullHtml], { type: 'text/html' });
         iframe.src = URL.createObjectURL(blob);
+        iframe.srcdoc = fullHtml;
       } else {
         iframe.src = new URL('emulator/player.svg?' + queryStr, base).href;
       }
@@ -380,14 +395,18 @@
 
       let explicitUrl = game.url;
       if (explicitUrl && !explicitUrl.startsWith('http')) {
-        explicitUrl = new URL(explicitUrl.replace(/^\//, ''), base).href;
+        try {
+          explicitUrl = new URL(explicitUrl.replace(/^\//, ''), base).href;
+        } catch (e) {
+          explicitUrl = null;
+        }
       }
 
       const candidates = [];
       if (explicitUrl) candidates.push(explicitUrl);
+      try { candidates.push(new URL(`games/${enc}/index.html`, base).href); } catch (e) {}
+      try { candidates.push(new URL(`../games/${enc}/index.html`, base).href); } catch (e) {}
       candidates.push(
-        new URL(`games/${enc}/index.html`, base).href,
-        new URL(`../games/${enc}/index.html`, base).href,
         `https://raw.githubusercontent.com/bokit-bip/gamesv7iskewl/main/games/${enc}/index.html`,
         `https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/${enc}/index.html`,
         `https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/${enc}/index.html`,
@@ -404,7 +423,7 @@
           if (r.ok) {
             const html = await r.text();
             // Validate response isn't a CDN package limit error or 404 message
-            if (html.includes('Package size exceeded') || html.includes('Cannot find "')) {
+            if (html.includes('Package size exceeded') || html.includes('Cannot find "') || html.trim().startsWith('404')) {
               continue;
             }
             const targetBase = new URL('./', candUrl).href;
@@ -412,8 +431,9 @@
             const fullHtml = html.includes('<head>')
               ? html.replace('<head>', '<head>' + baseTag)
               : (baseTag + html);
-            const blob = new Blob([fullHtml], { type: 'text/html; charset=utf-8' });
+            const blob = new Blob([fullHtml], { type: 'text/html' });
             iframe.src = URL.createObjectURL(blob);
+            iframe.srcdoc = fullHtml;
             loaded = true;
             break;
           }
@@ -423,11 +443,13 @@
       if (!loaded) {
         console.warn('All game fetch candidates failed for', gid, '— generating fallback Blob player');
         const fallbackTarget = candidates[0] || ('games/' + enc + '/index.html');
+        let resolvedBase = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/';
+        try { resolvedBase = new URL('./', fallbackTarget).href; } catch (e) {}
         const fallbackHtml = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <base href="${new URL('./', fallbackTarget).href}">
+  <base href="${resolvedBase}">
   <style>
     body { margin:0; padding:20px; background:#07090e; color:#f1f5f9; font-family:monospace; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; box-sizing:border-box; text-align:center; }
     .card { background:#0f172a; border:1px solid #1e293b; border-radius:10px; padding:24px; max-width:440px; box-shadow:0 12px 30px rgba(0,0,0,0.6); }
@@ -446,8 +468,9 @@
   </div>
 </body>
 </html>`;
-        const blob = new Blob([fallbackHtml], { type: 'text/html; charset=utf-8' });
+        const blob = new Blob([fallbackHtml], { type: 'text/html' });
         iframe.src = URL.createObjectURL(blob);
+        iframe.srcdoc = fallbackHtml;
       }
     }
   };
@@ -457,7 +480,10 @@
     const modal = document.getElementById('game-player-modal');
     const iframe = document.getElementById('game-iframe');
     if (modal) modal.classList.add('hidden');
-    if (iframe) iframe.src = 'about:blank';
+    if (iframe) {
+      iframe.src = 'about:blank';
+      iframe.removeAttribute('srcdoc');
+    }
     state.currentGame = null;
   };
 

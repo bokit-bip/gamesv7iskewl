@@ -124,6 +124,7 @@
           var full = html.includes("<head>") ? html.replace("<head>", "<head>" + baseTag) : (baseTag + html);
           var blob = new Blob([full], { type: "text/html" });
           frame.src = URL.createObjectURL(blob);
+          frame.srcdoc = full;
         })
         .catch(function(err){
           frame.src = targetUrl;
