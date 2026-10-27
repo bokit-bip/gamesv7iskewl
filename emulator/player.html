@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retro Player — BokitCord</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%235865F2'><path d='M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 9 18.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z'/></svg>" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #060709;
+      color: #f2f3f5;
+      font-family: 'gg sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    #player-layout {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+    #top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 48px;
+      padding: 0 16px;
+      background: rgba(14, 17, 24, 0.95);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      user-select: none;
+    }
+    .bar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .btn-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #dbdee1;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn-bar:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .system-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-radius: 4px;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+    .badge-nes {
+      background: linear-gradient(135deg, #c0392b, #e74c3c);
+    }
+    .badge-snes {
+      background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+      color: #fff;
+    }
+    .badge-n64 {
+      background: linear-gradient(135deg, #00b894, #00cec9);
+      color: #0b221a;
+      font-weight: 900;
+    }
+    .badge-nds {
+      background: linear-gradient(135deg, #0984e3, #74b9ff);
+      color: #fff;
+    }
+    .badge-ps1 {
+      background: linear-gradient(135deg, #003791, #0070d1);
+      color: #fff;
+    }
+    .badge-generic {
+      background: linear-gradient(135deg, #5865f2, #7289da);
+    }
+    .game-title-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 380px;
+    }
+    .bar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #game-container {
+      flex: 1;
+      width: 100%;
+      height: calc(100% - 48px);
+      position: relative;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #game {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+    #loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at center, #111827 0%, #060709 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 50;
+      transition: opacity 0.4s ease;
+    }
+    #loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .spinner {
+      width: 52px;
+      height: 52px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #5865f2;
+      border-radius: 50%;
+      animation: spin 0.9s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .loading-status {
+      font-size: 14px;
+      color: #dbdee1;
+      font-weight: 500;
+      text-align: center;
+      max-width: 400px;
+    }
+    .loading-subtext {
+      font-size: 12px;
+      color: #949ba4;
+      text-align: center;
+    }
+    .error-card {
+      background: rgba(237, 66, 69, 0.15);
+      border: 1px solid #ed4245;
+      border-radius: 8px;
+      padding: 16px 20px;
+      max-width: 480px;
+      text-align: center;
+      color: #f2f3f5;
+      font-size: 13px;
+      line-height: 1.5;
+      display: none;
+    }
+
+    /* Controls modal */
+    .controls-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .controls-modal.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-card {
+      background: #18191c;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 520px;
+      padding: 24px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-close-modal {
+      background: none;
+      border: none;
+      color: #949ba4;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+    .btn-close-modal:hover {
+      color: #fff;
+    }
+    .controls-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    .controls-table th {
+      text-align: left;
+      padding: 8px 10px;
+      color: #949ba4;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-weight: 600;
+    }
+    .controls-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #dbdee1;
+    }
+    .key-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #fff;
+    }
+    .modal-tip {
+      font-size: 12px;
+      color: #949ba4;
+      line-height: 1.4;
+      background: rgba(88, 101, 242, 0.08);
+      border: 1px solid rgba(88, 101, 242, 0.2);
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="player-layout">
+    <header id="top-bar">
+      <div class="bar-left">
+        <button id="btn-back" class="btn-bar" title="Return to Games Library">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>Library</span>
+        </button>
+        <span id="system-badge" class="system-badge badge-generic">Retro</span>
+        <span id="display-game-title" class="game-title-text">Loading Game...</span>
+      </div>
+
+      <div class="bar-right">
+        <button id="btn-controls" class="btn-bar" title="View Keyboard & Controller Controls">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="6" width="20" height="12" rx="6"></rect>
+            <path d="M6 12h4m-2-2v4m9-3h.01m2 2h.01"></path>
+          </svg>
+          <span>Controls</span>
+        </button>
+        <button id="btn-restart" class="btn-bar" title="Restart Game">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+          <span>Restart</span>
+        </button>
+        <button id="btn-fullscreen" class="btn-bar" title="Toggle Fullscreen">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+          </svg>
+          <span>Fullscreen</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="game-container">
+      <div id="game"></div>
+
+      <div id="loading-overlay">
+        <div id="spinner" class="spinner"></div>
+        <div id="loading-text" class="loading-status">Initializing Emulator...</div>
+        <div class="loading-subtext">Optimized with WASM &amp; local server caching</div>
+        <div id="error-box" class="error-card"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Controls Guide Modal -->
+  <div id="controls-modal" class="controls-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="6" width="20" height="12" rx="6"></rect>
+            <path d="M6 12h4m-2-2v4m9-3h.01m2 2h.01"></path>
+          </svg>
+          <span id="modal-system-title">Default Controls</span>
+        </h3>
+        <button id="btn-close-modal" class="btn-close-modal">&times;</button>
+      </div>
+
+      <table class="controls-table">
+        <thead>
+          <tr>
+            <th>Action / Button</th>
+            <th>Keyboard Key</th>
+            <th>Gamepad</th>
+          </tr>
+        </thead>
+        <tbody id="controls-table-body">
+          <tr>
+            <td>Directional Pad</td>
+            <td><span class="key-badge">Arrow Keys</span></td>
+            <td>D-Pad / Left Stick</td>
+          </tr>
+          <tr>
+            <td>Button A</td>
+            <td><span class="key-badge">X</span></td>
+            <td>A / Cross</td>
+          </tr>
+          <tr>
+            <td>Button B</td>
+            <td><span class="key-badge">Z</span></td>
+            <td>B / Circle</td>
+          </tr>
+          <tr>
+            <td>Button X (SNES/N64/DS)</td>
+            <td><span class="key-badge">S</span></td>
+            <td>X / Square</td>
+          </tr>
+          <tr>
+            <td>Button Y (SNES/DS)</td>
+            <td><span class="key-badge">A</span></td>
+            <td>Y / Triangle</td>
+          </tr>
+          <tr>
+            <td>Left Shoulder (L)</td>
+            <td><span class="key-badge">Q</span></td>
+            <td>LB / L1</td>
+          </tr>
+          <tr>
+            <td>Right Shoulder (R)</td>
+            <td><span class="key-badge">W</span></td>
+            <td>RB / R1</td>
+          </tr>
+          <tr>
+            <td>Z Trigger (N64)</td>
+            <td><span class="key-badge">E</span></td>
+            <td>LT / L2</td>
+          </tr>
+          <tr>
+            <td>Start</td>
+            <td><span class="key-badge">Enter</span></td>
+            <td>Start / Options</td>
+          </tr>
+          <tr>
+            <td>Select</td>
+            <td><span class="key-badge">Shift</span></td>
+            <td>Back / Share</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="modal-tip">
+        <strong>Tip:</strong> You can also customize keys, save states (F2/F4), connect USB/Bluetooth controllers, or toggle CRT/Scanline shaders anytime via the in-game bottom toolbar!
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // Query parameters can come from injected query, window search, hash, or parent frame
+      let searchStr = window.location.search;
+      if (!searchStr || searchStr.length <= 1) {
+        if (window.__INJECTED_QUERY__) {
+          searchStr = window.__INJECTED_QUERY__;
+        } else if (window.location.hash && window.location.hash.length > 1) {
+          searchStr = window.location.hash.substring(1);
+        } else if (window.parent && window.parent !== window && window.parent.__RETRO_QUERY__) {
+          searchStr = window.parent.__RETRO_QUERY__;
+        }
+      }
+      if (searchStr && !searchStr.startsWith('?')) searchStr = '?' + searchStr;
+
+      const urlParams = new URLSearchParams(searchStr || '');
+      const rawCore = (urlParams.get('core') || 'nes').toLowerCase();
+      const rawGameUrl = urlParams.get('game') || '';
+      const rawGameTitle = urlParams.get('title') || 'Retro Game';
+      const rawSystem = urlParams.get('system') || '';
+
+      // Determine system info & color
+      let systemName = rawSystem;
+      let badgeClass = 'badge-generic';
+      let themeColor = '#5865f2';
+
+      if (rawCore === 'nes') {
+        systemName = systemName || 'NES';
+        badgeClass = 'badge-nes';
+        themeColor = '#e74c3c';
+      } else if (rawCore === 'snes') {
+        systemName = systemName || 'SNES';
+        badgeClass = 'badge-snes';
+        themeColor = '#6c5ce7';
+      } else if (rawCore === 'n64') {
+        systemName = systemName || 'N64';
+        badgeClass = 'badge-n64';
+        themeColor = '#00b894';
+      } else if (rawCore === 'nds' || rawCore === 'ds') {
+        systemName = systemName || 'Nintendo DS';
+        badgeClass = 'badge-nds';
+        themeColor = '#0984e3';
+      } else if (rawCore === 'psx' || rawCore === 'ps1') {
+        systemName = systemName || 'PlayStation';
+        badgeClass = 'badge-ps1';
+        themeColor = '#003791';
+      }
+
+      // Update UI elements
+      const titleElem = document.getElementById('display-game-title');
+      if (titleElem) titleElem.textContent = rawGameTitle;
+      document.title = `${rawGameTitle} (${systemName}) — BokitCord`;
+
+      const badgeElem = document.getElementById('system-badge');
+      if (badgeElem) {
+        badgeElem.textContent = systemName;
+        badgeElem.className = `system-badge ${badgeClass}`;
+      }
+
+      const spinner = document.getElementById('spinner');
+      if (spinner) spinner.style.borderTopColor = themeColor;
+
+      const loadingText = document.getElementById('loading-text');
+      if (loadingText) loadingText.textContent = `Loading ${systemName} core & ROM...`;
+
+      const modalTitle = document.getElementById('modal-system-title');
+      if (modalTitle) modalTitle.textContent = `${systemName} Controls`;
+
+      // Back button
+      const btnBack = document.getElementById('btn-back');
+      if (btnBack) {
+        btnBack.addEventListener('click', () => {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'emulator_close_player' }, '*');
+          } else {
+            window.location.href = '/';
+          }
+        });
+      }
+
+      // Fullscreen button
+      const btnFs = document.getElementById('btn-fullscreen');
+      if (btnFs) {
+        btnFs.addEventListener('click', () => {
+          const elem = document.getElementById('game-container') || document.documentElement;
+          if (!document.fullscreenElement) {
+            elem.requestFullscreen().catch(err => console.error(err));
+          } else {
+            document.exitFullscreen().catch(err => console.error(err));
+          }
+        });
+      }
+
+      // Restart button
+      const btnRestart = document.getElementById('btn-restart');
+      if (btnRestart) {
+        btnRestart.addEventListener('click', () => {
+          if (window.EJS_emulator && typeof window.EJS_emulator.restart === 'function') {
+            window.EJS_emulator.restart();
+          } else {
+            window.location.reload();
+          }
+        });
+      }
+
+      // Controls guide modal
+      const modal = document.getElementById('controls-modal');
+      const btnControls = document.getElementById('btn-controls');
+      const btnCloseModal = document.getElementById('btn-close-modal');
+
+      if (btnControls && modal) {
+        btnControls.addEventListener('click', () => modal.classList.add('visible'));
+      }
+      if (btnCloseModal && modal) {
+        btnCloseModal.addEventListener('click', () => modal.classList.remove('visible'));
+      }
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) modal.classList.remove('visible');
+        });
+      }
+
+      // Prepare Server Base & ROM URL
+      const TAILSCALE_ORIGIN = 'https://pop-leave.tailcb4af7.ts.net';
+      const curOrigin = (window.location.origin && window.location.origin.startsWith('http')) ? window.location.origin : '';
+      const isLocalDev = curOrigin.includes(':3000');
+      const baseApiUrl = isLocalDev ? '' : TAILSCALE_ORIGIN;
+
+      let finalGameUrl = rawGameUrl;
+      if (finalGameUrl.startsWith('/roms/')) {
+        finalGameUrl = baseApiUrl + finalGameUrl;
+      } else if (rawGameUrl.startsWith('http://') || rawGameUrl.startsWith('https://')) {
+        if (isLocalDev) {
+          if (!rawGameUrl.startsWith(curOrigin)) {
+            finalGameUrl = `/api/emulator/rom-proxy?url=${encodeURIComponent(rawGameUrl)}`;
+          }
+        } else {
+          finalGameUrl = `${TAILSCALE_ORIGIN}/api/emulator/rom-proxy?url=${encodeURIComponent(rawGameUrl)}`;
+        }
+      }
+
+      if (!finalGameUrl) {
+        const errBox = document.getElementById('error-box');
+        if (spinner) spinner.style.display = 'none';
+        if (errBox) {
+          errBox.style.display = 'block';
+          errBox.textContent = 'No ROM file specified. Please select a game from the BokitCord games catalog.';
+        }
+        return;
+      }
+
+      // Map core name
+      let ejsCore = rawCore;
+      if (rawCore === 'ds') ejsCore = 'nds';
+      if (rawCore === 'ps1') ejsCore = 'psx';
+
+      // Configure EmulatorJS
+      window.EJS_player = '#game';
+      window.EJS_core = ejsCore;
+      window.EJS_gameName = rawGameTitle;
+      window.EJS_color = themeColor;
+      window.EJS_startOnLoaded = true;
+      window.EJS_pathtodata = `${baseApiUrl}/api/emulatorjs/data/`;
+      window.EJS_gameUrl = finalGameUrl;
+      window.EJS_threads = false;
+
+      window.EJS_onGameStart = function() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) overlay.classList.add('hidden');
+      };
+
+      // Load loader.js from server cache proxy (bypasses school Wi-Fi blocks), with official CDN fallback
+      const script = document.createElement('script');
+      script.src = `${baseApiUrl}/api/emulatorjs/data/loader.js`;
+      script.async = true;
+      script.onerror = function() {
+        console.warn('Primary loader failed, falling back to official cdn.emulatorjs.org');
+        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+        const fbScript = document.createElement('script');
+        fbScript.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+        fbScript.async = true;
+        fbScript.onerror = function() {
+          const overlay = document.getElementById('loading-overlay');
+          const errBox = document.getElementById('error-box');
+          if (spinner) spinner.style.display = 'none';
+          if (errBox) {
+            errBox.style.display = 'block';
+            errBox.textContent = 'Failed to load emulator core engine. Please check your connection to BokitCord.';
+          }
+        };
+        document.body.appendChild(fbScript);
+      };
+      document.body.appendChild(script);
+    })();
+  </script>
+</body>
+</html>

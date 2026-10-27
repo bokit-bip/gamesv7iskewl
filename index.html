@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title id="site-title">Games V7 — Skeletal Flowers Retro Arcade</title>
+  <link id="site-favicon" rel="icon" type="image/svg+xml" href="assets/skull-logo.svg" />
+  <!-- Google Fonts for Retro Glitch & Arcade Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- CRT Scanlines Overlay -->
+  <div id="crt-overlay" class="crt-overlay"></div>
+
+  <!-- Top Retro Navigation Bar -->
+  <header id="top-nav">
+    <div class="nav-brand" onclick="switchTab('home')">
+      <img src="assets/skull-logo.svg" class="brand-flower-icon" alt="Games V7 Logo" />
+      <div class="brand-label">
+        <span class="brand-title">GAMES V7</span>
+        <span class="brand-sub">SKELETAL FLOWERS</span>
+      </div>
+    </div>
+
+    <nav>
+      <ul class="nav-tabs">
+        <li><button class="nav-tab-btn active" data-tab="home" onclick="switchTab('home')">HOME</button></li>
+        <li><button class="nav-tab-btn" data-tab="games" onclick="switchTab('games')">GAMES</button></li>
+        <li><button class="nav-tab-btn" data-tab="proxy" onclick="switchTab('proxy')">PROXY</button></li>
+        <li><button class="nav-tab-btn" data-tab="editor" onclick="switchTab('editor')">CODE EDITOR</button></li>
+        <li><button class="nav-tab-btn" data-tab="settings" onclick="switchTab('settings')">SETTINGS</button></li>
+      </ul>
+    </nav>
+
+    <div class="nav-right">
+      <button class="nav-pill-btn nav-pill-panic" onclick="triggerPanic()" title="Panic Button (Hotkey: ~)">
+        <span>🚨 PANIC (~)</span>
+      </button>
+      <button class="nav-pill-btn" onclick="openAboutBlankCloak()" title="Open entire portal in about:blank">
+        <span>🎭 STEALTH</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ====================================================================
+         1. HOME TAB — SKELETAL FLOWERS RETRO SHOWCASE
+         Exact Composition Matching Reference Screenshot
+         ==================================================================== -->
+    <section id="home-view" class="tab-view active">
+      <div class="hero-showcase-container">
+        
+        <!-- Retro Main Stage: Solid Dark Background with 3D Flower & Overlay Window -->
+        <div class="hero-stage-layout">
+          
+          <!-- Left Column: Eyebrow, 3D Glitch Title, Classic Retro OS Window, Collections -->
+          <div class="hero-info-column">
+            <span class="hero-eyebrow">// DIGITAL VAULT 2026</span>
+            
+            <!-- Exact CRT Chromatic Aberration Text (Red + Cyan + White) -->
+            <div class="crt-title-container">
+              <div class="crt-sf red">SKELETAL FLOWERS</div>
+              <div class="crt-sf blue">SKELETAL FLOWERS</div>
+              <h1 class="crt-sf main">SKELETAL FLOWERS</h1>
+            </div>
+
+            <!-- Classic Retro OS Window (Matches User Screenshot) -->
+            <div class="retro-browser-window">
+              <div class="retro-browser-bar">
+                <img src="assets/close-button.svg" alt="Window controls" class="retro-controls-img" />
+              </div>
+              <div class="retro-window-body">
+                <p>
+                  <strong>220+ digitally preserved retro & modern games</strong> with unblocked stealth proxy and live in-browser development environment. Pure performance, zero latency, inspired by the essence of arcade gaming.
+                </p>
+              </div>
+            </div>
+
+            <!-- Collections Button with Chromatic Aberration Arrow -->
+            <div>
+              <button class="retro-btn-collections" onclick="switchTab('games')" title="Browse All 220+ Games">
+                <span>COLLECTIONS</span>
+                <img src="assets/arrow_svg.svg" alt="Arrow" class="retro-arrow-icon" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Column: 3D Blooming Skull Flower Artwork -->
+          <div class="hero-art-display">
+            <img src="assets/hero-skull-flower.jpg" alt="Skeletal Flowers Artwork" class="hero-flower-img" />
+          </div>
+
+        </div>
+
+        <!-- Live Stats Overview -->
+        <div class="stats-strip">
+          <div class="stat-card" onclick="switchTab('games')">
+            <div class="stat-icon">🎮</div>
+            <div class="stat-info">
+              <span class="stat-num" id="stat-games-count">220+</span>
+              <span class="stat-label">Playable Games</span>
+            </div>
+          </div>
+
+          <div class="stat-card" onclick="switchTab('games')">
+            <div class="stat-icon">🕹️</div>
+            <div class="stat-info">
+              <span class="stat-num">5 CORES</span>
+              <span class="stat-label">NES • SNES • N64 • DS • PS1</span>
+            </div>
+          </div>
+
+          <div class="stat-card" onclick="switchTab('proxy')">
+            <div class="stat-icon">🌐</div>
+            <div class="stat-info">
+              <span class="stat-num">STEALTH</span>
+              <span class="stat-label">Unblocked Web Proxy</span>
+            </div>
+          </div>
+
+          <div class="stat-card" onclick="switchTab('editor')">
+            <div class="stat-icon">💻</div>
+            <div class="stat-info">
+              <span class="stat-num">SANDBOX</span>
+              <span class="stat-label">Live Code IDE</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         2. GAMES TAB — ARCADE & RETRO CATALOG
+         ==================================================================== -->
+    <section id="games-view" class="tab-view">
+      <div class="games-toolbar">
+        <div class="search-omnibar-wrap">
+          <span class="search-icon-left">🔍</span>
+          <input type="text" id="games-search-input" class="search-input-field" placeholder="Search 220+ games, systems, retro titles..." autocomplete="off" />
+          <button id="btn-clear-search" class="btn-clear-search" style="display: none;" onclick="clearGamesSearch()">&times;</button>
+        </div>
+
+        <div class="system-filter-chips" id="system-filter-chips">
+          <button class="filter-chip active" data-filter="all">ALL (220+)</button>
+          <button class="filter-chip" data-filter="nes">NES (25)</button>
+          <button class="filter-chip" data-filter="snes">SNES (25)</button>
+          <button class="filter-chip" data-filter="n64">N64 (25)</button>
+          <button class="filter-chip" data-filter="nds">NINTENDO DS (25)</button>
+          <button class="filter-chip" data-filter="ps1">PLAYSTATION 1 (40)</button>
+          <button class="filter-chip" data-filter="html5">HTML5 WEB</button>
+          <button class="filter-chip" data-filter="flash">FLASH CLASSICS</button>
+        </div>
+      </div>
+
+      <!-- Games Grid -->
+      <div class="games-grid" id="games-grid">
+        <!-- Injected dynamically via app.js -->
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         3. PROXY TAB — STEALTH WEB BROWSER
+         ==================================================================== -->
+    <section id="proxy-view" class="tab-view">
+      <div class="proxy-omnibar-box">
+        <span style="color:#10b981;font-size:16px;">🔒</span>
+        <input type="text" id="proxy-url-input" class="proxy-input" placeholder="Enter URL or search term (e.g. google.com, youtube.com)..." />
+        <button class="btn-proxy-go" onclick="launchProxyUrl()">ENTER ▶</button>
+      </div>
+
+      <div class="proxy-bookmarks-grid">
+        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://google.com')">
+          <span class="bookmark-icon">🌐</span>
+          <span class="bookmark-name">Google</span>
+          <span class="bookmark-desc">Search</span>
+        </div>
+        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://youtube.com')">
+          <span class="bookmark-icon">▶️</span>
+          <span class="bookmark-name">YouTube</span>
+          <span class="bookmark-desc">Videos</span>
+        </div>
+        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://discord.com')">
+          <span class="bookmark-icon">💬</span>
+          <span class="bookmark-name">Discord</span>
+          <span class="bookmark-desc">Chat</span>
+        </div>
+        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://tiktok.com')">
+          <span class="bookmark-icon">🎵</span>
+          <span class="bookmark-name">TikTok</span>
+          <span class="bookmark-desc">Shorts</span>
+        </div>
+        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://poki.com')">
+          <span class="bookmark-icon">🎮</span>
+          <span class="bookmark-name">Poki</span>
+          <span class="bookmark-desc">Web Games</span>
+        </div>
+        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://crazygames.com')">
+          <span class="bookmark-icon">🕹️</span>
+          <span class="bookmark-name">CrazyGames</span>
+          <span class="bookmark-desc">Online</span>
+        </div>
+        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://chess.com')">
+          <span class="bookmark-icon">♟️</span>
+          <span class="bookmark-name">Chess</span>
+          <span class="bookmark-desc">Board Game</span>
+        </div>
+        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://wikipedia.org')">
+          <span class="bookmark-icon">📚</span>
+          <span class="bookmark-name">Wikipedia</span>
+          <span class="bookmark-desc">Encyclopedia</span>
+        </div>
+        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://github.com')">
+          <span class="bookmark-icon">🐙</span>
+          <span class="bookmark-name">GitHub</span>
+          <span class="bookmark-desc">Code</span>
+        </div>
+        <div class="proxy-bookmark-card" onclick="launchDaydream()">
+          <span class="bookmark-icon">✨</span>
+          <span class="bookmark-name">DayDream X</span>
+          <span class="bookmark-desc">ServiceWorker</span>
+        </div>
+      </div>
+
+      <iframe id="proxy-frame" class="proxy-viewport-frame" allow="fullscreen; autoplay; encrypted-media"></iframe>
+    </section>
+
+    <!-- ====================================================================
+         4. CODE EDITOR TAB — RETRO IDE SANDBOX
+         ==================================================================== -->
+    <section id="editor-view" class="tab-view">
+      <div class="editor-toolbar">
+        <div class="editor-toolbar-left">
+          <label style="font-family:var(--font-retro-title);font-size:11.5px;color:var(--text-muted);">TEMPLATES:</label>
+          <select id="editor-template-select" class="editor-select" onchange="loadEditorTemplate(this.value)">
+            <option value="pong">🎮 Retro Pong Arcade Game</option>
+            <option value="matrix">💻 Matrix Digital Rain</option>
+            <option value="glitch">✨ Cyberpunk Glitch Typography</option>
+            <option value="synth">🔊 8-Bit Web Audio Synth</option>
+            <option value="blank">📄 Blank HTML5 Canvas</option>
+          </select>
+        </div>
+
+        <div class="editor-toolbar-right">
+          <button class="editor-btn editor-btn-run" onclick="runEditorCode()">▶ RUN CODE</button>
+          <button class="editor-btn" onclick="resetEditorCode()">🔄 RESET</button>
+          <button class="editor-btn" onclick="downloadEditorHtml()">💾 DOWNLOAD</button>
+          <button class="editor-btn" onclick="popoutEditorPreview()">↗ POPOUT</button>
+        </div>
+      </div>
+
+      <div class="editor-split-pane">
+        <!-- Left: Code Editor -->
+        <div class="editor-box-wrap">
+          <div class="editor-box-header">
+            <span>SOURCE CODE // HTML5 + CSS + JS</span>
+            <span id="editor-char-count">0 chars</span>
+          </div>
+          <textarea id="code-textarea" spellcheck="false"></textarea>
+          <!-- Terminal Console Output -->
+          <div class="editor-console-drawer">
+            <div class="console-header">
+              <span>TERMINAL OUTPUT (CONSOLE.LOG)</span>
+              <button style="background:none;border:none;color:#94a3b8;font-family:inherit;font-size:10px;cursor:pointer;" onclick="clearConsole()">CLEAR</button>
+            </div>
+            <div class="console-output" id="console-output">
+              <span style="color:#64748b;">// Console ready. Click 'RUN CODE' to execute.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Live Preview -->
+        <div class="editor-box-wrap">
+          <div class="editor-box-header">
+            <span>SANDBOX PREVIEW // LIVE RUNNER</span>
+            <span style="color:#10b981;">● RUNNING</span>
+          </div>
+          <iframe id="editor-preview-frame" sandbox="allow-scripts allow-modals allow-pointer-lock allow-same-origin"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         5. SETTINGS TAB — TAB CLOAKING & CONTROLS
+         ==================================================================== -->
+    <section id="settings-view" class="tab-view">
+      <div class="settings-card">
+        <h2 class="settings-section-title">TAB CLOAKING & STEALTH CONTROLS</h2>
+
+        <!-- Cloak Presets -->
+        <div class="settings-row">
+          <div class="settings-meta">
+            <span class="settings-label">🎭 Tab Cloak Preset</span>
+            <span class="settings-subtext">Disguises the browser tab's title and favicon to appear as an educational or productive app in your history and tabs.</span>
+          </div>
+          <select id="settings-cloak-select" class="settings-select" onchange="applyTabCloak(this.value)">
+            <option value="drive">🎭 Google Drive</option>
+            <option value="classroom">🎭 Google Classroom</option>
+            <option value="docs">🎭 Google Docs</option>
+            <option value="canvas">🎭 Canvas LMS</option>
+            <option value="desmos">🎭 Desmos Calculator</option>
+            <option value="default">🎭 Cloak Off (Games V7)</option>
+          </select>
+        </div>
+
+        <!-- Panic Hotkey -->
+        <div class="settings-row">
+          <div class="settings-meta">
+            <span class="settings-label">🚨 Emergency Panic Hotkey</span>
+            <span class="settings-subtext">Press this key anytime to instantly leave the site and redirect to a safe educational page. Default: <code>~</code> (Tilde).</span>
+          </div>
+          <input type="text" id="panic-url-input" class="settings-select" value="https://classroom.google.com" placeholder="Redirect URL..." />
+        </div>
+
+        <!-- About:Blank Stealth Launcher -->
+        <div class="settings-row">
+          <div class="settings-meta">
+            <span class="settings-label">🛡️ Launch in about:blank</span>
+            <span class="settings-subtext">Opens Games V7 inside a clean <code>about:blank</code> popup tab, completely hiding this URL from browser history and web inspection extensions.</span>
+          </div>
+          <button class="btn-settings-action" onclick="openAboutBlankCloak()">OPEN ABOUT:BLANK</button>
+        </div>
+
+        <!-- Visual Effects Toggles -->
+        <div class="settings-row">
+          <div class="settings-meta">
+            <span class="settings-label">📺 CRT Scanline Raster Filter</span>
+            <span class="settings-subtext">Toggle retro scanlines and cathode-ray tube raster effect across the interface.</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-crt-scanlines" checked onchange="toggleCrtEffect(this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Audio Beeps Toggle -->
+        <div class="settings-row">
+          <div class="settings-meta">
+            <span class="settings-label">🔊 Vintage Synth Audio FX</span>
+            <span class="settings-subtext">Synthesize classic 8-bit click and navigation sounds using the Web Audio API.</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-retro-audio" checked onchange="toggleAudioBeeps(this.checked)" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ====================================================================
+       IN-PAGE GAME PLAYER MODAL
+       ==================================================================== -->
+  <div id="game-player-modal" class="hidden">
+    <div class="player-header">
+      <div class="player-left">
+        <button class="btn-player-back" onclick="closeGamePlayer()">
+          <span>◀ EXIT</span>
+        </button>
+        <span class="player-title" id="player-modal-title">Retro Game</span>
+      </div>
+
+      <div class="player-right">
+        <button class="player-ctrl-btn" onclick="reloadCurrentGame()" title="Reload (R)">🔄 RELOAD</button>
+        <button class="player-ctrl-btn" onclick="togglePlayerFullscreen()" title="Fullscreen (F)">⛶ FULLSCREEN</button>
+        <button class="player-ctrl-btn" onclick="popoutCurrentGame()" title="Open in New Tab (B)">↗ POPOUT</button>
+        <button class="player-ctrl-btn" style="color:#ef4444;" onclick="triggerPanic()" title="Panic (~)">🚨 PANIC</button>
+      </div>
+    </div>
+    <iframe id="game-iframe" allow="fullscreen; autoplay; gamepad; clipboard-read; clipboard-write; encrypted-media"></iframe>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
