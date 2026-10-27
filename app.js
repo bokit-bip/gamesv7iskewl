@@ -224,6 +224,48 @@
     renderGamesGrid();
   }
 
+  function generateRetroCoverDataUri(title, badgeText) {
+    const safeTitle = (title || 'Arcade Game').slice(0, 22).replace(/[<>&"]/g, '');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="188" viewBox="0 0 300 188">
+      <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0b0e17"/>
+          <stop offset="50%" stop-color="#141926"/>
+          <stop offset="100%" stop-color="#06070a"/>
+        </linearGradient>
+      </defs>
+      <rect width="300" height="188" fill="url(#bg)"/>
+      <circle cx="150" cy="75" r="38" fill="#ff2a4b" opacity="0.15"/>
+      <text x="150" y="85" fill="#ff2a4b" font-family="monospace" font-size="32" font-weight="900" text-anchor="middle">☠</text>
+      <text x="150" y="140" fill="#ffffff" font-family="'Orbitron', sans-serif" font-size="13" font-weight="800" text-anchor="middle" letter-spacing="1">${safeTitle}</text>
+    </svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
+  window.handleCoverError = function(img, cleanCover, title, badgeText) {
+    const step = parseInt(img.dataset.failStep || '0', 10);
+    img.dataset.failStep = step + 1;
+
+    if (step === 0) {
+      // Step 1: Try relative root covers/
+      img.src = `covers/${cleanCover.replace(/^covers\//, '')}`;
+    } else if (step === 1) {
+      // Step 2: Try jsDelivr CDN from gamesssv7
+      img.src = `https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/${cleanCover}`;
+    } else if (step === 2) {
+      // Step 3: Try jsDelivr CDN from somuuuu (for HTML5/Flash covers)
+      const fname = cleanCover.split('/').pop();
+      img.src = `https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/${fname}`;
+    } else if (step === 3) {
+      // Step 4: Try Tailscale public proxy
+      img.src = `https://pop-leave.tailcb4af7.ts.net/${cleanCover}`;
+    } else {
+      // Step 5: High-tech retro SVG canvas tile (100% immune to network failure)
+      img.onerror = null;
+      img.src = generateRetroCoverDataUri(title, badgeText);
+    }
+  };
+
   function renderGamesGrid() {
     const grid = document.getElementById('games-grid');
     if (!grid) return;
@@ -254,15 +296,17 @@
       else if (game.core === 'psx' || gid.startsWith('ps1-')) { badgeClass = 'badge-ps1'; badgeText = 'PS1'; }
       else if (game.isFlash) { badgeClass = 'badge-flash'; badgeText = 'FLASH'; }
 
-      // Cover URL with fallback
-      let cover = game.cover || game.coverUrl || `/covers/retro/${game.core}/${gid}.png`;
-      if (!cover.startsWith('http') && !cover.startsWith('/')) cover = '/' + cover;
+      // Relative cover path
+      let rawCover = game.cover || game.coverUrl || (game.core ? `covers/retro/${game.core}/${gid}.png` : `covers/${gid}.png`);
+      let cleanCover = rawCover.replace(/^\/+/, '');
+      let initialCover = `./${cleanCover}`;
+      const safeEscapedTitle = title.replace(/'/g, "\\'");
 
       return `
         <div class="game-card" onclick="playGame('${gid}')">
           <div class="game-card-thumb-wrap">
             <span class="game-card-badge ${badgeClass}">${badgeText}</span>
-            <img class="game-card-thumb" src="${cover}" alt="${title}" loading="lazy" onerror="this.onerror=null;this.src='https://pop-leave.tailcb4af7.ts.net${cover}';" />
+            <img class="game-card-thumb" src="${initialCover}" alt="${title}" loading="lazy" onerror="handleCoverError(this, '${cleanCover}', '${safeEscapedTitle}', '${badgeText}')" />
           </div>
           <div class="game-card-content">
             <div>
