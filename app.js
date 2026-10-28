@@ -593,7 +593,7 @@
   }
 
   // ========================================================================
-  // 4. STEALTH PROXY BROWSER
+  // 4. STEALTH PROXY BROWSER, WISP DIAGNOSTICS & FULLSCREEN
   // ========================================================================
 
   function getProxyServerOrigin() {
@@ -606,13 +606,54 @@
     return 'https://pop-leave.tailcb4af7.ts.net';
   }
 
+  // Wisp Multi-Server Registry
+  const DEFAULT_WISP_SERVERS = [
+    { id: 'local', name: 'Tailscale / Bokit Relay', url: 'wss://pop-leave.tailcb4af7.ts.net/wisp/', pingUrl: '/wisp/ping', tag: 'OFFICIAL' },
+    { id: 'mercury', name: 'Mercury Workshop', url: 'wss://wisp.mercurywork.shop/', tag: 'COMMUNITY' },
+    { id: 'ruby', name: 'Ruby Network', url: 'wss://ruby.rubynetwork.co/wisp/', tag: 'MIRROR' },
+    { id: 'tomp', name: 'Tomp Edge Network', url: 'wss://tomp.app/wisp/', tag: 'MIRROR' },
+    { id: 'coastal', name: 'Coastal Cloud', url: 'wss://wisp.coastal.fun/wisp/', tag: 'FAST' }
+  ];
+
+  let wispServersList = (function() {
+    try {
+      const stored = localStorage.getItem('gamesv7_custom_wisp_servers');
+      if (stored) {
+        const custom = JSON.parse(stored);
+        return [...DEFAULT_WISP_SERVERS, ...custom];
+      }
+    } catch (e) {}
+    return [...DEFAULT_WISP_SERVERS];
+  })();
+
+  let activeWispServerUrl = (function() {
+    try {
+      return localStorage.getItem('gamesv7_active_wisp_url') || DEFAULT_WISP_SERVERS[0].url;
+    } catch (e) {
+      return DEFAULT_WISP_SERVERS[0].url;
+    }
+  })();
+
   window.launchProxyUrl = function (overrideUrl) {
     playRetroBeep(680, 'sine', 0.06);
     const input = document.getElementById('proxy-url-input');
+    const container = document.getElementById('proxy-viewport-container');
     const frame = document.getElementById('proxy-frame');
+    const activeUrlLabel = document.getElementById('proxy-vp-active-url');
     let target = (overrideUrl || (input ? input.value : '')).trim();
 
     if (!target) return;
+
+    // Handle TikTok Explore direct route
+    if (/^https?:\/\/(?:www\.)?tiktok\.com(?:\/|\/\?.*)?$/i.test(target) || target === 'tiktok.com' || target === 'www.tiktok.com') {
+      target = 'https://www.tiktok.com/explore';
+    }
+
+    // Auto-embed Spotify tracks/playlists for native playback
+    if (target.includes('open.spotify.com') && !target.includes('/embed')) {
+      target = target.replace('open.spotify.com/', 'open.spotify.com/embed/');
+    }
+
     if (!target.startsWith('http://') && !target.startsWith('https://')) {
       if (target.includes('.') && !target.includes(' ')) {
         target = 'https://' + target;
@@ -622,6 +663,12 @@
     }
 
     if (input) input.value = target;
+    if (activeUrlLabel) activeUrlLabel.textContent = target;
+
+    if (container) {
+      container.classList.add('visible');
+      container.style.display = 'flex';
+    }
     if (frame) {
       frame.style.display = 'block';
       const serverOrigin = getProxyServerOrigin();
@@ -634,12 +681,293 @@
   };
 
   window.launchDaydream = function () {
+    const container = document.getElementById('proxy-viewport-container');
     const frame = document.getElementById('proxy-frame');
+    const activeUrlLabel = document.getElementById('proxy-vp-active-url');
+    if (activeUrlLabel) activeUrlLabel.textContent = 'DayDream X Stealth Sandbox';
+    if (container) {
+      container.classList.add('visible');
+      container.style.display = 'flex';
+    }
     if (frame) {
       frame.style.display = 'block';
       const serverOrigin = getProxyServerOrigin();
       frame.src = `${serverOrigin}/apps/`;
     }
+  };
+
+  // Proxy Viewport Header Actions
+  window.toggleProxyFullscreen = function () {
+    playRetroBeep(520, 'sine', 0.05);
+    const container = document.getElementById('proxy-viewport-container');
+    if (!container) return;
+
+    const isFull = document.fullscreenElement === container || container.classList.contains('fullscreen');
+
+    if (isFull) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+      container.classList.remove('fullscreen');
+    } else {
+      container.classList.add('fullscreen');
+      if (container.requestFullscreen) {
+        container.requestFullscreen().catch(() => {});
+      }
+    }
+  };
+
+  window.proxyFrameReload = function () {
+    playRetroBeep(440, 'triangle', 0.05);
+    const frame = document.getElementById('proxy-frame');
+    if (frame && frame.src) {
+      const src = frame.src;
+      frame.src = 'about:blank';
+      setTimeout(() => { frame.src = src; }, 50);
+    }
+  };
+
+  window.proxyFramePopout = function () {
+    playRetroBeep(600, 'sine', 0.05);
+    const frame = document.getElementById('proxy-frame');
+    if (frame && frame.src && frame.src !== 'about:blank') {
+      window.open(frame.src, '_blank');
+    } else {
+      const input = document.getElementById('proxy-url-input');
+      const val = input ? input.value.trim() : '';
+      if (val) {
+        const serverOrigin = getProxyServerOrigin();
+        window.open(`${serverOrigin}/browser/gateway?url=${encodeURIComponent(val)}`, '_blank');
+      }
+    }
+  };
+
+  window.closeProxyFrame = function () {
+    playRetroBeep(330, 'square', 0.05);
+    const container = document.getElementById('proxy-viewport-container');
+    const frame = document.getElementById('proxy-frame');
+    if (container) {
+      container.classList.remove('visible', 'fullscreen');
+      container.style.display = 'none';
+    }
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    if (frame) {
+      frame.src = 'about:blank';
+      frame.style.display = 'none';
+    }
+  };
+
+  // Wisp Diagnostics & Ping Engine
+  window.openWispPingModal = function () {
+    playRetroBeep(550, 'sine', 0.05);
+    const modal = document.getElementById('wisp-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      renderWispServers();
+      pingAllWispServers();
+    }
+  };
+
+  window.closeWispPingModal = function () {
+    playRetroBeep(380, 'sine', 0.04);
+    const modal = document.getElementById('wisp-modal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  window.renderWispServers = function () {
+    const listEl = document.getElementById('wisp-servers-container');
+    const activeLabel = document.getElementById('wisp-active-server-name');
+    if (!listEl) return;
+
+    const activeObj = wispServersList.find(s => s.url === activeWispServerUrl) || wispServersList[0];
+    if (activeLabel) activeLabel.textContent = activeObj ? activeObj.name : 'Custom Server';
+
+    listEl.innerHTML = wispServersList.map((server) => {
+      const isActive = server.url === activeWispServerUrl;
+      const tagHtml = server.tag ? `<span class="wisp-server-tag ${server.tag === 'FAST' ? 'fastest' : ''}">${server.tag}</span>` : '';
+      return `
+        <div class="wisp-server-card ${isActive ? 'active-server' : ''}" id="wisp-card-${server.id}">
+          <div class="wisp-server-meta">
+            <div class="wisp-server-name-row">
+              <span class="wisp-server-name">${escapeHtml(server.name)}</span>
+              ${tagHtml}
+            </div>
+            <span class="wisp-server-url" title="${escapeHtml(server.url)}">${escapeHtml(server.url)}</span>
+          </div>
+          <div class="wisp-server-actions">
+            <span class="wisp-latency-pill testing" id="latency-${server.id}">-- ms</span>
+            <button type="button" class="btn-wisp-select ${isActive ? 'selected' : ''}" onclick="selectWispServer('${server.url}', '${escapeHtml(server.name)}')">
+              ${isActive ? '✓ ACTIVE' : 'USE'}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  window.pingSingleWisp = function (server) {
+    return new Promise((resolve) => {
+      const startTime = performance.now();
+      let finished = false;
+
+      const finish = (ok, val) => {
+        if (finished) return;
+        finished = true;
+        const duration = Math.round(performance.now() - startTime);
+        resolve({ ok, latency: ok ? duration : null, message: val });
+      };
+
+      const timer = setTimeout(() => {
+        finish(false, 'Timeout');
+      }, 3500);
+
+      // Prefer fast HTTP ping endpoint if same origin / local
+      if (server.pingUrl && (window.location.origin.includes('localhost') || window.location.origin.includes('pop-leave'))) {
+        fetch(server.pingUrl, { method: 'GET', cache: 'no-store' })
+          .then(res => {
+            clearTimeout(timer);
+            if (res.ok) finish(true, 'OK');
+            else finish(false, `HTTP ${res.status}`);
+          })
+          .catch(() => {
+            testViaWebSocket();
+          });
+        return;
+      }
+
+      function testViaWebSocket() {
+        try {
+          const ws = new WebSocket(server.url);
+          ws.onopen = () => {
+            clearTimeout(timer);
+            try { ws.close(); } catch (e) {}
+            finish(true, 'Connected');
+          };
+          ws.onerror = () => {
+            clearTimeout(timer);
+            finish(false, 'Failed');
+          };
+        } catch (err) {
+          clearTimeout(timer);
+          finish(false, err.message);
+        }
+      }
+
+      testViaWebSocket();
+    });
+  };
+
+  window.pingAllWispServers = async function () {
+    const pill = document.getElementById('wisp-ping-val');
+    const dot = document.querySelector('#wisp-status-pill .wisp-indicator-dot');
+    if (dot) dot.className = 'wisp-indicator-dot testing';
+    if (pill) pill.textContent = '...';
+
+    wispServersList.forEach((s) => {
+      const latEl = document.getElementById(`latency-${s.id}`);
+      if (latEl) {
+        latEl.className = 'wisp-latency-pill testing';
+        latEl.textContent = 'testing...';
+      }
+    });
+
+    let bestLatency = Infinity;
+    let bestServer = null;
+
+    const promises = wispServersList.map(async (server) => {
+      const res = await pingSingleWisp(server);
+      const latEl = document.getElementById(`latency-${server.id}`);
+      if (latEl) {
+        if (res.ok) {
+          latEl.textContent = `${res.latency} ms`;
+          if (res.latency < 120) latEl.className = 'wisp-latency-pill good';
+          else if (res.latency < 280) latEl.className = 'wisp-latency-pill medium';
+          else latEl.className = 'wisp-latency-pill bad';
+
+          if (res.latency < bestLatency) {
+            bestLatency = res.latency;
+            bestServer = server;
+          }
+        } else {
+          latEl.textContent = 'OFFLINE';
+          latEl.className = 'wisp-latency-pill bad';
+        }
+      }
+      return { server, ...res };
+    });
+
+    const results = await Promise.all(promises);
+
+    // Update omnibar status
+    if (pill) {
+      if (bestLatency < Infinity) {
+        pill.textContent = `${bestLatency}ms`;
+        if (dot) dot.className = 'wisp-indicator-dot online';
+      } else {
+        pill.textContent = 'ERR';
+        if (dot) dot.className = 'wisp-indicator-dot offline';
+      }
+    }
+
+    // Mark fastest server
+    if (bestServer) {
+      results.forEach(r => {
+        const card = document.getElementById(`wisp-card-${r.server.id}`);
+        if (card) {
+          const tag = card.querySelector('.wisp-server-tag');
+          if (r.server.id === bestServer.id && !tag) {
+            const nameRow = card.querySelector('.wisp-server-name-row');
+            if (nameRow) {
+              const fTag = document.createElement('span');
+              fTag.className = 'wisp-server-tag fastest';
+              fTag.textContent = '⚡ FASTEST';
+              nameRow.appendChild(fTag);
+            }
+          }
+        }
+      });
+    }
+  };
+
+  window.selectWispServer = function (url, name) {
+    playRetroBeep(700, 'sine', 0.06);
+    activeWispServerUrl = url;
+    try {
+      localStorage.setItem('gamesv7_active_wisp_url', url);
+    } catch (e) {}
+    renderWispServers();
+  };
+
+  window.addCustomWispServer = function () {
+    const input = document.getElementById('custom-wisp-url');
+    if (!input) return;
+    const val = input.value.trim();
+    if (!val || (!val.startsWith('wss://') && !val.startsWith('ws://'))) {
+      alert('Please enter a valid WebSocket URL starting with wss:// or ws://');
+      return;
+    }
+
+    const id = 'custom-' + Date.now().toString(36);
+    const newServer = {
+      id,
+      name: 'Custom Wisp Edge',
+      url: val,
+      tag: 'USER'
+    };
+
+    wispServersList.push(newServer);
+    try {
+      const stored = localStorage.getItem('gamesv7_custom_wisp_servers');
+      const list = stored ? JSON.parse(stored) : [];
+      list.push(newServer);
+      localStorage.setItem('gamesv7_custom_wisp_servers', JSON.stringify(list));
+    } catch (e) {}
+
+    input.value = '';
+    renderWispServers();
+    pingAllWispServers();
   };
 
   // ========================================================================
@@ -931,17 +1259,35 @@
     state.soundEnabled = enabled;
   };
 
-  // Keyboard Shortcuts (Panic ~, R for Reload, F for Fullscreen, etc.)
+  // Keyboard Shortcuts (Panic ~, R for Reload, F for Fullscreen, Esc for Exit, etc.)
   window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
     if (e.key === '`' || e.key === '~') {
       e.preventDefault();
       triggerPanic();
-    } else if (state.currentGame && (e.key === 'r' || e.key === 'R') && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+    } else if (state.currentGame && (e.key === 'r' || e.key === 'R')) {
       e.preventDefault();
       reloadCurrentGame();
-    } else if (state.currentGame && (e.key === 'f' || e.key === 'F') && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+    } else if (state.currentGame && (e.key === 'f' || e.key === 'F')) {
       e.preventDefault();
       togglePlayerFullscreen();
+    } else if (e.key === 'f' || e.key === 'F') {
+      const vp = document.getElementById('proxy-viewport-container');
+      if (vp && (vp.classList.contains('visible') || vp.style.display === 'flex' || state.activeTab === 'proxy')) {
+        e.preventDefault();
+        toggleProxyFullscreen();
+      }
+    } else if (e.key === 'Escape') {
+      const wModal = document.getElementById('wisp-modal');
+      if (wModal && !wModal.classList.contains('hidden')) {
+        closeWispPingModal();
+      } else {
+        const vp = document.getElementById('proxy-viewport-container');
+        if (vp && vp.classList.contains('fullscreen')) {
+          toggleProxyFullscreen();
+        }
+      }
     }
   });
 
@@ -992,6 +1338,23 @@
         state.panicUrl = e.target.value.trim() || 'https://classroom.google.com';
       });
     }
+
+    // Auto-ping active Wisp server for omnibar latency badge
+    setTimeout(() => {
+      pingSingleWisp({ url: activeWispServerUrl, pingUrl: '/wisp/ping' }).then((res) => {
+        const pill = document.getElementById('wisp-ping-val');
+        const dot = document.querySelector('#wisp-status-pill .wisp-indicator-dot');
+        if (pill) {
+          if (res.ok) {
+            pill.textContent = `${res.latency}ms`;
+            if (dot) dot.className = 'wisp-indicator-dot online';
+          } else {
+            pill.textContent = 'ERR';
+            if (dot) dot.className = 'wisp-indicator-dot offline';
+          }
+        }
+      });
+    }, 400);
   });
 
   window.addEventListener('hashchange', checkHashRouting);

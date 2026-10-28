@@ -171,6 +171,13 @@
         <span style="color:#10b981;font-size:16px;">🔒</span>
         <input type="text" id="proxy-url-input" class="proxy-input" placeholder="Enter URL or search term (e.g. google.com, youtube.com)..." />
         <button class="btn-proxy-go" onclick="launchProxyUrl()">ENTER ▶</button>
+        <button type="button" class="btn-proxy-ctrl" id="btn-ping-wisp" onclick="openWispPingModal()" title="Ping Wisp Servers (Latency Test)">⚡ PING WISP</button>
+        <button type="button" class="btn-proxy-ctrl" id="btn-proxy-fullscreen" onclick="toggleProxyFullscreen()" title="Toggle Fullscreen (F)">⛶ FULLSCREEN</button>
+        <div class="wisp-status-badge" id="wisp-status-pill" onclick="openWispPingModal()" title="Click to test &amp; configure Wisp server latency">
+          <span class="wisp-indicator-dot online"></span>
+          <span class="wisp-label">Wisp:</span>
+          <span class="wisp-ms" id="wisp-ping-val">--ms</span>
+        </div>
       </div>
 
       <div class="proxy-bookmarks-grid">
@@ -189,10 +196,10 @@
           <span class="bookmark-name">Discord</span>
           <span class="bookmark-desc">Chat</span>
         </div>
-        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://tiktok.com')">
+        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://www.tiktok.com/explore')">
           <span class="bookmark-icon">🎵</span>
           <span class="bookmark-name">TikTok</span>
-          <span class="bookmark-desc">Shorts</span>
+          <span class="bookmark-desc">Trending</span>
         </div>
         <div class="proxy-bookmark-card" onclick="openPresetProxy('https://poki.com')">
           <span class="bookmark-icon">🎮</span>
@@ -226,7 +233,22 @@
         </div>
       </div>
 
-      <iframe id="proxy-frame" class="proxy-viewport-frame" allow="fullscreen; autoplay; encrypted-media"></iframe>
+      <!-- Proxy Viewport Container with floating header controls -->
+      <div id="proxy-viewport-container" class="proxy-viewport-wrapper">
+        <div class="proxy-viewport-header" id="proxy-viewport-header">
+          <div class="proxy-vp-title">
+            <span class="proxy-vp-indicator">●</span>
+            <span id="proxy-vp-active-url">Stealth Browser Active</span>
+          </div>
+          <div class="proxy-vp-controls">
+            <button class="proxy-vp-btn" onclick="proxyFrameReload()" title="Reload (R)">🔄 RELOAD</button>
+            <button class="proxy-vp-btn" onclick="toggleProxyFullscreen()" title="Toggle Fullscreen (F)">⛶ FULLSCREEN</button>
+            <button class="proxy-vp-btn" onclick="proxyFramePopout()" title="Pop out into new tab">↗ POPOUT</button>
+            <button class="proxy-vp-btn proxy-vp-close" onclick="closeProxyFrame()" title="Close viewport">✖ CLOSE</button>
+          </div>
+        </div>
+        <iframe id="proxy-frame" class="proxy-viewport-frame" allow="fullscreen; autoplay; encrypted-media"></iframe>
+      </div>
     </section>
 
     <!-- ====================================================================
@@ -372,6 +394,44 @@
       </div>
     </div>
     <iframe id="game-iframe" allow="fullscreen; autoplay; gamepad; clipboard-read; clipboard-write; encrypted-media"></iframe>
+  </div>
+
+  <!-- ====================================================================
+       WISP PROTOCOL & LATENCY MODAL
+       ==================================================================== -->
+  <div id="wisp-modal" class="wisp-modal-overlay hidden" onclick="if(event.target===this) closeWispPingModal()">
+    <div class="wisp-modal-dialog">
+      <div class="wisp-modal-header">
+        <div class="wisp-modal-title">
+          <span class="wisp-title-main">⚡ WISP PROXY &amp; LATENCY DIAGNOSTICS</span>
+          <span class="wisp-modal-sub">Real-time WebSocket round-trip ping &amp; edge router switcher</span>
+        </div>
+        <button type="button" class="wisp-modal-close" onclick="closeWispPingModal()" title="Close (Esc)">✖</button>
+      </div>
+
+      <div class="wisp-modal-body">
+        <div class="wisp-modal-toolbar">
+          <button type="button" class="btn-wisp-ping-all" onclick="pingAllWispServers()">
+            🔄 PING ALL SERVERS
+          </button>
+          <div class="wisp-active-info">
+            Active: <span id="wisp-active-server-name">Local / Tailscale Relay</span>
+          </div>
+        </div>
+
+        <div class="wisp-servers-list" id="wisp-servers-container">
+          <!-- Populated dynamically via app.js -->
+        </div>
+
+        <div class="wisp-custom-input-box">
+          <label class="wisp-custom-label">ADD CUSTOM WISP V1 ENDPOINT:</label>
+          <div class="wisp-input-row">
+            <input type="text" id="custom-wisp-url" class="wisp-custom-input" placeholder="wss://my-custom-wisp-server.org/wisp/" />
+            <button type="button" class="btn-wisp-add" onclick="addCustomWispServer()">+ ADD &amp; TEST</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="app.js?v=7.3"></script>
