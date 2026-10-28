@@ -173,7 +173,7 @@
   async function loadGamesCatalog() {
     try {
       let data = [];
-      const paths = ['assets/games.json', 'games.json', '../games.json', '/api/games'];
+      const paths = ['assets/games.json?v=7.3', 'games.json?v=7.3', '../games.json?v=7.3', '/api/games'];
       for (const p of paths) {
         try {
           const res = await fetch(p);

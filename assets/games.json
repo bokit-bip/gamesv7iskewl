@@ -75,7 +75,7 @@
     "coverFile": "basket_random.jpg",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/basket_random.jpg",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/basket_random.jpg",
-    "url": "games/basket random/games/basket-random/index.html"
+    "url": "games/basket random/index.html"
   },
   {
     "id": "basketballstars",
@@ -98,7 +98,7 @@
     "coverFile": "blockblast.png",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/blockblast.png",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/blockblast.png",
-    "url": "games/blockblast/blockblast/games/block-blast/index.html"
+    "url": "games/blockblast/index.html"
   },
   {
     "id": "bowmasters",
@@ -121,7 +121,7 @@
     "coverFile": "boxingrandom.jpg",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/boxingrandom.jpg",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/boxingrandom.jpg",
-    "url": "games/boxingrandom/gamefile/boxing.html"
+    "url": "games/boxingrandom/index.html"
   },
   {
     "id": "burgers and frights",
@@ -287,7 +287,7 @@
     "coverFile": "fish..png",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/fish..png",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/fish..png",
-    "url": "games/fish./fish/gamefile/fish.html"
+    "url": "games/fish./index.html"
   },
   {
     "id": "fnac",
@@ -321,7 +321,7 @@
     "coverFile": "fnaf1.jpg",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/fnaf1.jpg",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/fnaf1.jpg",
-    "url": "games/fnaf1/fnaf 1/games/fnaf/index.html"
+    "url": "games/fnaf1/index.html"
   },
   {
     "id": "fnaf2",
@@ -344,7 +344,7 @@
     "coverFile": "fnaf3.jpg",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/fnaf3.jpg",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/fnaf3.jpg",
-    "url": "games/fnaf3/games/3/index.html"
+    "url": "games/fnaf3/index.html"
   },
   {
     "id": "fnaf4",
@@ -400,7 +400,7 @@
     "coverFile": "gunmayham.jpg",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/gunmayham.jpg",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/gunmayham.jpg",
-    "url": "games/gunmayham/gunmayhem/games/funmayhem/index.html"
+    "url": "games/gunmayham/index.html"
   },
   {
     "id": "helltaker",
@@ -500,7 +500,7 @@
     "coverFile": "houseofhazards.png",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/houseofhazards.png",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/houseofhazards.png",
-    "url": "games/houseofhazards/games/houseofhazards/index.html"
+    "url": "games/houseofhazards/index.html"
   },
   {
     "id": "jetpack joy ride",
@@ -523,7 +523,7 @@
     "coverFile": "minecraft.png",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/minecraft.png",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/minecraft.png",
-    "url": "games/minecraft/truffled.lol/games/eglar/1dot12dot2/index.html"
+    "url": "games/minecraft/index.html"
   },
   {
     "id": "oneshot",
@@ -535,7 +535,7 @@
     "coverFile": "oneshot.jpg",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/oneshot.jpg",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/oneshot.jpg",
-    "url": "games/oneshot/oneshot/gamefile/oneshot.html"
+    "url": "games/oneshot/index.html"
   },
   {
     "id": "ovo",

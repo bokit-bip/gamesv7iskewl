@@ -113,7 +113,7 @@
       var frame = document.getElementById("frame");
       if (!frame) return;
 
-      var targetUrl = new URL("index.html", document.baseURI).href;
+      var targetUrl = new URL("index.html?v=7.3", document.baseURI).href;
       fetch(targetUrl)
         .then(function(r){
           if (!r.ok) throw new Error("HTTP " + r.status);
