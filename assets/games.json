@@ -4498,5 +4498,38 @@
     "coverUrl": "/covers/retro/atari2600/atari-seaquest.png",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/retro/atari2600/atari-seaquest.png",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/retro/atari2600/atari-seaquest.png"
+  },
+  {
+    "id": "kindergarten",
+    "title": "Kindergarten",
+    "category": "Horror",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/kindergarten.jpg",
+    "coverFile": "kindergarten.jpg",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/kindergarten.jpg",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/kindergarten.jpg"
+  },
+  {
+    "id": "kindergarten2",
+    "title": "Kindergarten 2",
+    "category": "Horror",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/kindergarten2.jpg",
+    "coverFile": "kindergarten2.jpg",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/kindergarten2.jpg",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/kindergarten2.jpg"
+  },
+  {
+    "id": "kindergarten3",
+    "title": "Kindergarten 3",
+    "category": "Horror",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/kindergarten3.jpg",
+    "coverFile": "kindergarten3.jpg",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/kindergarten3.jpg",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/kindergarten3.jpg"
   }
 ]
