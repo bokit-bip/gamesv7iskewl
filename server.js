@@ -95,9 +95,31 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // PNS Runtime Core JS stub for proxied TikTok sessions
+  if (reqPath === '/browser/core.js' || reqPath === '/core.js') {
+    res.writeHead(200, {
+      'Content-Type': 'application/javascript',
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.end('/* [Scramjet] PNS Runtime Core stub */ (function(){})();');
+    return;
+  }
+
   // Handle Proxy Gateway
   if (reqPath.startsWith('/browser/gateway') || reqPath.startsWith('/proxy/gateway')) {
     try {
+      if (!req.originalUrl) req.originalUrl = req.url || '';
+      if (!req.query) {
+        req.query = {};
+        if (req.url && req.url.includes('?')) {
+          try {
+            const u = new URL(req.url, `http://${req.headers.host || 'localhost:8080'}`);
+            for (const [k, v] of u.searchParams.entries()) {
+              req.query[k] = v;
+            }
+          } catch (e) {}
+        }
+      }
       const scramjetPath = path.join(SHARED_DIR, 'proxy_scramjet.js');
       if (fs.existsSync(scramjetPath)) {
         return require(scramjetPath).handleProxyRequest(req, res);
