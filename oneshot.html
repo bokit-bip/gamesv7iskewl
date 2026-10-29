@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title id="page-title">OneShot</title>
+  <link id="page-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 87.3 78'%3E%3Cpath fill='%230066da' d='m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z'/%3E%3Cpath fill='%2300ac47' d='M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44A9.06 9.06 0 0 0 0 53h27.5z'/%3E%3Cpath fill='%23ea4335' d='m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z'/%3E%3Cpath fill='%2300832d' d='M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z'/%3E%3Cpath fill='%232684fc' d='M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5L72.35 24.7c-.8-1.4-1.95-2.5-3.3-3.3L55.3 45.2z'/%3E%3Cpath fill='%23ffba00' d='m73.55 76.8-13.75-23.8H27.5l13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h23.3c1.6 0 3.15-.4 4.5-1.2z'/%3E%3C/svg%3E">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #0b0e14; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; touch-action: none; }
+    #game-container { width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; }
+    #game-frame { width: 100%; height: 100%; border: none; display: block; background: #0b0e14; }
+    #loading-overlay { position: absolute; inset: 0; background: #0b0e14; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #94a3b8; font-size: 14px; font-weight: 500; z-index: 10; transition: opacity 0.3s ease, visibility 0.3s ease; pointer-events: none; }
+    .spinner { width: 40px; height: 40px; border: 3px solid rgba(255, 255, 255, 0.1); border-top-color: #ff2a4b; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hud-controls { position: fixed; bottom: 12px; right: 12px; display: flex; align-items: center; gap: 7px; z-index: 9999; opacity: 0.35; transition: opacity 0.2s, transform 0.2s; }
+    .hud-controls:hover, .hud-controls:focus-within { opacity: 1; transform: translateY(-2px); }
+    .hud-btn, .hud-select { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 11px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 7px; color: #f1f5f9; font-size: 12px; font-weight: 500; cursor: pointer; backdrop-filter: blur(8px); text-decoration: none; user-select: none; transition: background 0.15s; }
+    .hud-btn:hover { background: rgba(30, 41, 59, 0.95); border-color: rgba(255, 255, 255, 0.35); }
+    .hud-btn-direct { background: linear-gradient(135deg, rgba(255,42,75,0.3), rgba(168,85,247,0.3)); border-color: rgba(255,42,75,0.6); color: #ff9fb2; font-weight: 700; }
+    .hud-btn-direct:hover { background: linear-gradient(135deg, #ff2a4b, #a855f7); color: #fff; }
+    .hud-btn-danger { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; }
+    .hud-btn-danger:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+    .hud-select { outline: none; font-family: inherit; background: #0f172a; }
+  </style>
+  <script>
+    const TAILSCALE_ORIGIN = "https://pop-leave.tailcb4af7.ts.net";
+    const GAME_FOLDER = "oneshot";
+    const IS_EMULATOR = false;
+    const QUERY_STR = "";
+    const INLINE_SRC = "<!doctype html>\n<html lang=\"en\">\n<head>\n\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Oneshot Legacy</title>\n  \n  <style>\n    :root {\n      --color-gray: hsl(0, 0%, 55%);\n      --controls-size: 10vh;\n    }\n    @media (orientation: landscape) {\n      :root {\n        --controls-size: 20vh;\n      }\n    }\n    html {\n      touch-action: none;\n    }\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\";\n      margin: 0;\n      color: white;\n      background: black;\n    }\n    .unselectable {\n      -webkit-touch-callout: none;\n      -webkit-user-select: none;\n      user-select: none;\n    }\n    #status {\n      font-size: 1.5rem;\n      color: var(--color-gray);\n      text-align: center;\n    }\n    #controls {\n      position: relative;\n      text-align: right;\n      z-index: 10;\n    }\n    #controls button {\n      -webkit-appearance: button;\n      display: inline-flex;\n      background: transparent;\n      border: 0;\n      color: white;\n      font-family: inherit;\n      font-size: 1em;\n      line-height: inherit;\n      cursor: pointer;\n      padding: 0.5rem;\n    }\n    #controls svg {\n      pointer-events: none;\n    }\n    #canvas {\n      position: absolute;\n      top: 50%;\n      left: 50%;\n      width: 100%;\n      height: 100%;\n      border: 0;\n      image-rendering: pixelated;\n      image-rendering: crisp-edges;\n      transform: translate(-50%, -50%);\n    }\n    img#canvas {\n      object-fit: contain;\n    }\n    #dpad,\n    #apad {\n      position: fixed;\n      bottom: 1rem;\n    }\n    #dpad {\n      left: 1rem;\n    }\n    #apad {\n      right: 1rem;\n    }\n    #dpad svg {\n      width: calc(2 * var(--controls-size));\n      height: calc(2 * var(--controls-size));\n      fill: var(--color-gray);\n    }\n    #dpad svg rect {\n      opacity: 0.4;\n    }\n    #apad > * {\n      width: var(--controls-size);\n      height: var(--controls-size);\n      background-color: var(--color-gray);\n      border-radius: 50%;\n    }\n    #apad > :last-child {\n      position: relative;\n      right: var(--controls-size);\n    }\n    #dpad path:not(.active),\n    #apad > *:not(.active) {\n      opacity: 0.4;\n    }\n  </style>\n<script async src=\"https://www.googletagmanager.com/gtag/js?id=G-PXHK7Q7G3Z\"><\\/script>\n<script>\n  window.dataLayer = window.dataLayer || [];\n  function gtag() {\n    dataLayer.push(arguments);\n  }\n  gtag(\"js\", new Date());\n  gtag(\"config\", \"G-PXHK7Q7G3Z\");\n<\\/script>\n</head>\n<body>\n  <div id=\"controls\">\n    <button id=\"controls-fullscreen\" class=\"unselectable\">\n      <svg viewBox=\"0 0 15 15\" fill=\"none\" xmlns=\"https://static.wikia.nocookie.net/oneshot/images/1/1f/Niko_WME.jpg/revision/latest?cb=20220925190751\" width=\"25\" height=\"25\"><path d=\"M13.5 13.5H10m3.5 0V10m0 3.5l-4-4m.5-8h3.5m0 0V5m0-3.5l-4 4M5 1.5H1.5m0 0V5m0-3.5l4 4m-4 4.5v3.5m0 0H5m-3.5 0l4-4\" stroke=\"currentColor\"></path></svg>\n    </button>\n  </div>\n  <div id=\"status\"></div>\n  <div id=\"viewport\">\n    <canvas id=\"canvas\" tabindex=\"-1\" class=\"unselectable\"></canvas>\n    <div id=\"dpad\" class=\"unselectable\">\n      <svg xmlns=\"https://static.wikia.nocookie.net/oneshot/images/1/1f/Niko_WME.jpg/revision/latest?cb=20220925190751\" viewBox=\"0 0 72 72\">\n        <path id=\"dpad-up\" data-key=\"ArrowUp\" d=\"M48,5.8C48,2.5,45.4,0,42,0H29.9C26.6,0,24,2.4,24,5.8V24h24V5.8z\" />\n        <path id=\"dpad-right\" data-key=\"ArrowRight\" d=\"M66.2,24H48v24h18.2c3.3,0,5.8-2.7,5.8-6V29.9C72,26.5,69.5,24,66.2,24z\" />\n        <path id=\"dpad-down\" data-key=\"ArrowDown\" d=\"M24,66.3c0,3.3,2.6,5.7,5.9,5.7H42c3.3,0,6-2.4,6-5.7V48H24V66.3z\" />\n        <path id=\"dpad-left\" data-key=\"ArrowLeft\" d=\"M5.7,24C2.4,24,0,26.5,0,29.9V42c0,3.3,2.3,6,5.7,6H24V24H5.7z\" />\n        <rect id=\"dpad-center\" x=\"24\" y=\"24\" width=\"24\" height=\"24\" />\n      </svg>\n    </div>\n    <div id=\"apad\" class=\"unselectable\">\n      <div id=\"apad-escape\" data-key=\"Escape\"></div>\n      <div id=\"apad-enter\" data-key=\"Enter\"></div>\n    </div>\n  </div>\n<script async type=\"text/javascript\" src=\"index.js\"><\\/script>\n<script>\nconst hasTouchscreen = window.matchMedia('(hover: none), (pointer: coarse)').matches;\nconst preventNativeKeys = ['ArrowUp', 'ArrowDown', 'ArrowRight', 'ArrowLeft', ' ', 'F12'];\nconst keys = new Map();\nconst keysDown = new Map();\nconst canvas = document.getElementById('canvas');\nlet easyrpgPlayer;\nlet lastTouchedId;\nwindow.addEventListener('load', (event) => {\n    createEasyRpgPlayer({\n      game: undefined,\n      saveFs: undefined\n    }).then(function(Module) {\n      easyrpgPlayer = Module;\n      easyrpgPlayer.initApi();\n      canvas.focus();\n    });\n});\ncanvas.addEventListener('mouseenter', () => canvas.focus());\ncanvas.addEventListener('click', () => canvas.focus());\ndocument.querySelector('#controls-fullscreen').addEventListener('click', () => {\n  const viewport = document.getElementById('viewport');\n  if (viewport.requestFullscreen) {\n    viewport.requestFullscreen();\n  }\n});\nfunction simulateKeyboardEvent(eventType, key) {\n  const event = new Event(eventType, { bubbles: true });\n  event.code = key;\n  canvas.dispatchEvent(event);\n}\nfunction simulateKeyboardInput(key) {\n  simulateKeyboardEvent('keydown', key);\n  window.setTimeout(() => {\n    simulateKeyboardEvent('keyup', key);\n  }, 100);\n}\nfunction bindKey(node, key) {\n  keys.set(node.id, key);\n  node.addEventListener('touchstart', event => {\n    event.preventDefault();\n    simulateKeyboardEvent('keydown', key);\n    keysDown.set(event.target.id, node.id);\n    node.classList.add('active');\n  });\n  node.addEventListener('touchend', event => {\n    event.preventDefault();\n    const pressedKey = keysDown.get(event.target.id);\n    if (pressedKey && keys.has(pressedKey)) {\n      const key = keys.get(pressedKey);\n      simulateKeyboardEvent('keyup', key);\n    }\n    keysDown.delete(event.target.id);\n    node.classList.remove('active');\n    if (lastTouchedId) {\n      document.getElementById(lastTouchedId).classList.remove('active');\n    }\n  });\n  node.addEventListener('touchmove', event => {\n    const { target, clientX, clientY } = event.changedTouches[0];\n    const origTargetId = keysDown.get(target.id);\n    const nextTargetId = document.elementFromPoint(clientX, clientY).id;\n    if (origTargetId === nextTargetId) return;\n    if (origTargetId) {\n      const key = keys.get(origTargetId);\n      simulateKeyboardEvent('keyup', key);\n      keysDown.delete(target.id);\n      document.getElementById(origTargetId).classList.remove('active');\n    }\n    if (keys.has(nextTargetId)) {\n      const key = keys.get(nextTargetId);\n      simulateKeyboardEvent('keydown', key);\n      keysDown.set(target.id, nextTargetId);\n      lastTouchedId = nextTargetId;\n      document.getElementById(nextTargetId).classList.add('active');\n    }\n  })\n}\nlet gamepads = {};\nconst haveEvents = 'ongamepadconnected' in window;\nfunction addGamepad(gamepad) {\n  if (gamepad == undefined) return;\n  gamepads[gamepad.index] = gamepad;\n  updateTouchControlsVisibility();\n}\nfunction removeGamepad(gamepad) {\n  if (gamepad == undefined) return;\n  delete gamepads[gamepad.index];\n  updateTouchControlsVisibility();\n}\nfunction getGamepads() {\n  var pads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);\n  return pads;\n}\nfunction scanGamePads() {\n  var pads = getGamepads();\n  for (var i = 0; i < pads.length; i++) {\n    if (pads[i]) {\n      if (pads[i].index in gamepads) {\n        gamepads[pads[i].index] = pads[i];\n      } else {\n        addGamepad(pads[i]);\n      }\n    }\n  }\n}\nif (!haveEvents) {\n  setInterval(scanGamePads, 500);\n}\nwindow.addEventListener('gamepadconnected', function(e) {\n  addGamepad(e.gamepad);\n});\nwindow.addEventListener('gamepaddisconnected', function(e) {\n  removeGamepad(e.gamepad);\n})\nfunction updateTouchControlsVisibility() {\n  if (hasTouchscreen && Object.keys(gamepads).length === 0) {\n    for (const elem of document.querySelectorAll('#dpad, #apad')) {\n      elem.style.display = '';\n    }\n  } else {\n    for (const elem of document.querySelectorAll('#dpad, #apad')) {\n      elem.style.display = 'none';\n    }\n  }\n}\nif (hasTouchscreen) {\n  for (const button of document.querySelectorAll('[data-key]')) {\n    bindKey(button, button.dataset.key);\n  }\n} else {\n  window.addEventListener('keydown', event => {\n    if (preventNativeKeys.includes(event.key)) {\n      event.preventDefault();\n    }\n  });\n  canvas.addEventListener('contextmenu', event => {\n    event.preventDefault();\n  });\n}\nupdateTouchControlsVisibility();\nalert(\"all credits to arandomiperson on discord for this port, thank him.\");\n<\\/script>\n\n</body>\n</html>";
+
+    const CLOAK_PRESETS = {
+      drive: { title: "My Drive - Google Drive", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 87.3 78'%3E%3Cpath fill='%230066da' d='m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z'/%3E%3Cpath fill='%2300ac47' d='M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44A9.06 9.06 0 0 0 0 53h27.5z'/%3E%3Cpath fill='%23ea4335' d='m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z'/%3E%3Cpath fill='%2300832d' d='M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z'/%3E%3Cpath fill='%232684fc' d='M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5L72.35 24.7c-.8-1.4-1.95-2.5-3.3-3.3L55.3 45.2z'/%3E%3Cpath fill='%23ffba00' d='m73.55 76.8-13.75-23.8H27.5l13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h23.3c1.6 0 3.15-.4 4.5-1.2z'/%3E%3C/svg%3E" },
+      classroom: { title: "Classes", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%231e8e3e' d='M22 6.5C22 5.12 20.88 4 19.5 4h-15C3.12 4 2 5.12 2 6.5v11C2 18.88 3.12 20 4.5 20h15c1.38 0 2.5-1.12 2.5-2.5v-11z'/%3E%3Cpath fill='%23f9ab00' d='M20.5 5.5h-17c-.55 0-1 .45-1 1v11c0 .55.45 1 1 1h17c.55 0 1-.45 1-1v-11c0-.55-.45-1-1-1z'/%3E%3Ccircle cx='12' cy='10' r='2.2' fill='%23fff'/%3E%3Cpath fill='%23fff' d='M12 13.2c-2.4 0-4.5 1.2-4.5 2.5V17h9v-1.3c0-1.3-2.1-2.5-4.5-2.5z'/%3E%3Ccircle cx='7' cy='11' r='1.6' fill='%23fff' opacity='.8'/%3E%3Cpath fill='%23fff' opacity='.8' d='M7 13.5c-1.8 0-3.2.9-3.2 2V16h2.2v-.8c0-.6.4-1.2 1-1.7z'/%3E%3Ccircle cx='17' cy='11' r='1.6' fill='%23fff' opacity='.8'/%3E%3Cpath fill='%23fff' opacity='.8' d='M17 13.5c1.8 0 3.2.9 3.2 2V16H18v-.8c0-.6-.4-1.2-1-1.7z'/%3E%3C/svg%3E" },
+      docs: { title: "Untitled document - Google Docs", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234285F4' d='M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z'/%3E%3Cpath fill='%23A1C2FA' d='M14 2v6h6'/%3E%3Cpath fill='%23FFF' d='M8 12h8v1.5H8zm0 3h8v1.5H8zm0 3h5v1.5H8z'/%3E%3C/svg%3E" },
+      canvas: { title: "Dashboard", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23E02424' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z'/%3E%3C/svg%3E" },
+      desmos: { title: "Desmos | Graphing Calculator", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%232F7B18' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z'/%3E%3C/svg%3E" },
+      default: { title: "OneShot", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff2a4b'%3E%3Cpath d='M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 9 18.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z'/%3E%3C/svg%3E" }
+    };
+
+    function setTabCloak(key) {
+      const preset = CLOAK_PRESETS[key] || CLOAK_PRESETS.default;
+      document.title = preset.title;
+      let favicon = document.getElementById('page-favicon');
+      if (!favicon) {
+        favicon = document.createElement('link');
+        favicon.id = 'page-favicon';
+        favicon.rel = 'icon';
+        document.head.appendChild(favicon);
+      }
+      favicon.href = preset.icon;
+      try { localStorage.setItem('gamesv7_tab_cloak', key); } catch(e) {}
+    }
+
+    (function() {
+      try {
+        const saved = localStorage.getItem('gamesv7_tab_cloak') || 'drive';
+        if (CLOAK_PRESETS[saved]) document.title = CLOAK_PRESETS[saved].title;
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body>
+  <div id="game-container">
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div style="font-family:monospace;letter-spacing:1px;">LOADING ONESHOT...</div>
+    </div>
+    <iframe id="game-frame" src="about:blank" allow="fullscreen; gamepad; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="true"></iframe>
+  </div>
+
+  <div class="hud-controls">
+    <select id="cloak-select" class="hud-select" onchange="setTabCloak(this.value)" title="Tab Cloak">
+      <option value="drive">🎭 Google Drive</option>
+      <option value="classroom">🎭 Google Classroom</option>
+      <option value="docs">🎭 Google Docs</option>
+      <option value="canvas">🎭 Canvas</option>
+      <option value="desmos">🎭 Desmos</option>
+      <option value="default">🎭 Cloak: Off</option>
+    </select>
+    <a class="hud-btn hud-btn-direct" href="https://uplcm.com/4/11930399" target="_blank" rel="noopener noreferrer" title="Direct Link (Support Arcade)">
+      <span>⚡ Direct Link</span>
+    </a>
+    <button class="hud-btn" onclick="launchAboutBlank()" title="about:blank (Hotkey: B)">
+      <span>about:blank (B)</span>
+    </button>
+    <button class="hud-btn" onclick="restartGame()" title="Reload (Hotkey: R)">
+      <span>Reload (R)</span>
+    </button>
+    <button class="hud-btn" onclick="toggleFullscreen()" title="Fullscreen (Hotkey: F)">
+      <span>Fullscreen (F)</span>
+    </button>
+    <button class="hud-btn hud-btn-danger" onclick="panicRedirect()" title="Panic (Hotkey: ~)">
+      <span>🚨 Panic (~)</span>
+    </button>
+  </div>
+
+  <script>
+    const frame = document.getElementById('game-frame');
+    const overlay = document.getElementById('loading-overlay');
+    const cloakSelect = document.getElementById('cloak-select');
+    let effectiveGameUrl = '';
+
+    try {
+      const current = localStorage.getItem('gamesv7_tab_cloak') || 'drive';
+      if (cloakSelect && CLOAK_PRESETS[current]) cloakSelect.value = current;
+      setTabCloak(cloakSelect ? cloakSelect.value : 'drive');
+    } catch(e) {}
+
+    async function resolveAndLoadGame() {
+      const base = document.baseURI || window.location.href;
+      const enc = encodeURIComponent(GAME_FOLDER);
+
+      if (IS_EMULATOR) {
+        const playerCandidates = [
+          new URL('emulator/player.html', base).href,
+          new URL('../emulator/player.html', base).href,
+          'http://localhost:8080/emulator/player.html',
+          TAILSCALE_ORIGIN + '/emulator/player.html',
+          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html',
+          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html'
+        ];
+        for (const p of playerCandidates) {
+          try {
+            const r = await fetch(p);
+            if (r.ok) {
+              const html = await r.text();
+              const baseTag = '<base href="' + new URL('./', p).href + '">';
+              const injectScript = '<script>window.__INJECTED_QUERY__ = ' + JSON.stringify(QUERY_STR) + ';<' + '/script>';
+              const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + injectScript) : (baseTag + injectScript + html);
+              frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
+              return;
+            }
+          } catch(e) {}
+        }
+        frame.src = new URL('emulator/player.svg?' + QUERY_STR, base).href;
+        return;
+      }
+
+      if (INLINE_SRC && INLINE_SRC.length > 50) {
+        const targetBase = new URL('games/' + enc + '/', base).href;
+        const baseTag = '<base href="' + targetBase + '">';
+        const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
+        const full = INLINE_SRC.includes('<head>') ? INLINE_SRC.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + INLINE_SRC);
+        frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
+        return;
+      }
+
+      const candidates = [
+        new URL('games/' + enc + '/index.html', base).href,
+        new URL('../games/' + enc + '/index.html', base).href,
+        'http://localhost:8080/games/' + enc + '/index.html',
+        TAILSCALE_ORIGIN + '/games/' + enc + '/index.html',
+        'https://raw.githubusercontent.com/bokit-bip/gamesv7iskewl/main/games/' + enc + '/index.html',
+        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/index.html',
+        'https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/' + enc + '/index.html',
+        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/index.html'
+      ];
+
+      for (const url of candidates) {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 2500);
+          const res = await fetch(url, { signal: timer.signal });
+          clearTimeout(timer);
+          if (res.ok) {
+            let html = await res.text();
+            if (html.includes('Package size exceeded') || html.includes('Cannot find "') || html.trim().startsWith('404')) continue;
+            effectiveGameUrl = url;
+            const targetBase = new URL('./', url).href;
+            const baseTag = '<base href="' + targetBase + '">';
+            const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
+            const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + html);
+            frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
+            return;
+          }
+        } catch(e) {}
+      }
+
+      effectiveGameUrl = TAILSCALE_ORIGIN + '/games/' + enc + '/index.html';
+      frame.src = effectiveGameUrl;
+    }
+
+    resolveAndLoadGame();
+
+    frame.addEventListener('load', () => {
+      if (frame.src && frame.src !== 'about:blank' && overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.visibility = 'hidden';
+        setTimeout(() => overlay.remove(), 400);
+      }
+      try {
+        frame.focus();
+        if (frame.contentWindow) frame.contentWindow.focus();
+      } catch(e) {}
+    });
+
+    function restartGame() {
+      if (frame) {
+        frame.src = 'about:blank';
+        setTimeout(() => { resolveAndLoadGame(); }, 80);
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+
+    function panicRedirect() {
+      window.location.replace('https://classroom.google.com');
+    }
+
+    function launchAboutBlank() {
+      const win = window.open('about:blank', '_blank');
+      if (!win) { alert('Popout blocked.'); return; }
+      const curKey = (cloakSelect && cloakSelect.value) || 'drive';
+      const preset = CLOAK_PRESETS[curKey] || CLOAK_PRESETS.drive;
+      const targetSrc = (frame && frame.src && frame.src !== 'about:blank') ? frame.src : (effectiveGameUrl || (window.location.origin + '/games/' + GAME_FOLDER + '/index.html'));
+      const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + preset.title + '</title><link rel="icon" type="image/svg+xml" href="' + preset.icon + '"><style>body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#0b0e14;}iframe{width:100%;height:100%;border:none;display:block;}</style></head><body><iframe src="' + targetSrc + '" allow="fullscreen; gamepad; autoplay; clipboard-write; encrypted-media"></iframe></body></html>';
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '`' || e.key === '~') {
+        e.preventDefault();
+        panicRedirect();
+      } else if ((e.key === 'b' || e.key === 'B') && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        e.preventDefault();
+        launchAboutBlank();
+      } else if ((e.key === 'f' || e.key === 'F') && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        toggleFullscreen();
+      } else if ((e.key === 'r' || e.key === 'R') && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        restartGame();
+      }
+    });
+  </script>
+
+  <!-- Direct Link Ad Integration -->
+  <script>
+    (function() {
+      var opened = false;
+      function openAd() {
+        if (opened) return;
+        opened = true;
+        try { window.open('https://uplcm.com/4/11930399', '_blank', 'noopener,noreferrer'); } catch(e) {}
+        ['click', 'touchstart', 'pointerdown', 'keydown'].forEach(function(evt) {
+          window.removeEventListener(evt, openAd);
+        });
+      }
+      ['click', 'touchstart', 'pointerdown', 'keydown'].forEach(function(evt) {
+        window.addEventListener(evt, openAd, { once: true });
+      });
+    })();
+  </script>
+</body>
+</html>
