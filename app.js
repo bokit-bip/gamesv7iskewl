@@ -7,6 +7,20 @@
   'use strict';
 
   // State Management
+  function loadFavorites() {
+    try {
+      const s = localStorage.getItem('gamesv7_favorites');
+      return s ? JSON.parse(s) : [];
+    } catch (e) { return []; }
+  }
+
+  function loadRecentlyPlayed() {
+    try {
+      const s = localStorage.getItem('gamesv7_recently_played');
+      return s ? JSON.parse(s) : [];
+    } catch (e) { return []; }
+  }
+
   const state = {
     currentTab: 'home',
     games: [],
@@ -17,7 +31,9 @@
     cloakKey: 'drive',
     panicUrl: 'https://classroom.google.com',
     soundEnabled: true,
-    crtEnabled: true
+    crtEnabled: true,
+    favorites: loadFavorites(),
+    recentlyPlayed: loadRecentlyPlayed()
   };
 
   // Cloaking Presets (Title + Vector Favicons)
@@ -209,26 +225,121 @@
     }
   }
 
+  function saveFavorites() {
+    try {
+      localStorage.setItem('gamesv7_favorites', JSON.stringify(state.favorites));
+    } catch (e) {}
+    updateFilterCounts();
+  }
+
+  function saveRecentlyPlayed() {
+    try {
+      localStorage.setItem('gamesv7_recently_played', JSON.stringify(state.recentlyPlayed));
+    } catch (e) {}
+    updateFilterCounts();
+  }
+
+  window.recordRecentlyPlayed = function (gameId) {
+    if (!gameId) return;
+    const gid = String(gameId);
+    state.recentlyPlayed = [gid, ...state.recentlyPlayed.filter(id => id !== gid)].slice(0, 50);
+    saveRecentlyPlayed();
+    if (state.activeFilter === 'recent') {
+      filterAndRenderGames();
+    }
+  };
+
+  window.toggleFavorite = function (gameId) {
+    if (!gameId) return;
+    const gid = String(gameId);
+    const idx = state.favorites.indexOf(gid);
+    const isNowFav = (idx === -1);
+    if (isNowFav) {
+      state.favorites.push(gid);
+      try { playRetroBeep(880, 'sine', 0.1); } catch (e) {}
+      showToastNotification(`⭐ Added to Favorites!`);
+    } else {
+      state.favorites.splice(idx, 1);
+      try { playRetroBeep(440, 'triangle', 0.08); } catch (e) {}
+      showToastNotification(`Removed from Favorites.`);
+    }
+    saveFavorites();
+    updateModalFavButton();
+
+    if (state.activeFilter === 'favorites') {
+      filterAndRenderGames();
+    } else {
+      const cardBtns = document.querySelectorAll(`.game-card-fav-btn[data-gid="${gid}"]`);
+      cardBtns.forEach(btn => {
+        btn.classList.toggle('active', isNowFav);
+        btn.title = isNowFav ? 'Remove from favorites' : 'Add to favorites';
+        const icon = btn.querySelector('.fav-icon');
+        if (icon) icon.textContent = isNowFav ? '★' : '☆';
+      });
+    }
+  };
+
+  window.toggleCurrentGameFavorite = function () {
+    if (state.currentGame) {
+      toggleFavorite(state.currentGame.id || state.currentGame.folder);
+    }
+  };
+
+  function updateModalFavButton() {
+    const btn = document.getElementById('modal-fav-btn');
+    if (!btn || !state.currentGame) return;
+    const gid = state.currentGame.id || state.currentGame.folder;
+    const isFav = state.favorites.includes(gid);
+    btn.classList.toggle('active', isFav);
+    btn.innerHTML = isFav ? '★ FAVORITED' : '☆ FAVORITE';
+  }
+
+  function updateFilterCounts() {
+    const favCountEl = document.getElementById('fav-count');
+    if (favCountEl) favCountEl.textContent = state.favorites.length;
+    const recentCountEl = document.getElementById('recent-count');
+    if (recentCountEl) recentCountEl.textContent = state.recentlyPlayed.length;
+  }
+
+  window.switchFilter = function (filterName) {
+    const container = document.getElementById('system-filter-chips');
+    if (container) {
+      container.querySelectorAll('.filter-chip').forEach(c => {
+        c.classList.toggle('active', c.getAttribute('data-filter') === filterName);
+      });
+    }
+    state.activeFilter = filterName || 'all';
+    filterAndRenderGames();
+  };
+
   function filterAndRenderGames() {
     const query = state.searchQuery.toLowerCase().trim();
     const filter = state.activeFilter;
 
-    state.filteredGames = state.games.filter(g => {
-      // Filter category/system
-      let matchesFilter = true;
-      if (filter === 'nes') matchesFilter = (g.system === 'NES' || g.core === 'nes' || (g.id && g.id.startsWith('nes-')));
-      else if (filter === 'snes') matchesFilter = (g.system === 'SNES' || g.core === 'snes' || (g.id && g.id.startsWith('snes-')));
-      else if (filter === 'n64') matchesFilter = (g.system === 'N64' || g.core === 'n64' || (g.id && g.id.startsWith('n64-')));
-      else if (filter === 'nds') matchesFilter = (g.system === 'Nintendo DS' || g.core === 'nds' || (g.id && g.id.startsWith('nds-')));
-      else if (filter === 'ps1') matchesFilter = (g.system === 'PlayStation' || g.core === 'psx' || (g.id && g.id.startsWith('ps1-')));
-      else if (filter === 'gb') matchesFilter = (g.system === 'Game Boy' || g.system === 'Game Boy Color' || g.core === 'gb' || (g.id && g.id.startsWith('gb-')));
-      else if (filter === 'atari') matchesFilter = (g.system === 'Atari 2600' || g.core === 'atari2600' || (g.id && g.id.startsWith('atari-')));
-      else if (filter === 'html5') matchesFilter = (!g.isEmulator && !g.isFlash);
-      else if (filter === 'flash') matchesFilter = (g.isFlash || (g.category && g.category.includes('Flash')));
+    let baseList = [];
+    if (filter === 'recent') {
+      baseList = state.recentlyPlayed
+        .map(id => state.games.find(g => (g.id || g.folder) === id))
+        .filter(Boolean);
+    } else if (filter === 'favorites') {
+      baseList = state.games.filter(g => state.favorites.includes(g.id || g.folder));
+    } else {
+      baseList = state.games.filter(g => {
+        if (filter === 'all' || !filter) return true;
+        if (filter === 'nes') return (g.system === 'NES' || g.core === 'nes' || (g.id && g.id.startsWith('nes-')));
+        if (filter === 'snes') return (g.system === 'SNES' || g.core === 'snes' || (g.id && g.id.startsWith('snes-')));
+        if (filter === 'n64') return (g.system === 'N64' || g.core === 'n64' || (g.id && g.id.startsWith('n64-')));
+        if (filter === 'nds') return (g.system === 'Nintendo DS' || g.core === 'nds' || (g.id && g.id.startsWith('nds-')));
+        if (filter === 'ps1') return (g.system === 'PlayStation' || g.core === 'psx' || (g.id && g.id.startsWith('ps1-')));
+        if (filter === 'gb') return (g.system === 'Game Boy' || g.system === 'Game Boy Color' || g.core === 'gb' || (g.id && g.id.startsWith('gb-')));
+        if (filter === 'atari') return (g.system === 'Atari 2600' || g.core === 'atari2600' || (g.id && g.id.startsWith('atari-')));
+        if (filter === 'html5') return (!g.isEmulator && !g.isFlash);
+        if (filter === 'flash') return (g.isFlash || (g.category && g.category.includes('Flash')));
+        return true;
+      });
+    }
 
-      if (!matchesFilter) return false;
-
-      // Filter search text
+    state.filteredGames = baseList.filter(g => {
       if (!query) return true;
       const title = (g.title || g.name || '').toLowerCase();
       const desc = (g.description || '').toLowerCase();
@@ -237,6 +348,7 @@
     });
 
     renderGamesGrid();
+    updateFilterCounts();
   }
 
   function generateRetroCoverDataUri(title, badgeText) {
@@ -286,11 +398,34 @@
     if (!grid) return;
 
     if (state.filteredGames.length === 0) {
+      if (state.activeFilter === 'favorites') {
+        grid.innerHTML = `
+          <div class="empty-filter-state">
+            <div class="empty-filter-icon">⭐</div>
+            <h3>NO FAVORITES YET</h3>
+            <p>Click the <strong>★</strong> on any game card or inside the player header to save your top games here!</p>
+            <button class="btn-empty-reset" onclick="switchFilter('all')">EXPLORE ALL GAMES</button>
+          </div>
+        `;
+        return;
+      }
+      if (state.activeFilter === 'recent') {
+        grid.innerHTML = `
+          <div class="empty-filter-state">
+            <div class="empty-filter-icon">🕒</div>
+            <h3>NO RECENTLY PLAYED GAMES</h3>
+            <p>Launch any arcade classic or web game and it will automatically be tracked here for quick access!</p>
+            <button class="btn-empty-reset" onclick="switchFilter('all')">EXPLORE ALL GAMES</button>
+          </div>
+        `;
+        return;
+      }
       grid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #94a3b8; font-family: var(--font-retro-title);">
-          <div style="font-size: 32px; margin-bottom: 12px;">👾</div>
+        <div class="empty-filter-state">
+          <div class="empty-filter-icon">👾</div>
           <h3>NO GAMES FOUND</h3>
-          <p style="font-size: 13px; margin-top: 6px;">Try adjusting your search query or switching filters.</p>
+          <p>Try adjusting your search query or switching filters.</p>
+          <button class="btn-empty-reset" onclick="switchFilter('all')">VIEW ALL GAMES</button>
         </div>
       `;
       return;
@@ -300,6 +435,7 @@
       const gid = game.id || game.folder || '';
       const title = escapeHtml(game.title || game.name || gid);
       const sub = escapeHtml(game.system || game.type || 'Retro Classic');
+      const isFav = state.favorites.includes(gid);
       
       // Determine Badge
       let badgeClass = 'badge-html5';
@@ -321,6 +457,9 @@
         <div class="game-card" onclick="playGame('${gid}')">
           <div class="game-card-thumb-wrap">
             <span class="game-card-badge ${badgeClass}">${badgeText}</span>
+            <button class="game-card-fav-btn ${isFav ? 'active' : ''}" data-gid="${gid}" onclick="event.stopPropagation(); toggleFavorite('${gid}')" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">
+              <span class="fav-icon">${isFav ? '★' : '☆'}</span>
+            </button>
             <img class="game-card-thumb" src="${initialCover}" alt="${title}" loading="lazy" onerror="handleCoverError(this, '${cleanCover}', '${safeEscapedTitle}', '${badgeText}')" />
           </div>
           <div class="game-card-content">
@@ -341,14 +480,12 @@
   window.playGame = async function (gameId) {
     playRetroBeep(640, 'triangle', 0.08);
 
-    // Direct link ad trigger on game play
-    try {
-      window.open('https://uplcm.com/4/11930399', '_blank', 'noopener,noreferrer');
-    } catch (e) {}
     const game = state.games.find(g => (g.id || g.folder) === gameId);
     if (!game) return;
 
     state.currentGame = game;
+    recordRecentlyPlayed(game.id || game.folder || gameId);
+    updateModalFavButton();
     const modal = document.getElementById('game-player-modal');
     const iframe = document.getElementById('game-iframe');
     const titleEl = document.getElementById('player-modal-title');
@@ -1018,6 +1155,8 @@
         filterAndRenderGames();
       });
     }
+
+    updateFilterCounts();
   }
 
   // ========================================================================

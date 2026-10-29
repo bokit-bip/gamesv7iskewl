@@ -145,6 +145,8 @@
 
         <div class="system-filter-chips" id="system-filter-chips">
           <button class="filter-chip active" data-filter="all">ALL (270+)</button>
+          <button class="filter-chip chip-favorites" data-filter="favorites" title="Show your favorited games">★ FAVORITES (<span id="fav-count">0</span>)</button>
+          <button class="filter-chip chip-recent" data-filter="recent" title="Show recently played games">🕒 RECENT (<span id="recent-count">0</span>)</button>
           <button class="filter-chip" data-filter="gb">GAME BOY (25)</button>
           <button class="filter-chip" data-filter="atari">ATARI 2600 (25)</button>
           <button class="filter-chip" data-filter="nes">NES (25)</button>
@@ -387,6 +389,7 @@
       </div>
 
       <div class="player-right">
+        <button class="player-ctrl-btn player-fav-toggle" id="modal-fav-btn" onclick="toggleCurrentGameFavorite()" title="Toggle Favorite">⭐ FAVORITE</button>
         <button class="player-ctrl-btn player-dl-btn" onclick="downloadCurrentGameHtml()" title="Download game into single HTML file">💾 DOWNLOAD HTML</button>
         <button class="player-ctrl-btn" onclick="reloadCurrentGame()" title="Reload (R)">🔄 RELOAD</button>
         <button class="player-ctrl-btn" onclick="togglePlayerFullscreen()" title="Fullscreen (F)">⛶ FULLSCREEN</button>
