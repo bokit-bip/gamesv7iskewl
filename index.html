@@ -387,6 +387,7 @@
       </div>
 
       <div class="player-right">
+        <button class="player-ctrl-btn player-dl-btn" onclick="downloadCurrentGameHtml()" title="Download game into single HTML file">💾 DOWNLOAD HTML</button>
         <button class="player-ctrl-btn" onclick="reloadCurrentGame()" title="Reload (R)">🔄 RELOAD</button>
         <button class="player-ctrl-btn" onclick="togglePlayerFullscreen()" title="Fullscreen (F)">⛶ FULLSCREEN</button>
         <button class="player-ctrl-btn" onclick="popoutCurrentGame()" title="Open in New Tab (B)">↗ POPOUT</button>
@@ -434,6 +435,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=7.3"></script>
+  <div id="toast-container" class="toast-container"></div>
+  <script src="app.js?v=7.4"></script>
 </body>
 </html>
