@@ -4,6 +4,16 @@
  * Runs on http://localhost:3000
  */
 
+process.env.UV_THREADPOOL_SIZE = '64';
+
+// Top-level crash guards for upstream network/socket errors
+process.on('uncaughtException', (err) => {
+  console.error('[Process UncaughtException]:', err && err.message ? err.message : err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[Process UnhandledRejection]:', reason);
+});
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -66,6 +76,23 @@ const server = http.createServer((req, res) => {
         return;
       }
     }
+  }
+
+  // Wisp Diagnostic & Ping endpoint
+  if (reqPath === '/wisp/ping' || reqPath === '/wisp') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    const isHttps = req.headers['x-forwarded-proto'] === 'https';
+    res.end(JSON.stringify({
+      status: 'online',
+      service: 'Games V7 Wisp Server',
+      protocol: 'wisp-v1',
+      transport: 'libcurl',
+      backend: 'scramjet',
+      wispUrl: `${isHttps ? 'wss' : 'ws'}://${req.headers.host || 'localhost:3000'}/wisp/`,
+      timestamp: new Date().toISOString(),
+      uptime: Math.round(process.uptime()),
+    }));
+    return;
   }
 
   // Handle Proxy Gateway
@@ -141,6 +168,16 @@ const server = http.createServer((req, res) => {
     fs.createReadStream(filePath).pipe(res);
   }
 });
+
+// Initialize Wisp WebSocket Server on http server if available
+try {
+  const wispPath = path.join(SHARED_DIR, 'wisp_server.js');
+  if (fs.existsSync(wispPath)) {
+    require(wispPath).createWispServer(server);
+  }
+} catch (e) {
+  console.error('[WISP ERROR]:', e);
+}
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log('====================================================');
