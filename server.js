@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * GAMES V7 — STANDALONE LOCAL SERVER
- * Runs on http://localhost:3000
+ * Runs on http://localhost:8080
  */
 
 process.env.UV_THREADPOOL_SIZE = '64';
@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 
-const PORT = parseInt(process.env.PORT, 10) || 3000;
+const PORT = parseInt(process.env.PORT, 10) || 8080;
 const ROOT_DIR = __dirname;
 const SHARED_DIR = path.resolve(__dirname, '..', 'dead bokitware');
 
@@ -88,7 +88,7 @@ const server = http.createServer((req, res) => {
       protocol: 'wisp-v1',
       transport: 'libcurl',
       backend: 'scramjet',
-      wispUrl: `${isHttps ? 'wss' : 'ws'}://${req.headers.host || 'localhost:3000'}/wisp/`,
+      wispUrl: `${isHttps ? 'wss' : 'ws'}://${req.headers.host || 'localhost:8080'}/wisp/`,
       timestamp: new Date().toISOString(),
       uptime: Math.round(process.uptime()),
     }));

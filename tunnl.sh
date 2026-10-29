@@ -7,7 +7,7 @@
 set -uo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PORT="${PORT:-3000}"
+PORT="${PORT:-8080}"
 SSH_KEY="$HOME/.ssh/id_ed25519"
 KEEP_ALIVE_PID=""
 SSH_PID=""

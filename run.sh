@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-#  GAMES V7 — ONE-CLICK LAUNCH SCRIPT (LOCALHOST:3000)
+#  GAMES V7 — ONE-CLICK LAUNCH SCRIPT (LOCALHOST:8080)
 # ==============================================================================
 
 set -e
@@ -8,7 +8,7 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$DIR"
 
-PORT=3000
+PORT=8080
 
 echo ""
 echo "=========================================================="
@@ -16,7 +16,7 @@ echo "  🎮 GAMES V7 // SKELETAL FLOWERS LAUNCHER"
 echo "=========================================================="
 echo ""
 
-# Check if port 3000 is occupied
+# Check if port 8080 is occupied
 if lsof -i :$PORT >/dev/null 2>&1; then
     echo "⚠️  Port $PORT is currently in use. Freeing port $PORT for Games V7..."
     fuser -k $PORT/tcp >/dev/null 2>&1 || kill -9 $(lsof -t -i:$PORT) >/dev/null 2>&1 || true

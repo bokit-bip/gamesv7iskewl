@@ -581,7 +581,7 @@
       // Prepare Server Base & ROM URL
       const TAILSCALE_ORIGIN = 'https://pop-leave.tailcb4af7.ts.net';
       const curOrigin = (window.location.origin && window.location.origin.startsWith('http')) ? window.location.origin : '';
-      const isLocalDev = curOrigin.includes(':3000');
+      const isLocalDev = curOrigin.includes(':8080') || curOrigin.includes(':3000');
       const baseApiUrl = isLocalDev ? '' : TAILSCALE_ORIGIN;
 
       let finalGameUrl = rawGameUrl;

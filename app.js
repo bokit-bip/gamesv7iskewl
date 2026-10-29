@@ -414,6 +414,7 @@
         `https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/${enc}/index.html`,
         `https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/${enc}/index.html`,
         `https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/${encodeURIComponent(gid)}.html`,
+        `http://localhost:8080/games/${enc}/index.html`,
         `http://localhost:3000/games/${enc}/index.html`,
         `https://pop-leave.tailcb4af7.ts.net/games/${enc}/index.html`
       );
@@ -498,7 +499,7 @@
     <h3>${escapeHtml(game.title || gid)}</h3>
     <p>Could not load files from any mirror. If you are offline, check your connection or launch from localhost.</p>
     <button class="btn" onclick="location.reload()">Retry</button>
-    <a class="btn btn-outline" href="http://localhost:3000/games/${enc}/index.html" target="_blank">Try Localhost</a>
+    <a class="btn btn-outline" href="http://localhost:8080/games/${enc}/index.html" target="_blank">Try Localhost</a>
   </div>
 </body>
 </html>`;
