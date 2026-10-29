@@ -372,6 +372,20 @@
     "url": "games/fnaf-into-the-pit/index.html"
   },
   {
+    "id": "fivenightsatfrickbears",
+    "title": "Five Nights at Frickbear's",
+    "category": "Horror",
+    "folder": "fivenightsatfrickbears",
+    "system": "WebGL",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/fivenightsatfrickbears.jpg",
+    "coverFile": "fivenightsatfrickbears.jpg",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/fivenightsatfrickbears.jpg",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/fivenightsatfrickbears.jpg",
+    "url": "games/fivenightsatfrickbears/index.html"
+  },
+  {
     "id": "geodash",
     "title": "Geometry Dash",
     "category": "Platformer",
@@ -406,6 +420,20 @@
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/gta3.jpg",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/gta3.jpg",
     "url": "games/gta3/index.html"
+  },
+  {
+    "id": "ragdollhit",
+    "title": "Ragdoll Hit",
+    "category": "Action",
+    "folder": "ragdollhit",
+    "system": "WebGL",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/ragdollhit.png",
+    "coverFile": "ragdollhit.png",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/ragdollhit.png",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/ragdollhit.png",
+    "url": "games/ragdollhit/index.html"
   },
   {
     "id": "vicecity",
