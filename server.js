@@ -106,7 +106,7 @@ const server = http.createServer((req, res) => {
   }
 
   // Handle Proxy Gateway
-  if (reqPath.startsWith('/browser/gateway') || reqPath.startsWith('/proxy/gateway')) {
+  if (reqPath.startsWith('/browser/gateway') || reqPath.startsWith('/proxy/gateway') || reqPath.startsWith('/api/proxy') || reqPath.startsWith('/api/movies/proxy')) {
     try {
       if (!req.originalUrl) req.originalUrl = req.url || '';
       if (!req.query) {
