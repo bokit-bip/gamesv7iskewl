@@ -358,6 +358,20 @@
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/fnaf4.jpg"
   },
   {
+    "id": "fnaf-into-the-pit",
+    "title": "Five Nights at Freddy's: Into the Pit",
+    "category": "Horror",
+    "folder": "fnaf-into-the-pit",
+    "system": "WebGL",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/fnaf-into-the-pit.jpg",
+    "coverFile": "fnaf-into-the-pit.jpg",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/fnaf-into-the-pit.jpg",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/fnaf-into-the-pit.jpg",
+    "url": "games/fnaf-into-the-pit/index.html"
+  },
+  {
     "id": "geodash",
     "title": "Geometry Dash",
     "category": "Platformer",
@@ -378,6 +392,20 @@
     "coverFile": "gladihoppers.png",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/gladihoppers.png",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/gladihoppers.png"
+  },
+  {
+    "id": "gta3",
+    "title": "Grand Theft Auto III",
+    "category": "Action",
+    "folder": "gta3",
+    "system": "WebGL",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/gta3.jpg",
+    "coverFile": "gta3.jpg",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/gta3.jpg",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/gta3.jpg",
+    "url": "games/gta3/index.html"
   },
   {
     "id": "vicecity",
