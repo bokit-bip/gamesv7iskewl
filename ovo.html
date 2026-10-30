@@ -29,7 +29,7 @@
     const GAME_FOLDER = "ovo";
     const IS_EMULATOR = false;
     const QUERY_STR = "";
-    const INLINE_SRC = "﻿<!DOCTYPE html>\r\n<html>\r\n\r\n<!-- Mirrored from dedragames.com/games/ovo/1.4.4/ by HTTrack Website Copier/3.x [XR&CO'2014], Sat, 05 Feb 2022 16:30:34 GMT -->\r\n<head>\r\n    <meta charset=\"UTF-8\" />\r\n\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge,chrome=1\" />\r\n\t<title>OvO</title>\r\n\t\r\n\t<!-- Standardised web app manifest -->\r\n\t<link rel=\"manifest\" href=\"appmanifest.json\" />\r\n\t\r\n\t<!-- Allow fullscreen mode on iOS devices. (These are Apple specific meta tags.) -->\r\n\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, minimal-ui\" />\r\n\t<meta name=\"apple-mobile-web-app-capable\" content=\"yes\" />\r\n\t<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black\" />\r\n\t<link rel=\"apple-touch-icon\" sizes=\"256x256\" href=\"icon-256.png\" />\r\n\t<meta name=\"HandheldFriendly\" content=\"true\" />\r\n\t\r\n\t<!-- Chrome for Android web app tags -->\r\n\t<meta name=\"mobile-web-app-capable\" content=\"yes\" />\r\n\t<link rel=\"shortcut icon\" sizes=\"256x256\" href=\"icon-256.png\" />\r\n\r\n    <!-- All margins and padding must be zero for the canvas to fill the screen. -->\r\n\t<style type=\"text/css\">\r\n\t\t* {\r\n\t\t\tpadding: 0;\r\n\t\t\tmargin: 0;\r\n\t\t}\r\n\t\thtml, body {\r\n\t\t\tbackground: #000;\r\n\t\t\tcolor: #fff;\r\n\t\t\toverflow: hidden;\r\n\t\t\ttouch-action: none;\r\n\t\t\t-ms-touch-action: none;\r\n\t\t}\r\n\t\tcanvas {\r\n\t\t\ttouch-action-delay: none;\r\n\t\t\ttouch-action: none;\r\n\t\t\t-ms-touch-action: none;\r\n\t\t}\r\n    </style>\r\n\t\r\n\t<link href=\"animate.css\" rel=\"stylesheet\" type=\"text/css\" />\r\n\t<link href=\"hmmg_layoutTransition.css\" rel=\"stylesheet\" type=\"text/css\" />\r\n\t<link href=\"jquery.gritter.css\" rel=\"stylesheet\" type=\"text/css\" />\r\n\r\n</head> \r\n \r\n<body> \r\n\t<div id=\"fb-root\"></div>\r\n\t\r\n\t<script>\r\n\t// Issue a warning if trying to preview an exported project on disk.\r\n\t(function(){\r\n\t\t// Check for running exported on file protocol\r\n\t\tif (window.location.protocol.substr(0, 4) === \"file\")\r\n\t\t{\r\n\t\t\talert(\"Exported games won't work until you upload them. (When running on the file:/// protocol, browsers block many features from working for security reasons.)\");\r\n\t\t}\r\n\t})();\r\n\t<\\/script>\r\n\t\r\n\t<!-- The canvas must be inside a div called c2canvasdiv -->\r\n\t<div id=\"c2canvasdiv\">\r\n\t\r\n\t\t<!-- The canvas the project will render to.  If you change its ID, don't forget to change the\r\n\t\tID the runtime looks for in the jQuery events above (ready() and cr_sizeCanvas()). -->\r\n\t\t<canvas id=\"c2canvas\" width=\"640\" height=\"640\">\r\n\t\t\t<!-- This text is displayed if the visitor's browser does not support HTML5.\r\n\t\t\tYou can change it, but it is a good idea to link to a description of a browser\r\n\t\t\tand provide some links to download some popular HTML5-compatible browsers. -->\r\n\t\t\t<h1>Your browser does not appear to support HTML5.  Try upgrading your browser to the latest version.  <a href=\"http://www.whatbrowser.org/\">What is a browser?</a>\r\n\t\t\t<br/><br/><a href=\"http://www.microsoft.com/windows/internet-explorer/default.aspx\">Microsoft Internet Explorer</a><br/>\r\n\t\t\t<a href=\"http://www.mozilla.com/firefox/\">Mozilla Firefox</a><br/>\r\n\t\t\t<a href=\"http://www.google.com/chrome/\">Google Chrome</a><br/>\r\n\t\t\t<a href=\"http://www.apple.com/safari/download/\">Apple Safari</a></h1>\r\n\t\t</canvas>\r\n\t\t\r\n\t</div>\r\n\t\r\n\t<!-- Pages load faster with scripts at the bottom -->\r\n\t\r\n\t<!-- Construct 2 exported games require jQuery. -->\r\n\t<script src=\"jquery-3.4.1.min.js\"><\\/script>\r\n\r\n\t<script src=\"GameAnalytics.js\"><\\/script>\r\n\t<script src=\"Tween.js\"><\\/script>\r\n\t<script src=\"html2canvas.min.js\"><\\/script>\r\n\t<script src=\"jquery.gritter.js\"><\\/script>\r\n\t<script src=\"howler.js\"><\\/script>\r\n\r\n\t\r\n    <!-- The runtime script.  You can rename it, but don't forget to rename the reference here as well.\r\n    This file will have been minified and obfuscated if you enabled \"Minify script\" during export. -->\r\n\t<script src=\"c2runtime.js\"><\\/script>\r\n\r\n    <script>\r\n\t\t// Start the Construct 2 project running on window load.\r\n\t\tjQuery(document).ready(function ()\r\n\t\t{\t\t\t\r\n\t\t\t// Create new runtime using the c2canvas\r\n\t\t\tcr_createRuntime(\"c2canvas\");\r\n\t\t});\r\n\t\t\r\n\t\t// Pause and resume on page becoming visible/invisible\r\n\t\tfunction onVisibilityChanged() {\r\n\t\t\tif (document.hidden || document.mozHidden || document.webkitHidden || document.msHidden)\r\n\t\t\t\tcr_setSuspended(true);\r\n\t\t\telse\r\n\t\t\t\tcr_setSuspended(false);\r\n\t\t};\r\n\t\t\r\n\t\tdocument.addEventListener(\"visibilitychange\", onVisibilityChanged, false);\r\n\t\tdocument.addEventListener(\"mozvisibilitychange\", onVisibilityChanged, false);\r\n\t\tdocument.addEventListener(\"webkitvisibilitychange\", onVisibilityChanged, false);\r\n\t\tdocument.addEventListener(\"msvisibilitychange\", onVisibilityChanged, false);\r\n\t\t\r\n\t\tfunction OnRegisterSWError(e)\r\n\t\t{\r\n\t\t\tconsole.warn(\"Failed to register service worker: \", e);\r\n\t\t};\r\n\t\t\r\n\t\t// Runtime calls this global method when ready to start caching (i.e. after startup).\r\n\t\t// This registers the service worker which caches resources for offline support.\r\n\t\twindow.C2_RegisterSW = function C2_RegisterSW()\r\n\t\t{\r\n\t\t\tif (!navigator.serviceWorker)\r\n\t\t\t\treturn;\t\t// no SW support, ignore call\r\n\t\t\t\r\n\t\t\ttry {\r\n\t\t\t\tnavigator.serviceWorker.register(\"sw.js\", { scope: \"./\" })\r\n\t\t\t\t.then(function (reg)\r\n\t\t\t\t{\r\n\t\t\t\t\tconsole.log(\"Registered service worker on \" + reg.scope);\r\n\t\t\t\t})\r\n\t\t\t\t.catch(OnRegisterSWError);\r\n\t\t\t}\r\n\t\t\tcatch (e)\r\n\t\t\t{\r\n\t\t\t\tOnRegisterSWError(e);\r\n\t\t\t}\r\n\t\t};\r\n    <\\/script>\r\n</body> \r\n\r\n<!-- Mirrored from dedragames.com/games/ovo/1.4.4/ by HTTrack Website Copier/3.x [XR&CO'2014], Sat, 05 Feb 2022 16:30:44 GMT -->\r\n</html> ";
+    const INLINE_B64 = "77u/PCFET0NUWVBFIGh0bWw+DQo8aHRtbD4NCg0KPCEtLSBNaXJyb3JlZCBmcm9tIGRlZHJhZ2FtZXMuY29tL2dhbWVzL292by8xLjQuNC8gYnkgSFRUcmFjayBXZWJzaXRlIENvcGllci8zLnggW1hSJkNPJzIwMTRdLCBTYXQsIDA1IEZlYiAyMDIyIDE2OjMwOjM0IEdNVCAtLT4NCjxoZWFkPg0KICAgIDxtZXRhIGNoYXJzZXQ9IlVURi04IiAvPg0KCTxtZXRhIGh0dHAtZXF1aXY9IlgtVUEtQ29tcGF0aWJsZSIgY29udGVudD0iSUU9ZWRnZSxjaHJvbWU9MSIgLz4NCgk8dGl0bGU+T3ZPPC90aXRsZT4NCgkNCgk8IS0tIFN0YW5kYXJkaXNlZCB3ZWIgYXBwIG1hbmlmZXN0IC0tPg0KCTxsaW5rIHJlbD0ibWFuaWZlc3QiIGhyZWY9ImFwcG1hbmlmZXN0Lmpzb24iIC8+DQoJDQoJPCEtLSBBbGxvdyBmdWxsc2NyZWVuIG1vZGUgb24gaU9TIGRldmljZXMuIChUaGVzZSBhcmUgQXBwbGUgc3BlY2lmaWMgbWV0YSB0YWdzLikgLS0+DQoJPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLjAsIG1heGltdW0tc2NhbGU9MS4wLCBtaW5pbXVtLXNjYWxlPTEuMCwgdXNlci1zY2FsYWJsZT1ubywgbWluaW1hbC11aSIgLz4NCgk8bWV0YSBuYW1lPSJhcHBsZS1tb2JpbGUtd2ViLWFwcC1jYXBhYmxlIiBjb250ZW50PSJ5ZXMiIC8+DQoJPG1ldGEgbmFtZT0iYXBwbGUtbW9iaWxlLXdlYi1hcHAtc3RhdHVzLWJhci1zdHlsZSIgY29udGVudD0iYmxhY2siIC8+DQoJPGxpbmsgcmVsPSJhcHBsZS10b3VjaC1pY29uIiBzaXplcz0iMjU2eDI1NiIgaHJlZj0iaWNvbi0yNTYucG5nIiAvPg0KCTxtZXRhIG5hbWU9IkhhbmRoZWxkRnJpZW5kbHkiIGNvbnRlbnQ9InRydWUiIC8+DQoJDQoJPCEtLSBDaHJvbWUgZm9yIEFuZHJvaWQgd2ViIGFwcCB0YWdzIC0tPg0KCTxtZXRhIG5hbWU9Im1vYmlsZS13ZWItYXBwLWNhcGFibGUiIGNvbnRlbnQ9InllcyIgLz4NCgk8bGluayByZWw9InNob3J0Y3V0IGljb24iIHNpemVzPSIyNTZ4MjU2IiBocmVmPSJpY29uLTI1Ni5wbmciIC8+DQoNCiAgICA8IS0tIEFsbCBtYXJnaW5zIGFuZCBwYWRkaW5nIG11c3QgYmUgemVybyBmb3IgdGhlIGNhbnZhcyB0byBmaWxsIHRoZSBzY3JlZW4uIC0tPg0KCTxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+DQoJCSogew0KCQkJcGFkZGluZzogMDsNCgkJCW1hcmdpbjogMDsNCgkJfQ0KCQlodG1sLCBib2R5IHsNCgkJCWJhY2tncm91bmQ6ICMwMDA7DQoJCQljb2xvcjogI2ZmZjsNCgkJCW92ZXJmbG93OiBoaWRkZW47DQoJCQl0b3VjaC1hY3Rpb246IG5vbmU7DQoJCQktbXMtdG91Y2gtYWN0aW9uOiBub25lOw0KCQl9DQoJCWNhbnZhcyB7DQoJCQl0b3VjaC1hY3Rpb24tZGVsYXk6IG5vbmU7DQoJCQl0b3VjaC1hY3Rpb246IG5vbmU7DQoJCQktbXMtdG91Y2gtYWN0aW9uOiBub25lOw0KCQl9DQogICAgPC9zdHlsZT4NCgkNCgk8bGluayBocmVmPSJhbmltYXRlLmNzcyIgcmVsPSJzdHlsZXNoZWV0IiB0eXBlPSJ0ZXh0L2NzcyIgLz4NCgk8bGluayBocmVmPSJobW1nX2xheW91dFRyYW5zaXRpb24uY3NzIiByZWw9InN0eWxlc2hlZXQiIHR5cGU9InRleHQvY3NzIiAvPg0KCTxsaW5rIGhyZWY9ImpxdWVyeS5ncml0dGVyLmNzcyIgcmVsPSJzdHlsZXNoZWV0IiB0eXBlPSJ0ZXh0L2NzcyIgLz4NCg0KPC9oZWFkPiANCiANCjxib2R5PiANCgk8ZGl2IGlkPSJmYi1yb290Ij48L2Rpdj4NCgkNCgk8c2NyaXB0Pg0KCS8vIElzc3VlIGEgd2FybmluZyBpZiB0cnlpbmcgdG8gcHJldmlldyBhbiBleHBvcnRlZCBwcm9qZWN0IG9uIGRpc2suDQoJKGZ1bmN0aW9uKCl7DQoJCS8vIENoZWNrIGZvciBydW5uaW5nIGV4cG9ydGVkIG9uIGZpbGUgcHJvdG9jb2wNCgkJaWYgKHdpbmRvdy5sb2NhdGlvbi5wcm90b2NvbC5zdWJzdHIoMCwgNCkgPT09ICJmaWxlIikNCgkJew0KCQkJYWxlcnQoIkV4cG9ydGVkIGdhbWVzIHdvbid0IHdvcmsgdW50aWwgeW91IHVwbG9hZCB0aGVtLiAoV2hlbiBydW5uaW5nIG9uIHRoZSBmaWxlOi8vLyBwcm90b2NvbCwgYnJvd3NlcnMgYmxvY2sgbWFueSBmZWF0dXJlcyBmcm9tIHdvcmtpbmcgZm9yIHNlY3VyaXR5IHJlYXNvbnMuKSIpOw0KCQl9DQoJfSkoKTsNCgk8L3NjcmlwdD4NCgkNCgk8IS0tIFRoZSBjYW52YXMgbXVzdCBiZSBpbnNpZGUgYSBkaXYgY2FsbGVkIGMyY2FudmFzZGl2IC0tPg0KCTxkaXYgaWQ9ImMyY2FudmFzZGl2Ij4NCgkNCgkJPCEtLSBUaGUgY2FudmFzIHRoZSBwcm9qZWN0IHdpbGwgcmVuZGVyIHRvLiAgSWYgeW91IGNoYW5nZSBpdHMgSUQsIGRvbid0IGZvcmdldCB0byBjaGFuZ2UgdGhlDQoJCUlEIHRoZSBydW50aW1lIGxvb2tzIGZvciBpbiB0aGUgalF1ZXJ5IGV2ZW50cyBhYm92ZSAocmVhZHkoKSBhbmQgY3Jfc2l6ZUNhbnZhcygpKS4gLS0+DQoJCTxjYW52YXMgaWQ9ImMyY2FudmFzIiB3aWR0aD0iNjQwIiBoZWlnaHQ9IjY0MCI+DQoJCQk8IS0tIFRoaXMgdGV4dCBpcyBkaXNwbGF5ZWQgaWYgdGhlIHZpc2l0b3IncyBicm93c2VyIGRvZXMgbm90IHN1cHBvcnQgSFRNTDUuDQoJCQlZb3UgY2FuIGNoYW5nZSBpdCwgYnV0IGl0IGlzIGEgZ29vZCBpZGVhIHRvIGxpbmsgdG8gYSBkZXNjcmlwdGlvbiBvZiBhIGJyb3dzZXINCgkJCWFuZCBwcm92aWRlIHNvbWUgbGlua3MgdG8gZG93bmxvYWQgc29tZSBwb3B1bGFyIEhUTUw1LWNvbXBhdGlibGUgYnJvd3NlcnMuIC0tPg0KCQkJPGgxPllvdXIgYnJvd3NlciBkb2VzIG5vdCBhcHBlYXIgdG8gc3VwcG9ydCBIVE1MNS4gIFRyeSB1cGdyYWRpbmcgeW91ciBicm93c2VyIHRvIHRoZSBsYXRlc3QgdmVyc2lvbi4gIDxhIGhyZWY9Imh0dHA6Ly93d3cud2hhdGJyb3dzZXIub3JnLyI+V2hhdCBpcyBhIGJyb3dzZXI/PC9hPg0KCQkJPGJyLz48YnIvPjxhIGhyZWY9Imh0dHA6Ly93d3cubWljcm9zb2Z0LmNvbS93aW5kb3dzL2ludGVybmV0LWV4cGxvcmVyL2RlZmF1bHQuYXNweCI+TWljcm9zb2Z0IEludGVybmV0IEV4cGxvcmVyPC9hPjxici8+DQoJCQk8YSBocmVmPSJodHRwOi8vd3d3Lm1vemlsbGEuY29tL2ZpcmVmb3gvIj5Nb3ppbGxhIEZpcmVmb3g8L2E+PGJyLz4NCgkJCTxhIGhyZWY9Imh0dHA6Ly93d3cuZ29vZ2xlLmNvbS9jaHJvbWUvIj5Hb29nbGUgQ2hyb21lPC9hPjxici8+DQoJCQk8YSBocmVmPSJodHRwOi8vd3d3LmFwcGxlLmNvbS9zYWZhcmkvZG93bmxvYWQvIj5BcHBsZSBTYWZhcmk8L2E+PC9oMT4NCgkJPC9jYW52YXM+DQoJCQ0KCTwvZGl2Pg0KCQ0KCTwhLS0gUGFnZXMgbG9hZCBmYXN0ZXIgd2l0aCBzY3JpcHRzIGF0IHRoZSBib3R0b20gLS0+DQoJDQoJPCEtLSBDb25zdHJ1Y3QgMiBleHBvcnRlZCBnYW1lcyByZXF1aXJlIGpRdWVyeS4gLS0+DQoJPHNjcmlwdCBzcmM9ImpxdWVyeS0zLjQuMS5taW4uanMiPjwvc2NyaXB0Pg0KDQoJPHNjcmlwdCBzcmM9IkdhbWVBbmFseXRpY3MuanMiPjwvc2NyaXB0Pg0KCTxzY3JpcHQgc3JjPSJUd2Vlbi5qcyI+PC9zY3JpcHQ+DQoJPHNjcmlwdCBzcmM9Imh0bWwyY2FudmFzLm1pbi5qcyI+PC9zY3JpcHQ+DQoJPHNjcmlwdCBzcmM9ImpxdWVyeS5ncml0dGVyLmpzIj48L3NjcmlwdD4NCgk8c2NyaXB0IHNyYz0iaG93bGVyLmpzIj48L3NjcmlwdD4NCg0KCQ0KICAgIDwhLS0gVGhlIHJ1bnRpbWUgc2NyaXB0LiAgWW91IGNhbiByZW5hbWUgaXQsIGJ1dCBkb24ndCBmb3JnZXQgdG8gcmVuYW1lIHRoZSByZWZlcmVuY2UgaGVyZSBhcyB3ZWxsLg0KICAgIFRoaXMgZmlsZSB3aWxsIGhhdmUgYmVlbiBtaW5pZmllZCBhbmQgb2JmdXNjYXRlZCBpZiB5b3UgZW5hYmxlZCAiTWluaWZ5IHNjcmlwdCIgZHVyaW5nIGV4cG9ydC4gLS0+DQoJPHNjcmlwdCBzcmM9ImMycnVudGltZS5qcyI+PC9zY3JpcHQ+DQoNCiAgICA8c2NyaXB0Pg0KCQkvLyBTdGFydCB0aGUgQ29uc3RydWN0IDIgcHJvamVjdCBydW5uaW5nIG9uIHdpbmRvdyBsb2FkLg0KCQlqUXVlcnkoZG9jdW1lbnQpLnJlYWR5KGZ1bmN0aW9uICgpDQoJCXsJCQkNCgkJCS8vIENyZWF0ZSBuZXcgcnVudGltZSB1c2luZyB0aGUgYzJjYW52YXMNCgkJCWNyX2NyZWF0ZVJ1bnRpbWUoImMyY2FudmFzIik7DQoJCX0pOw0KCQkNCgkJLy8gUGF1c2UgYW5kIHJlc3VtZSBvbiBwYWdlIGJlY29taW5nIHZpc2libGUvaW52aXNpYmxlDQoJCWZ1bmN0aW9uIG9uVmlzaWJpbGl0eUNoYW5nZWQoKSB7DQoJCQlpZiAoZG9jdW1lbnQuaGlkZGVuIHx8IGRvY3VtZW50Lm1vekhpZGRlbiB8fCBkb2N1bWVudC53ZWJraXRIaWRkZW4gfHwgZG9jdW1lbnQubXNIaWRkZW4pDQoJCQkJY3Jfc2V0U3VzcGVuZGVkKHRydWUpOw0KCQkJZWxzZQ0KCQkJCWNyX3NldFN1c3BlbmRlZChmYWxzZSk7DQoJCX07DQoJCQ0KCQlkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCJ2aXNpYmlsaXR5Y2hhbmdlIiwgb25WaXNpYmlsaXR5Q2hhbmdlZCwgZmFsc2UpOw0KCQlkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCJtb3p2aXNpYmlsaXR5Y2hhbmdlIiwgb25WaXNpYmlsaXR5Q2hhbmdlZCwgZmFsc2UpOw0KCQlkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCJ3ZWJraXR2aXNpYmlsaXR5Y2hhbmdlIiwgb25WaXNpYmlsaXR5Q2hhbmdlZCwgZmFsc2UpOw0KCQlkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCJtc3Zpc2liaWxpdHljaGFuZ2UiLCBvblZpc2liaWxpdHlDaGFuZ2VkLCBmYWxzZSk7DQoJCQ0KCQlmdW5jdGlvbiBPblJlZ2lzdGVyU1dFcnJvcihlKQ0KCQl7DQoJCQljb25zb2xlLndhcm4oIkZhaWxlZCB0byByZWdpc3RlciBzZXJ2aWNlIHdvcmtlcjogIiwgZSk7DQoJCX07DQoJCQ0KCQkvLyBSdW50aW1lIGNhbGxzIHRoaXMgZ2xvYmFsIG1ldGhvZCB3aGVuIHJlYWR5IHRvIHN0YXJ0IGNhY2hpbmcgKGkuZS4gYWZ0ZXIgc3RhcnR1cCkuDQoJCS8vIFRoaXMgcmVnaXN0ZXJzIHRoZSBzZXJ2aWNlIHdvcmtlciB3aGljaCBjYWNoZXMgcmVzb3VyY2VzIGZvciBvZmZsaW5lIHN1cHBvcnQuDQoJCXdpbmRvdy5DMl9SZWdpc3RlclNXID0gZnVuY3Rpb24gQzJfUmVnaXN0ZXJTVygpDQoJCXsNCgkJCWlmICghbmF2aWdhdG9yLnNlcnZpY2VXb3JrZXIpDQoJCQkJcmV0dXJuOwkJLy8gbm8gU1cgc3VwcG9ydCwgaWdub3JlIGNhbGwNCgkJCQ0KCQkJdHJ5IHsNCgkJCQluYXZpZ2F0b3Iuc2VydmljZVdvcmtlci5yZWdpc3Rlcigic3cuanMiLCB7IHNjb3BlOiAiLi8iIH0pDQoJCQkJLnRoZW4oZnVuY3Rpb24gKHJlZykNCgkJCQl7DQoJCQkJCWNvbnNvbGUubG9nKCJSZWdpc3RlcmVkIHNlcnZpY2Ugd29ya2VyIG9uICIgKyByZWcuc2NvcGUpOw0KCQkJCX0pDQoJCQkJLmNhdGNoKE9uUmVnaXN0ZXJTV0Vycm9yKTsNCgkJCX0NCgkJCWNhdGNoIChlKQ0KCQkJew0KCQkJCU9uUmVnaXN0ZXJTV0Vycm9yKGUpOw0KCQkJfQ0KCQl9Ow0KICAgIDwvc2NyaXB0Pg0KPC9ib2R5PiANCg0KPCEtLSBNaXJyb3JlZCBmcm9tIGRlZHJhZ2FtZXMuY29tL2dhbWVzL292by8xLjQuNC8gYnkgSFRUcmFjayBXZWJzaXRlIENvcGllci8zLnggW1hSJkNPJzIwMTRdLCBTYXQsIDA1IEZlYiAyMDIyIDE2OjMwOjQ0IEdNVCAtLT4NCjwvaHRtbD4g";
 
     const CLOAK_PRESETS = {
       drive: { title: "My Drive - Google Drive", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 87.3 78'%3E%3Cpath fill='%230066da' d='m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z'/%3E%3Cpath fill='%2300ac47' d='M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44A9.06 9.06 0 0 0 0 53h27.5z'/%3E%3Cpath fill='%23ea4335' d='m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z'/%3E%3Cpath fill='%2300832d' d='M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z'/%3E%3Cpath fill='%232684fc' d='M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5L72.35 24.7c-.8-1.4-1.95-2.5-3.3-3.3L55.3 45.2z'/%3E%3Cpath fill='%23ffba00' d='m73.55 76.8-13.75-23.8H27.5l13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h23.3c1.6 0 3.15-.4 4.5-1.2z'/%3E%3C/svg%3E" },
@@ -106,77 +106,177 @@
       setTabCloak(cloakSelect ? cloakSelect.value : 'drive');
     } catch(e) {}
 
+    function makeShim(tb) {
+      return '<script>' +
+        '(function(){' +
+        'var tb=' + JSON.stringify(tb) + ';' +
+        'if(!tb.endsWith("/"))tb+="/";' +
+        'var OrigImage=window.Image;' +
+        'window.Image=function(w,h){var img=new OrigImage(w,h);img.crossOrigin="anonymous";return img;};' +
+        'var origCE=document.createElement.bind(document);' +
+        'document.createElement=function(t,o){var el=origCE(t,o);if(t&&t.toLowerCase()==="img"){try{el.crossOrigin="anonymous";}catch(e){}}return el;};' +
+        'var OrigAudio=window.Audio;' +
+        'if(OrigAudio){window.Audio=function(s){var a=new OrigAudio();try{a.crossOrigin="anonymous";}catch(e){}if(s){if(typeof s==="string"&&!/^(https?:|data:|blob:)/i.test(s)){s=new URL(s,tb).href;}a.src=s;}return a;};}' +
+        'class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0||bStr.indexOf("file:")===0){bStr=tb;}try{super(u,bStr);}catch(e){super(u,tb);}}}' +
+        'window.URL=PatchedURL;' +
+        'var origFetch=window.fetch;' +
+        'if(origFetch){window.fetch=function(inp,init){if(typeof inp==="string"){if(!/^(https?:|data:|blob:)/i.test(inp)){inp=new URL(inp,tb).href;}}else if(inp&&typeof inp==="object"&&inp.url){if(!/^(https?:|data:|blob:)/i.test(inp.url)){inp=new Request(new URL(inp.url,tb).href,inp);}}return origFetch.call(this,inp,init);};}' +
+        'var origXhrOpen=XMLHttpRequest.prototype.open;' +
+        'XMLHttpRequest.prototype.open=function(m,u){var args=Array.prototype.slice.call(arguments);if(typeof u==="string"&&!/^(https?:|data:|blob:)/i.test(u)){args[1]=new URL(u,tb).href;}return origXhrOpen.apply(this,args);};' +
+        'var pageLoaded=(document.readyState==="complete");' +
+        'window.addEventListener("load",function(){pageLoaded=true;},{capture:true});' +
+        'var origWinAEL=window.addEventListener.bind(window);' +
+        'window.addEventListener=function(t,l,o){if(t==="load"&&(pageLoaded||document.readyState==="complete")){setTimeout(function(){try{if(typeof l==="function")l.call(window,new Event("load"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("load"));}catch(e){}},15);}return origWinAEL(t,l,o);};' +
+        'var origOnload=null;' +
+        'Object.defineProperty(window,"onload",{get:function(){return origOnload;},set:function(fn){origOnload=fn;if(pageLoaded||document.readyState==="complete"){setTimeout(function(){try{if(typeof fn==="function")fn.call(window,new Event("load"));}catch(e){}},15);}},configurable:true});' +
+        'var domReady=(document.readyState==="interactive"||document.readyState==="complete");' +
+        'document.addEventListener("DOMContentLoaded",function(){domReady=true;},{capture:true});' +
+        'var origDocAEL=document.addEventListener.bind(document);' +
+        'document.addEventListener=function(t,l,o){if(t==="DOMContentLoaded"&&(domReady||document.readyState!=="loading")){setTimeout(function(){try{if(typeof l==="function")l.call(document,new Event("DOMContentLoaded"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("DOMContentLoaded"));}catch(e){}},15);}return origDocAEL(t,l,o);};' +
+        '})();<' + '/script>';
+    }
+
     async function resolveAndLoadGame() {
-      const base = document.baseURI || window.location.href;
       const enc = encodeURIComponent(GAME_FOLDER);
+      const isFile = window.location.protocol === 'file:' || (document.baseURI && document.baseURI.startsWith('file:'));
 
       if (IS_EMULATOR) {
-        const playerCandidates = [
-          new URL('emulator/player.html', base).href,
-          new URL('../emulator/player.html', base).href,
-          'http://localhost:8080/emulator/player.html',
-          TAILSCALE_ORIGIN + '/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html'
-        ];
+        const playerCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          playerCandidates.push(new URL('emulator/player.html', base).href);
+          playerCandidates.push(new URL('../emulator/player.html', base).href);
+        }
+        playerCandidates.push('http://localhost:8080/emulator/player.html');
+        playerCandidates.push('http://127.0.0.1:8080/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html');
+        playerCandidates.push(TAILSCALE_ORIGIN + '/emulator/player.html');
+
         for (const p of playerCandidates) {
           try {
-            const r = await fetch(p);
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const r = await fetch(p, { signal: c.signal });
+            clearTimeout(t);
             if (r.ok) {
               const html = await r.text();
-              const baseTag = '<base href="' + new URL('./', p).href + '">';
+              effectiveGameUrl = p;
+              const targetBase = new URL('./', p).href;
+              const baseTag = '<base href="' + targetBase + '">';
+              const shim = makeShim(targetBase);
               const injectScript = '<script>window.__INJECTED_QUERY__ = ' + JSON.stringify(QUERY_STR) + ';<' + '/script>';
-              const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + injectScript) : (baseTag + injectScript + html);
+              const full = html.includes('<head>')
+                ? html.replace('<head>', '<head>' + baseTag + shim + injectScript)
+                : (baseTag + shim + injectScript + html);
               frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
               return;
             }
           } catch(e) {}
         }
-        frame.src = new URL('emulator/player.svg?' + QUERY_STR, base).href;
+        frame.src = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.svg?' + QUERY_STR;
         return;
       }
 
-      if (INLINE_SRC && INLINE_SRC.length > 50) {
-        const targetBase = new URL('games/' + enc + '/', base).href;
-        const baseTag = '<base href="' + targetBase + '">';
-        const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-        const full = INLINE_SRC.includes('<head>') ? INLINE_SRC.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + INLINE_SRC);
+      let inlineHtml = '';
+      if (INLINE_B64) {
+        try { inlineHtml = decodeURIComponent(escape(atob(INLINE_B64))); }
+        catch(e) { try { inlineHtml = atob(INLINE_B64); } catch(e2) {} }
+      }
+
+      // Check if inlineHtml already has a hardcoded http/https <base href="...">
+      let preExistingBase = '';
+      if (inlineHtml) {
+        const baseTagIdx = inlineHtml.toLowerCase().indexOf('<base');
+        if (baseTagIdx !== -1) {
+          const snippet = inlineHtml.slice(baseTagIdx, baseTagIdx + 400);
+          const hrefIdx = snippet.toLowerCase().indexOf('href=');
+          if (hrefIdx !== -1) {
+            const q = snippet[hrefIdx + 5];
+            if (q === '"' || q === "'") {
+              const endQ = snippet.indexOf(q, hrefIdx + 6);
+              if (endQ !== -1) {
+                const val = snippet.slice(hrefIdx + 6, endQ);
+                if (val.startsWith('http://') || val.startsWith('https://')) {
+                  preExistingBase = val;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      let activeBase = '';
+      let fetchedHtml = '';
+
+      if (preExistingBase) {
+        activeBase = preExistingBase;
+      } else {
+        const baseCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          baseCandidates.push(new URL('games/' + enc + '/', base).href);
+          baseCandidates.push(new URL('../games/' + enc + '/', base).href);
+        }
+        baseCandidates.push('http://localhost:8080/games/' + enc + '/');
+        baseCandidates.push('http://127.0.0.1:8080/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/');
+        baseCandidates.push(TAILSCALE_ORIGIN + '/games/' + enc + '/');
+
+        for (const b of baseCandidates) {
+          try {
+            const probe = b.endsWith('/') ? b + 'index.html' : b + '/index.html';
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const res = await fetch(probe, { signal: c.signal });
+            clearTimeout(t);
+            if (res.ok) {
+              const txt = await res.text();
+              if (txt.includes('Package size exceeded') || txt.includes('Cannot find "') || txt.trim().startsWith('404')) continue;
+              activeBase = b;
+              fetchedHtml = txt;
+              break;
+            }
+          } catch(e) {}
+        }
+        if (!activeBase) {
+          activeBase = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/';
+        }
+      }
+
+      let rawHtml = (inlineHtml && inlineHtml.length > 50) ? inlineHtml : fetchedHtml;
+
+      if (!rawHtml) {
+        try {
+          const probe = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
+          const c = new AbortController();
+          const t = setTimeout(() => c.abort(), 2500);
+          const res = await fetch(probe, { signal: c.signal });
+          clearTimeout(t);
+          if (res.ok) rawHtml = await res.text();
+        } catch(e) {}
+      }
+
+      if (rawHtml) {
+        effectiveGameUrl = activeBase;
+        const shim = makeShim(activeBase);
+        let full = rawHtml;
+        if (!preExistingBase) {
+          const baseTag = '<base href="' + activeBase + '">';
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + baseTag + shim)
+            : (baseTag + shim + full);
+        } else {
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + shim)
+            : (shim + full);
+        }
         frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
         return;
       }
 
-      const candidates = [
-        new URL('games/' + enc + '/index.html', base).href,
-        new URL('../games/' + enc + '/index.html', base).href,
-        'http://localhost:8080/games/' + enc + '/index.html',
-        TAILSCALE_ORIGIN + '/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesv7iskewl/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/index.html'
-      ];
-
-      for (const url of candidates) {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 2500);
-          const res = await fetch(url, { signal: timer.signal });
-          clearTimeout(timer);
-          if (res.ok) {
-            let html = await res.text();
-            if (html.includes('Package size exceeded') || html.includes('Cannot find "') || html.trim().startsWith('404')) continue;
-            effectiveGameUrl = url;
-            const targetBase = new URL('./', url).href;
-            const baseTag = '<base href="' + targetBase + '">';
-            const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-            const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + html);
-            frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
-            return;
-          }
-        } catch(e) {}
-      }
-
-      effectiveGameUrl = TAILSCALE_ORIGIN + '/games/' + enc + '/index.html';
+      effectiveGameUrl = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
       frame.src = effectiveGameUrl;
     }
 

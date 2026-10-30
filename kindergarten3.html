@@ -29,7 +29,7 @@
     const GAME_FOLDER = "kindergarten3";
     const IS_EMULATOR = false;
     const QUERY_STR = "";
-    const INLINE_SRC = "<!DOCTYPE html>\n<html lang=\"en-us\">\n\t<head>\n\t\t\n\t\t<meta charset=\"utf-8\" />\n\t\t<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n\t\t<title>Kindergarten3Port</title>\n\t\t<link rel=\"shortcut icon\" href=\"TemplateData/favicon.ico\" />\n\t\t<link rel=\"stylesheet\" href=\"TemplateData/style.css\" />\n\t\t<style>\n\t\t\thtml,\n\t\t\tbody {\n\t\t\t\tmargin: 0;\n\t\t\t\tpadding: 0;\n\t\t\t\toverflow: hidden;\n\t\t\t\theight: 100%;\n\t\t\t\twidth: 100%;\n\t\t\t}\n\n\t\t\t#unity-container {\n\t\t\t\twidth: 100%;\n\t\t\t\theight: 100%;\n\t\t\t\tposition: fixed;\n\t\t\t\ttop: 0;\n\t\t\t\tleft: 0;\n\t\t\t}\n\t\t</style>\n\t</head>\n\n\t<body>\n\t\t<div\n\t\t\tid=\"loading-text\"\n\t\t\tstyle=\"\n\t\t\t\tcolor: black;\n\t\t\t\tfont-family: cursive;\n\t\t\t\tfont-size: 48px;\n\t\t\t\ttext-align: center;\n\t\t\t\tmargin-top: 20px;\n\t\t\t\"\n\t\t>\n\t\t\tLOADING...\n\t\t</div>\n\t\t<div id=\"unity-container\" class=\"unity-desktop\" hidden>\n\t\t\t<canvas id=\"unity-canvas\" tabindex=\"-1\"></canvas>\n\t\t\t<div id=\"unity-loading-bar\">\n\t\t\t\t<div id=\"unity-logo\"></div>\n\t\t\t\t<div id=\"unity-progress-bar-empty\">\n\t\t\t\t\t<div id=\"unity-progress-bar-full\"></div>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t\t<div id=\"unity-warning\"></div>\n\t\t</div>\n\t\t<script>\n\t\t\tvar container = document.querySelector(\"#unity-container\");\n\t\t\tvar canvas = document.querySelector(\"#unity-canvas\");\n\t\t\tvar loadingBar = document.querySelector(\"#unity-loading-bar\");\n\t\t\tvar progressBarFull = document.querySelector(\"#unity-progress-bar-full\");\n\t\t\tvar fullscreenButton = document.querySelector(\"#unity-fullscreen-button\");\n\t\t\tvar warningBanner = document.querySelector(\"#unity-warning\");\n\n\t\t\tfunction unityShowBanner(msg, type) {}\n\n\t\t\tfunction mergeFiles(fileParts) {\n\t\t\t\treturn new Promise((resolve, reject) => {\n\t\t\t\t\tlet buffers = [];\n\n\t\t\t\t\tfunction fetchPart(index) {\n\t\t\t\t\t\tif (index >= fileParts.length) {\n\t\t\t\t\t\t\tlet mergedBlob = new Blob(buffers);\n\t\t\t\t\t\t\tlet mergedFileUrl = URL.createObjectURL(mergedBlob);\n\t\t\t\t\t\t\tresolve(mergedFileUrl);\n\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t}\n\t\t\t\t\t\tfetch(fileParts[index])\n\t\t\t\t\t\t\t.then((response) => response.arrayBuffer())\n\t\t\t\t\t\t\t.then((data) => {\n\t\t\t\t\t\t\t\tbuffers.push(data);\n\t\t\t\t\t\t\t\tfetchPart(index + 1);\n\t\t\t\t\t\t\t})\n\t\t\t\t\t\t\t.catch(reject);\n\t\t\t\t\t}\n\t\t\t\t\tfetchPart(0);\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tfunction getParts(file, start, end) {\n\t\t\t\tlet parts = [];\n\t\t\t\tfor (let i = start; i <= end; i++) {\n\t\t\t\t\tparts.push(file + \".part\" + i);\n\t\t\t\t}\n\t\t\t\treturn parts;\n\t\t\t}\n\t\t\tPromise.all([\n\t\t\t\tmergeFiles(getParts(\"Build/Kindergarten3Port.data\", 1, 2)),\n\t\t\t\tmergeFiles(getParts(\"Build/Kindergarten3Port.wasm\", 1, 3)),\n\t\t\t]).then(([dataUrl, wasmUrl]) => {\n\t\t\t\tcontainer.hidden = false;\n\t\t\t\tvar buildUrl = \"Build\";\n\t\t\t\tvar loaderUrl = buildUrl + \"/Kindergarten3Port.loader.js\";\n\n\t\t\t\tvar config = {\n\t\t\t\t\tdataUrl: dataUrl,\n\t\t\t\t\tframeworkUrl: buildUrl + \"/Kindergarten3Port.framework.js\",\n\t\t\t\t\tcodeUrl: wasmUrl,\n\t\t\t\t\tstreamingAssetsUrl: \"StreamingAssets\",\n\t\t\t\t\tcompanyName: \"Con Man Games\",\n\t\t\t\t\tproductName: \"Kindergarten3\",\n\t\t\t\t\tproductVersion: \"0.01\",\n\t\t\t\t\t// matchWebGLToCanvasSize: false, // Uncomment this to separately control WebGL canvas render size and DOM element size.\n\t\t\t\t\t// devicePixelRatio: 1, // Uncomment this to override low DPI rendering on high DPI displays.\n\t\t\t\t};\n\t\t\t\tif (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {\n\t\t\t\t\tvar meta = document.createElement(\"meta\");\n\t\t\t\t\tmeta.name = \"viewport\";\n\t\t\t\t\tmeta.content =\n\t\t\t\t\t\t\"width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes\";\n\t\t\t\t\tdocument.getElementsByTagName(\"head\")[0].appendChild(meta);\n\t\t\t\t\tcontainer.className = \"unity-mobile\";\n\t\t\t\t\tcanvas.className = \"unity-mobile\";\n\t\t\t\t} else {\n\t\t\t\t\tfunction resizeCanvas() {\n\t\t\t\t\t\tcanvas.width = window.innerWidth;\n\t\t\t\t\t\tcanvas.height = window.innerHeight;\n\t\t\t\t\t\tcanvas.style.width = window.innerWidth + \"px\";\n\t\t\t\t\t\tcanvas.style.height = window.innerHeight + \"px\";\n\t\t\t\t\t}\n\t\t\t\t\tresizeCanvas();\n\t\t\t\t\twindow.addEventListener(\"resize\", resizeCanvas);\n\t\t\t\t}\n\t\t\t\tloadingBar.style.display = \"block\";\n\t\t\t\tvar script = document.createElement(\"script\");\n\t\t\t\tscript.src = loaderUrl;\n\t\t\t\tscript.onload = () => {\n\t\t\t\t\tcreateUnityInstance(canvas, config, (progress) => {\n\t\t\t\t\t\tprogressBarFull.style.width = 100 * progress + \"%\";\n\t\t\t\t\t})\n\t\t\t\t\t\t.then((unityInstance) => {\n\t\t\t\t\t\t\tloadingBar.style.display = \"none\";\n\t\t\t\t\t\t\tdocument.querySelector(\"#loading-text\").remove();\n\t\t\t\t\t\t})\n\t\t\t\t\t\t.catch((message) => {\n\t\t\t\t\t\t\talert(message);\n\t\t\t\t\t\t});\n\t\t\t\t};\n\t\t\t\tdocument.body.appendChild(script);\n\t\t\t});\n\t\t<\\/script>\n\t</body>\n</html>";
+    const INLINE_B64 = "PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuLXVzIj4KCTxoZWFkPgoJCQoJCTxtZXRhIGNoYXJzZXQ9InV0Zi04IiAvPgoJCTxtZXRhIGh0dHAtZXF1aXY9IkNvbnRlbnQtVHlwZSIgY29udGVudD0idGV4dC9odG1sOyBjaGFyc2V0PXV0Zi04IiAvPgoJCTx0aXRsZT5LaW5kZXJnYXJ0ZW4zUG9ydDwvdGl0bGU+CgkJPGxpbmsgcmVsPSJzaG9ydGN1dCBpY29uIiBocmVmPSJUZW1wbGF0ZURhdGEvZmF2aWNvbi5pY28iIC8+CgkJPGxpbmsgcmVsPSJzdHlsZXNoZWV0IiBocmVmPSJUZW1wbGF0ZURhdGEvc3R5bGUuY3NzIiAvPgoJCTxzdHlsZT4KCQkJaHRtbCwKCQkJYm9keSB7CgkJCQltYXJnaW46IDA7CgkJCQlwYWRkaW5nOiAwOwoJCQkJb3ZlcmZsb3c6IGhpZGRlbjsKCQkJCWhlaWdodDogMTAwJTsKCQkJCXdpZHRoOiAxMDAlOwoJCQl9CgoJCQkjdW5pdHktY29udGFpbmVyIHsKCQkJCXdpZHRoOiAxMDAlOwoJCQkJaGVpZ2h0OiAxMDAlOwoJCQkJcG9zaXRpb246IGZpeGVkOwoJCQkJdG9wOiAwOwoJCQkJbGVmdDogMDsKCQkJfQoJCTwvc3R5bGU+Cgk8L2hlYWQ+CgoJPGJvZHk+CgkJPGRpdgoJCQlpZD0ibG9hZGluZy10ZXh0IgoJCQlzdHlsZT0iCgkJCQljb2xvcjogYmxhY2s7CgkJCQlmb250LWZhbWlseTogY3Vyc2l2ZTsKCQkJCWZvbnQtc2l6ZTogNDhweDsKCQkJCXRleHQtYWxpZ246IGNlbnRlcjsKCQkJCW1hcmdpbi10b3A6IDIwcHg7CgkJCSIKCQk+CgkJCUxPQURJTkcuLi4KCQk8L2Rpdj4KCQk8ZGl2IGlkPSJ1bml0eS1jb250YWluZXIiIGNsYXNzPSJ1bml0eS1kZXNrdG9wIiBoaWRkZW4+CgkJCTxjYW52YXMgaWQ9InVuaXR5LWNhbnZhcyIgdGFiaW5kZXg9Ii0xIj48L2NhbnZhcz4KCQkJPGRpdiBpZD0idW5pdHktbG9hZGluZy1iYXIiPgoJCQkJPGRpdiBpZD0idW5pdHktbG9nbyI+PC9kaXY+CgkJCQk8ZGl2IGlkPSJ1bml0eS1wcm9ncmVzcy1iYXItZW1wdHkiPgoJCQkJCTxkaXYgaWQ9InVuaXR5LXByb2dyZXNzLWJhci1mdWxsIj48L2Rpdj4KCQkJCTwvZGl2PgoJCQk8L2Rpdj4KCQkJPGRpdiBpZD0idW5pdHktd2FybmluZyI+PC9kaXY+CgkJPC9kaXY+CgkJPHNjcmlwdD4KCQkJdmFyIGNvbnRhaW5lciA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoIiN1bml0eS1jb250YWluZXIiKTsKCQkJdmFyIGNhbnZhcyA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoIiN1bml0eS1jYW52YXMiKTsKCQkJdmFyIGxvYWRpbmdCYXIgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCIjdW5pdHktbG9hZGluZy1iYXIiKTsKCQkJdmFyIHByb2dyZXNzQmFyRnVsbCA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoIiN1bml0eS1wcm9ncmVzcy1iYXItZnVsbCIpOwoJCQl2YXIgZnVsbHNjcmVlbkJ1dHRvbiA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoIiN1bml0eS1mdWxsc2NyZWVuLWJ1dHRvbiIpOwoJCQl2YXIgd2FybmluZ0Jhbm5lciA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoIiN1bml0eS13YXJuaW5nIik7CgoJCQlmdW5jdGlvbiB1bml0eVNob3dCYW5uZXIobXNnLCB0eXBlKSB7fQoKCQkJZnVuY3Rpb24gbWVyZ2VGaWxlcyhmaWxlUGFydHMpIHsKCQkJCXJldHVybiBuZXcgUHJvbWlzZSgocmVzb2x2ZSwgcmVqZWN0KSA9PiB7CgkJCQkJbGV0IGJ1ZmZlcnMgPSBbXTsKCgkJCQkJZnVuY3Rpb24gZmV0Y2hQYXJ0KGluZGV4KSB7CgkJCQkJCWlmIChpbmRleCA+PSBmaWxlUGFydHMubGVuZ3RoKSB7CgkJCQkJCQlsZXQgbWVyZ2VkQmxvYiA9IG5ldyBCbG9iKGJ1ZmZlcnMpOwoJCQkJCQkJbGV0IG1lcmdlZEZpbGVVcmwgPSBVUkwuY3JlYXRlT2JqZWN0VVJMKG1lcmdlZEJsb2IpOwoJCQkJCQkJcmVzb2x2ZShtZXJnZWRGaWxlVXJsKTsKCQkJCQkJCXJldHVybjsKCQkJCQkJfQoJCQkJCQlmZXRjaChmaWxlUGFydHNbaW5kZXhdKQoJCQkJCQkJLnRoZW4oKHJlc3BvbnNlKSA9PiByZXNwb25zZS5hcnJheUJ1ZmZlcigpKQoJCQkJCQkJLnRoZW4oKGRhdGEpID0+IHsKCQkJCQkJCQlidWZmZXJzLnB1c2goZGF0YSk7CgkJCQkJCQkJZmV0Y2hQYXJ0KGluZGV4ICsgMSk7CgkJCQkJCQl9KQoJCQkJCQkJLmNhdGNoKHJlamVjdCk7CgkJCQkJfQoJCQkJCWZldGNoUGFydCgwKTsKCQkJCX0pOwoJCQl9CgoJCQlmdW5jdGlvbiBnZXRQYXJ0cyhmaWxlLCBzdGFydCwgZW5kKSB7CgkJCQlsZXQgcGFydHMgPSBbXTsKCQkJCWZvciAobGV0IGkgPSBzdGFydDsgaSA8PSBlbmQ7IGkrKykgewoJCQkJCXBhcnRzLnB1c2goZmlsZSArICIucGFydCIgKyBpKTsKCQkJCX0KCQkJCXJldHVybiBwYXJ0czsKCQkJfQoJCQlQcm9taXNlLmFsbChbCgkJCQltZXJnZUZpbGVzKGdldFBhcnRzKCJCdWlsZC9LaW5kZXJnYXJ0ZW4zUG9ydC5kYXRhIiwgMSwgMikpLAoJCQkJbWVyZ2VGaWxlcyhnZXRQYXJ0cygiQnVpbGQvS2luZGVyZ2FydGVuM1BvcnQud2FzbSIsIDEsIDMpKSwKCQkJXSkudGhlbigoW2RhdGFVcmwsIHdhc21VcmxdKSA9PiB7CgkJCQljb250YWluZXIuaGlkZGVuID0gZmFsc2U7CgkJCQl2YXIgYnVpbGRVcmwgPSAiQnVpbGQiOwoJCQkJdmFyIGxvYWRlclVybCA9IGJ1aWxkVXJsICsgIi9LaW5kZXJnYXJ0ZW4zUG9ydC5sb2FkZXIuanMiOwoKCQkJCXZhciBjb25maWcgPSB7CgkJCQkJZGF0YVVybDogZGF0YVVybCwKCQkJCQlmcmFtZXdvcmtVcmw6IGJ1aWxkVXJsICsgIi9LaW5kZXJnYXJ0ZW4zUG9ydC5mcmFtZXdvcmsuanMiLAoJCQkJCWNvZGVVcmw6IHdhc21VcmwsCgkJCQkJc3RyZWFtaW5nQXNzZXRzVXJsOiAiU3RyZWFtaW5nQXNzZXRzIiwKCQkJCQljb21wYW55TmFtZTogIkNvbiBNYW4gR2FtZXMiLAoJCQkJCXByb2R1Y3ROYW1lOiAiS2luZGVyZ2FydGVuMyIsCgkJCQkJcHJvZHVjdFZlcnNpb246ICIwLjAxIiwKCQkJCQkvLyBtYXRjaFdlYkdMVG9DYW52YXNTaXplOiBmYWxzZSwgLy8gVW5jb21tZW50IHRoaXMgdG8gc2VwYXJhdGVseSBjb250cm9sIFdlYkdMIGNhbnZhcyByZW5kZXIgc2l6ZSBhbmQgRE9NIGVsZW1lbnQgc2l6ZS4KCQkJCQkvLyBkZXZpY2VQaXhlbFJhdGlvOiAxLCAvLyBVbmNvbW1lbnQgdGhpcyB0byBvdmVycmlkZSBsb3cgRFBJIHJlbmRlcmluZyBvbiBoaWdoIERQSSBkaXNwbGF5cy4KCQkJCX07CgkJCQlpZiAoL2lQaG9uZXxpUGFkfGlQb2R8QW5kcm9pZC9pLnRlc3QobmF2aWdhdG9yLnVzZXJBZ2VudCkpIHsKCQkJCQl2YXIgbWV0YSA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoIm1ldGEiKTsKCQkJCQltZXRhLm5hbWUgPSAidmlld3BvcnQiOwoJCQkJCW1ldGEuY29udGVudCA9CgkJCQkJCSJ3aWR0aD1kZXZpY2Utd2lkdGgsIGhlaWdodD1kZXZpY2UtaGVpZ2h0LCBpbml0aWFsLXNjYWxlPTEuMCwgdXNlci1zY2FsYWJsZT1ubywgc2hyaW5rLXRvLWZpdD15ZXMiOwoJCQkJCWRvY3VtZW50LmdldEVsZW1lbnRzQnlUYWdOYW1lKCJoZWFkIilbMF0uYXBwZW5kQ2hpbGQobWV0YSk7CgkJCQkJY29udGFpbmVyLmNsYXNzTmFtZSA9ICJ1bml0eS1tb2JpbGUiOwoJCQkJCWNhbnZhcy5jbGFzc05hbWUgPSAidW5pdHktbW9iaWxlIjsKCQkJCX0gZWxzZSB7CgkJCQkJZnVuY3Rpb24gcmVzaXplQ2FudmFzKCkgewoJCQkJCQljYW52YXMud2lkdGggPSB3aW5kb3cuaW5uZXJXaWR0aDsKCQkJCQkJY2FudmFzLmhlaWdodCA9IHdpbmRvdy5pbm5lckhlaWdodDsKCQkJCQkJY2FudmFzLnN0eWxlLndpZHRoID0gd2luZG93LmlubmVyV2lkdGggKyAicHgiOwoJCQkJCQljYW52YXMuc3R5bGUuaGVpZ2h0ID0gd2luZG93LmlubmVySGVpZ2h0ICsgInB4IjsKCQkJCQl9CgkJCQkJcmVzaXplQ2FudmFzKCk7CgkJCQkJd2luZG93LmFkZEV2ZW50TGlzdGVuZXIoInJlc2l6ZSIsIHJlc2l6ZUNhbnZhcyk7CgkJCQl9CgkJCQlsb2FkaW5nQmFyLnN0eWxlLmRpc3BsYXkgPSAiYmxvY2siOwoJCQkJdmFyIHNjcmlwdCA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoInNjcmlwdCIpOwoJCQkJc2NyaXB0LnNyYyA9IGxvYWRlclVybDsKCQkJCXNjcmlwdC5vbmxvYWQgPSAoKSA9PiB7CgkJCQkJY3JlYXRlVW5pdHlJbnN0YW5jZShjYW52YXMsIGNvbmZpZywgKHByb2dyZXNzKSA9PiB7CgkJCQkJCXByb2dyZXNzQmFyRnVsbC5zdHlsZS53aWR0aCA9IDEwMCAqIHByb2dyZXNzICsgIiUiOwoJCQkJCX0pCgkJCQkJCS50aGVuKCh1bml0eUluc3RhbmNlKSA9PiB7CgkJCQkJCQlsb2FkaW5nQmFyLnN0eWxlLmRpc3BsYXkgPSAibm9uZSI7CgkJCQkJCQlkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCIjbG9hZGluZy10ZXh0IikucmVtb3ZlKCk7CgkJCQkJCX0pCgkJCQkJCS5jYXRjaCgobWVzc2FnZSkgPT4gewoJCQkJCQkJYWxlcnQobWVzc2FnZSk7CgkJCQkJCX0pOwoJCQkJfTsKCQkJCWRvY3VtZW50LmJvZHkuYXBwZW5kQ2hpbGQoc2NyaXB0KTsKCQkJfSk7CgkJPC9zY3JpcHQ+Cgk8L2JvZHk+CjwvaHRtbD4=";
 
     const CLOAK_PRESETS = {
       drive: { title: "My Drive - Google Drive", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 87.3 78'%3E%3Cpath fill='%230066da' d='m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z'/%3E%3Cpath fill='%2300ac47' d='M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44A9.06 9.06 0 0 0 0 53h27.5z'/%3E%3Cpath fill='%23ea4335' d='m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z'/%3E%3Cpath fill='%2300832d' d='M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z'/%3E%3Cpath fill='%232684fc' d='M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5L72.35 24.7c-.8-1.4-1.95-2.5-3.3-3.3L55.3 45.2z'/%3E%3Cpath fill='%23ffba00' d='m73.55 76.8-13.75-23.8H27.5l13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h23.3c1.6 0 3.15-.4 4.5-1.2z'/%3E%3C/svg%3E" },
@@ -106,77 +106,177 @@
       setTabCloak(cloakSelect ? cloakSelect.value : 'drive');
     } catch(e) {}
 
+    function makeShim(tb) {
+      return '<script>' +
+        '(function(){' +
+        'var tb=' + JSON.stringify(tb) + ';' +
+        'if(!tb.endsWith("/"))tb+="/";' +
+        'var OrigImage=window.Image;' +
+        'window.Image=function(w,h){var img=new OrigImage(w,h);img.crossOrigin="anonymous";return img;};' +
+        'var origCE=document.createElement.bind(document);' +
+        'document.createElement=function(t,o){var el=origCE(t,o);if(t&&t.toLowerCase()==="img"){try{el.crossOrigin="anonymous";}catch(e){}}return el;};' +
+        'var OrigAudio=window.Audio;' +
+        'if(OrigAudio){window.Audio=function(s){var a=new OrigAudio();try{a.crossOrigin="anonymous";}catch(e){}if(s){if(typeof s==="string"&&!/^(https?:|data:|blob:)/i.test(s)){s=new URL(s,tb).href;}a.src=s;}return a;};}' +
+        'class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0||bStr.indexOf("file:")===0){bStr=tb;}try{super(u,bStr);}catch(e){super(u,tb);}}}' +
+        'window.URL=PatchedURL;' +
+        'var origFetch=window.fetch;' +
+        'if(origFetch){window.fetch=function(inp,init){if(typeof inp==="string"){if(!/^(https?:|data:|blob:)/i.test(inp)){inp=new URL(inp,tb).href;}}else if(inp&&typeof inp==="object"&&inp.url){if(!/^(https?:|data:|blob:)/i.test(inp.url)){inp=new Request(new URL(inp.url,tb).href,inp);}}return origFetch.call(this,inp,init);};}' +
+        'var origXhrOpen=XMLHttpRequest.prototype.open;' +
+        'XMLHttpRequest.prototype.open=function(m,u){var args=Array.prototype.slice.call(arguments);if(typeof u==="string"&&!/^(https?:|data:|blob:)/i.test(u)){args[1]=new URL(u,tb).href;}return origXhrOpen.apply(this,args);};' +
+        'var pageLoaded=(document.readyState==="complete");' +
+        'window.addEventListener("load",function(){pageLoaded=true;},{capture:true});' +
+        'var origWinAEL=window.addEventListener.bind(window);' +
+        'window.addEventListener=function(t,l,o){if(t==="load"&&(pageLoaded||document.readyState==="complete")){setTimeout(function(){try{if(typeof l==="function")l.call(window,new Event("load"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("load"));}catch(e){}},15);}return origWinAEL(t,l,o);};' +
+        'var origOnload=null;' +
+        'Object.defineProperty(window,"onload",{get:function(){return origOnload;},set:function(fn){origOnload=fn;if(pageLoaded||document.readyState==="complete"){setTimeout(function(){try{if(typeof fn==="function")fn.call(window,new Event("load"));}catch(e){}},15);}},configurable:true});' +
+        'var domReady=(document.readyState==="interactive"||document.readyState==="complete");' +
+        'document.addEventListener("DOMContentLoaded",function(){domReady=true;},{capture:true});' +
+        'var origDocAEL=document.addEventListener.bind(document);' +
+        'document.addEventListener=function(t,l,o){if(t==="DOMContentLoaded"&&(domReady||document.readyState!=="loading")){setTimeout(function(){try{if(typeof l==="function")l.call(document,new Event("DOMContentLoaded"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("DOMContentLoaded"));}catch(e){}},15);}return origDocAEL(t,l,o);};' +
+        '})();<' + '/script>';
+    }
+
     async function resolveAndLoadGame() {
-      const base = document.baseURI || window.location.href;
       const enc = encodeURIComponent(GAME_FOLDER);
+      const isFile = window.location.protocol === 'file:' || (document.baseURI && document.baseURI.startsWith('file:'));
 
       if (IS_EMULATOR) {
-        const playerCandidates = [
-          new URL('emulator/player.html', base).href,
-          new URL('../emulator/player.html', base).href,
-          'http://localhost:8080/emulator/player.html',
-          TAILSCALE_ORIGIN + '/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html'
-        ];
+        const playerCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          playerCandidates.push(new URL('emulator/player.html', base).href);
+          playerCandidates.push(new URL('../emulator/player.html', base).href);
+        }
+        playerCandidates.push('http://localhost:8080/emulator/player.html');
+        playerCandidates.push('http://127.0.0.1:8080/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html');
+        playerCandidates.push(TAILSCALE_ORIGIN + '/emulator/player.html');
+
         for (const p of playerCandidates) {
           try {
-            const r = await fetch(p);
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const r = await fetch(p, { signal: c.signal });
+            clearTimeout(t);
             if (r.ok) {
               const html = await r.text();
-              const baseTag = '<base href="' + new URL('./', p).href + '">';
+              effectiveGameUrl = p;
+              const targetBase = new URL('./', p).href;
+              const baseTag = '<base href="' + targetBase + '">';
+              const shim = makeShim(targetBase);
               const injectScript = '<script>window.__INJECTED_QUERY__ = ' + JSON.stringify(QUERY_STR) + ';<' + '/script>';
-              const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + injectScript) : (baseTag + injectScript + html);
+              const full = html.includes('<head>')
+                ? html.replace('<head>', '<head>' + baseTag + shim + injectScript)
+                : (baseTag + shim + injectScript + html);
               frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
               return;
             }
           } catch(e) {}
         }
-        frame.src = new URL('emulator/player.svg?' + QUERY_STR, base).href;
+        frame.src = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.svg?' + QUERY_STR;
         return;
       }
 
-      if (INLINE_SRC && INLINE_SRC.length > 50) {
-        const targetBase = new URL('games/' + enc + '/', base).href;
-        const baseTag = '<base href="' + targetBase + '">';
-        const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-        const full = INLINE_SRC.includes('<head>') ? INLINE_SRC.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + INLINE_SRC);
+      let inlineHtml = '';
+      if (INLINE_B64) {
+        try { inlineHtml = decodeURIComponent(escape(atob(INLINE_B64))); }
+        catch(e) { try { inlineHtml = atob(INLINE_B64); } catch(e2) {} }
+      }
+
+      // Check if inlineHtml already has a hardcoded http/https <base href="...">
+      let preExistingBase = '';
+      if (inlineHtml) {
+        const baseTagIdx = inlineHtml.toLowerCase().indexOf('<base');
+        if (baseTagIdx !== -1) {
+          const snippet = inlineHtml.slice(baseTagIdx, baseTagIdx + 400);
+          const hrefIdx = snippet.toLowerCase().indexOf('href=');
+          if (hrefIdx !== -1) {
+            const q = snippet[hrefIdx + 5];
+            if (q === '"' || q === "'") {
+              const endQ = snippet.indexOf(q, hrefIdx + 6);
+              if (endQ !== -1) {
+                const val = snippet.slice(hrefIdx + 6, endQ);
+                if (val.startsWith('http://') || val.startsWith('https://')) {
+                  preExistingBase = val;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      let activeBase = '';
+      let fetchedHtml = '';
+
+      if (preExistingBase) {
+        activeBase = preExistingBase;
+      } else {
+        const baseCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          baseCandidates.push(new URL('games/' + enc + '/', base).href);
+          baseCandidates.push(new URL('../games/' + enc + '/', base).href);
+        }
+        baseCandidates.push('http://localhost:8080/games/' + enc + '/');
+        baseCandidates.push('http://127.0.0.1:8080/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/');
+        baseCandidates.push(TAILSCALE_ORIGIN + '/games/' + enc + '/');
+
+        for (const b of baseCandidates) {
+          try {
+            const probe = b.endsWith('/') ? b + 'index.html' : b + '/index.html';
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const res = await fetch(probe, { signal: c.signal });
+            clearTimeout(t);
+            if (res.ok) {
+              const txt = await res.text();
+              if (txt.includes('Package size exceeded') || txt.includes('Cannot find "') || txt.trim().startsWith('404')) continue;
+              activeBase = b;
+              fetchedHtml = txt;
+              break;
+            }
+          } catch(e) {}
+        }
+        if (!activeBase) {
+          activeBase = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/';
+        }
+      }
+
+      let rawHtml = (inlineHtml && inlineHtml.length > 50) ? inlineHtml : fetchedHtml;
+
+      if (!rawHtml) {
+        try {
+          const probe = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
+          const c = new AbortController();
+          const t = setTimeout(() => c.abort(), 2500);
+          const res = await fetch(probe, { signal: c.signal });
+          clearTimeout(t);
+          if (res.ok) rawHtml = await res.text();
+        } catch(e) {}
+      }
+
+      if (rawHtml) {
+        effectiveGameUrl = activeBase;
+        const shim = makeShim(activeBase);
+        let full = rawHtml;
+        if (!preExistingBase) {
+          const baseTag = '<base href="' + activeBase + '">';
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + baseTag + shim)
+            : (baseTag + shim + full);
+        } else {
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + shim)
+            : (shim + full);
+        }
         frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
         return;
       }
 
-      const candidates = [
-        new URL('games/' + enc + '/index.html', base).href,
-        new URL('../games/' + enc + '/index.html', base).href,
-        'http://localhost:8080/games/' + enc + '/index.html',
-        TAILSCALE_ORIGIN + '/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesv7iskewl/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/index.html'
-      ];
-
-      for (const url of candidates) {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 2500);
-          const res = await fetch(url, { signal: timer.signal });
-          clearTimeout(timer);
-          if (res.ok) {
-            let html = await res.text();
-            if (html.includes('Package size exceeded') || html.includes('Cannot find "') || html.trim().startsWith('404')) continue;
-            effectiveGameUrl = url;
-            const targetBase = new URL('./', url).href;
-            const baseTag = '<base href="' + targetBase + '">';
-            const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-            const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + html);
-            frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
-            return;
-          }
-        } catch(e) {}
-      }
-
-      effectiveGameUrl = TAILSCALE_ORIGIN + '/games/' + enc + '/index.html';
+      effectiveGameUrl = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
       frame.src = effectiveGameUrl;
     }
 

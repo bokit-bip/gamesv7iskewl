@@ -29,7 +29,7 @@
     const GAME_FOLDER = "burgers and frights";
     const IS_EMULATOR = false;
     const QUERY_STR = "";
-    const INLINE_SRC = "<!DOCTYPE html>\n<html lang=\"en\">\n \n<head>\n    <title>Burgers &amp; Frights</title>\n \n<meta name=\"mobile-web-app-capable\" content=\"yes\">\n<meta name=\"apple-mobile-web-app-capable\" content=\"yes\">\n<meta name=\"application-name\" content=\"Burgers &amp; Frights\">\n<meta name=\"apple-mobile-web-app-title\" content=\"Burgers &amp; Frights\">\n<meta name=\"theme-color\" content=\"#0275d8\">\n<meta name=\"msapplication-navbutton-color\" content=\"#0275d8\">\n<meta name=\"apple-mobile-web-app-status-bar-style\" content=\"black-translucent\">\n<meta name=\"msapplication-starturl\" content=\"/\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\">\n\n<link rel=\"icon\" type=\"image/png\" sizes=\"195x253\" href=\"images/native.png\">\n<link rel=\"apple-touch-icon\" type=\"image/png\" sizes=\"195x253\" href=\"images/native.png\">\n\n \n    <meta charset=\"utf-8\" />\n \n    <meta content=\"width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, shrink-to-fit=no\" name=\"viewport\" />\n \n    <link href=\"images/favicon.png\" rel=\"shortcut icon\" type=\"image/ico\" />\n    <link href=\"css/index.css\" rel=\"stylesheet\" type=\"text/css\" />\n \n    <script type=\"module\">\n        import './js/entities/arms.class.js';\n        import './js/entities/car.class.js';\n        import './js/entities/director.class.js';\n        import './js/entities/environment.class.js';\n        import './js/entities/ghost.class.js';\n        import './js/entities/manyfaces.class.js';\n        import './js/entities/overlay.class.js';\n        import './js/entities/player.class.js';\n        import './js/entities/road.class.js';\n        import './js/entities/scarecrow.class.js';\n        import './js/entities/spirits.class.js';\n        import './js/entities/tuoni.class.js';\n        import './js/entities/train.class.js';\n \n        import './js/game/app.class.js';\n    <\\/script>\n</head>\n \n<body>\n    <canvas>\n        Canvas is not supported\n    </canvas>\n \n    <div class=\"loading\">\n        <div class=\"text\">\n            LOADING\n        </div>\n \n        <div class=\"dash\">\n        </div>\n        <div class=\"dash\" style=\"animation-delay:-2s;\">\n        </div>\n        <div class=\"dash\" style=\"animation-delay:-4s;\">\n        </div>\n    </div>\n \n    <a class=\"show-credits\" href=\"#\">SHOW CREDITS</a>\n \n    <div class=\"credits\">\n        <div class=\"credits-left\">\n            <img src=\"./images/title.png\" alt=\"logo\" />\n \n            <br />\n \n            <h3>Developed by <a href=\"https://donitz.itch.io/\" target=\"_blank\">Donitz</a></h3>\n \n            <br />\n \n            <h3>Powered by <a href=\"https://threejs.org/\" target=\"_blank\">Three.js</a></h3>\n \n            <br />\n \n            <h3>Faces created using <a href=\"http://www.makehumancommunity.org/\" target=\"_blank\">MakeHuman</a></h3>\n \n            <br />\n            <br />\n \n            <h3>Models - <small>All ingame models are remixed</small>:</h3>\n            <ul>\n                <li>\n                    <h3>The following models are licensed under <a href=\"https://creativecommons.org/publicdomain/zero/1.0/\" target=\"_blank\">CC0 1.0</a>:</h3>\n                </li>\n                <li>\n                    <a href=\"https://blendswap.com/blend/6383\" target=\"_blank\">\"Skeleton Unrigged\"</a>\n                    by knight725\n                </li>\n                <li>\n                    <br />\n                    <h3>The following models are licensed under <a href=\"https://creativecommons.org/licenses/by/3.0/\" target=\"_blank\">CC BY 3.0</a>:</h3>\n                </li>\n                <li>\n                    <a href=\"https://blendswap.com/blend/6737\" target=\"_blank\">\"Very Low Poly Human Basemesh\"</a>\n                    by tweedie\n                </li>\n                <li>\n                    <br />\n                    <h3>The following models are licensed under <a href=\"https://creativecommons.org/licenses/by/4.0/\" target=\"_blank\">CC BY 4.0</a>:</h3>\n                </li>\n                <li>\n                    <a href=\"https://sketchfab.com/3d-models/low-poly-car-2a87573599624b86a84ad86df05502f9\" target=\"_blank\">\"Low-Poly Car\"</a>\n                    by poopoodufu\n                </li>\n                <li>\n                    <a href=\"https://sketchfab.com/3d-models/low-poly-girl-3e79fef9da5f4db7b6a46f3e0ff89328\" target=\"_blank\">\"Low-poly Girl\"</a>\n                    by SingleWay - Razvan Savescu\n                </li>\n                <li>\n                    <a href=\"https://sketchfab.com/3d-models/low-poly-bicycles-c256e970e2874ad0ac04dcef730863af\" target=\"_blank\">\"Low Poly Bicycles\"</a>\n                    by EdwinRC\n                </li>\n            </ul>\n \n            <h3>Textures - <small>All ingame textures are remixed</small>:</h3>\n            <ul>\n                <li>\n                    <h3>The following textures are licensed under <a href=\"https://creativecommons.org/publicdomain/zero/1.0/\" target=\"_blank\">CC0 1.0</a>:</h3>\n                </li>\n                <li>\n                    <a href=\"https://www.cgbookcase.com/textures/two-lane-road-clean-01/\" target=\"_blank\">\"Two Lane Road Clean 01\"</a>\n                    by <a href=\"https://www.cgbookcase.com/\" target=\"_blank\">cgbookcase.com</a>\n                </li>\n                <li>\n                    \"Moss001\", \"Moss004\", \"Ground023\", \"Metal038\",<br /> \"Wood062\", \"Bricks046\", \"Concrete030\", \"Concrete034\"\n                    by <a href=\"https://ambientcg.com/\" target=\"_blank\">ambientCG</a>\n                </li>\n                <li>\n                    <br />\n                    <h3>The following textures are licensed under <a href=\"https://creativecommons.org/licenses/by/3.0/\" target=\"_blank\">CC BY 3.0</a>:</h3>\n                </li>\n                <li>\n                    <a href=\"https://opengameart.org/content/ulukais-space-skyboxes\" target=\"_blank\">\"Ulukai's space skyboxes\"</a>\n                    by Calinou\n                </li>\n                <li>\n                    <br />\n                    <h3>Red skybox created using <a href=\"https://wwwtyro.github.io/space-3d/\" target=\"_blank\">space-3d</a></h3>\n                </li>\n            </ul>\n        </div>\n \n        <div class=\"credits-right\">\n            <br />\n            <h3>Sounds effects from <a href=\"https://freesound.org/\" target=\"_blank\">freesound.org</a> - <small>Most sound effects are remixed and resampled</small>:</h3>\n            <ul>\n                <li>\n                    <h3>The following sounds are licensed under <a href=\"https://creativecommons.org/publicdomain/zero/1.0/\" target=\"_blank\">CC0 1.0</a>:</h3>\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/ShortRecord/sounds/521232/\" target=\"_blank\">\"horror ambient factory #3.mp3\"</a>\n                    by ShortRecord\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/ShortRecord/sounds/540634/\" target=\"_blank\">\"Horror ambient.mp3\"</a>\n                    by ShortRecord\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/vykroft/sounds/369978/\" target=\"_blank\">\"deep_growl_2.wav\"</a>\n                    by vykroft\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Nox_Sound/sounds/530908/\" target=\"_blank\">\"Ambiance_Wind_Forest_Trees_Loop_01.wav\"</a>\n                    by Nox_Sound\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Nox_Sound/sounds/522222/\" target=\"_blank\">\"Car_Passby_Exterior.wav\"</a>\n                    by Nox_Sound\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Litruv/sounds/175944/\" target=\"_blank\">\"Ghost Whispers\"</a>\n                    by Litruv\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/lennyboy/sounds/244417/\" target=\"_blank\">\"ScaryViolins.ogg\"</a>\n                    by lennyboy\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Fasolt/sounds/113175/\" target=\"_blank\">\"wind_howling_03.wav\"</a>\n                    by Fasolt\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Magmi.Soundtracks/sounds/425409/\" target=\"_blank\">\"Indrustial horror music 01\"</a>\n                    by Magmi.Soundtracks\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Jasonthedemon/sounds/187736/\" target=\"_blank\">\"crazy laugh echo.mp3\"</a>\n                    by Jasonthedemon\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/edtijo/sounds/241071/\" target=\"_blank\">\"Ambient Guitar Sounds\"</a>\n                    by edtijo\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Nadia4Sound/sounds/432446/\" target=\"_blank\">\"sad piano piece .wav\"</a>\n                    by Nadia4Sound\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/1sticky8/sounds/78483/\" target=\"_blank\">\"Bike_Wreck.wav\"</a>\n                    by 1sticky8\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/qubodup/sounds/168709/\" target=\"_blank\">\"Bell Ring\"</a>\n                    by qubodup\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/14FPanskaBubik_Lukas/sounds/418531/\" target=\"_blank\">\"Cycling.WAV\"</a>\n                    by 14FPanskaBubik_Lukas\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/dangthaiduy007/sounds/341668/\" target=\"_blank\">\"Jump scare sound\"</a>\n                    by dangthaiduy007\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/bigmanjoe/sounds/405612/\" target=\"_blank\">\"Celliliililililili.wav\"</a>\n                    by bigmanjoe\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/MadamVicious/sounds/218172/\" target=\"_blank\">\"Woman Evil Laughing.wav\"</a>\n                    by MadamVicious\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/nick121087/sounds/333832/\" target=\"_blank\">\"Demonic Woman Scream.wav\"</a>\n                    by nick121087\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/NachtmahrTV/sounds/556701/\" target=\"_blank\">\"Ghost Monster Scream\"</a>\n                    by NachtmahrTV\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/cylon8472/sounds/366672/\" target=\"_blank\">\"Monster Growl_with Reverb.wav\"</a>\n                    by cylon8472\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/ldezem/sounds/386174/\" target=\"_blank\">\"Chain pulley 750kg - Chain pull\"</a>\n                    by ldezem\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Halgrimm/sounds/169867/\" target=\"_blank\">\"swoosh\"</a>\n                    by Halgrimm\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Kievinay/sounds/512389/\" target=\"_blank\">\"Bass Impact - Ki_01.mp3\"</a>\n                    by Kievinay\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Heigh-hoo/sounds/81208/\" target=\"_blank\">\"not_in_service.aif\"</a>\n                    by Heigh-hoo\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Cman634/sounds/235284/\" target=\"_blank\">\"Buildup/Jumpscare/Vanish sound\"</a>\n                    by Cman634\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/magnuswaker/sounds/530919/\" target=\"_blank\">\"Gut Rip (Unbladed)\"</a>\n                    by magnuswaker\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Thanra/sounds/178313/\" target=\"_blank\">\"Male Death Scream\"</a>\n                    by Thanra\n                </li>\n                <li>\n                    <br />\n                    <h3>The following sounds are licensed under <a href=\"https://creativecommons.org/licenses/by/3.0/\" target=\"_blank\">CC BY 3.0</a>:</h3>\n                </li>\n                <li>\n                    <a href=\"https://freesound.org/people/Jackie4Ever/sounds/83095/\" target=\"_blank\">\"tense_shepard_moment_B1.flac\"</a>\n                    by Jackie4Ever\n                </li>\n            </ul>\n        </div>\n    </div>\n</body>\n \n</html>\n";
+    const INLINE_B64 = "PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KIAo8aGVhZD4KICAgIDx0aXRsZT5CdXJnZXJzICZhbXA7IEZyaWdodHM8L3RpdGxlPgogCjxtZXRhIG5hbWU9Im1vYmlsZS13ZWItYXBwLWNhcGFibGUiIGNvbnRlbnQ9InllcyI+CjxtZXRhIG5hbWU9ImFwcGxlLW1vYmlsZS13ZWItYXBwLWNhcGFibGUiIGNvbnRlbnQ9InllcyI+CjxtZXRhIG5hbWU9ImFwcGxpY2F0aW9uLW5hbWUiIGNvbnRlbnQ9IkJ1cmdlcnMgJmFtcDsgRnJpZ2h0cyI+CjxtZXRhIG5hbWU9ImFwcGxlLW1vYmlsZS13ZWItYXBwLXRpdGxlIiBjb250ZW50PSJCdXJnZXJzICZhbXA7IEZyaWdodHMiPgo8bWV0YSBuYW1lPSJ0aGVtZS1jb2xvciIgY29udGVudD0iIzAyNzVkOCI+CjxtZXRhIG5hbWU9Im1zYXBwbGljYXRpb24tbmF2YnV0dG9uLWNvbG9yIiBjb250ZW50PSIjMDI3NWQ4Ij4KPG1ldGEgbmFtZT0iYXBwbGUtbW9iaWxlLXdlYi1hcHAtc3RhdHVzLWJhci1zdHlsZSIgY29udGVudD0iYmxhY2stdHJhbnNsdWNlbnQiPgo8bWV0YSBuYW1lPSJtc2FwcGxpY2F0aW9uLXN0YXJ0dXJsIiBjb250ZW50PSIvIj4KPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLCBzaHJpbmstdG8tZml0PW5vIj4KCjxsaW5rIHJlbD0iaWNvbiIgdHlwZT0iaW1hZ2UvcG5nIiBzaXplcz0iMTk1eDI1MyIgaHJlZj0iaW1hZ2VzL25hdGl2ZS5wbmciPgo8bGluayByZWw9ImFwcGxlLXRvdWNoLWljb24iIHR5cGU9ImltYWdlL3BuZyIgc2l6ZXM9IjE5NXgyNTMiIGhyZWY9ImltYWdlcy9uYXRpdmUucG5nIj4KCiAKICAgIDxtZXRhIGNoYXJzZXQ9InV0Zi04IiAvPgogCiAgICA8bWV0YSBjb250ZW50PSJ3aWR0aD1kZXZpY2Utd2lkdGgsIHVzZXItc2NhbGFibGU9bm8sIG1pbmltdW0tc2NhbGU9MS4wLCBtYXhpbXVtLXNjYWxlPTEuMCwgc2hyaW5rLXRvLWZpdD1ubyIgbmFtZT0idmlld3BvcnQiIC8+CiAKICAgIDxsaW5rIGhyZWY9ImltYWdlcy9mYXZpY29uLnBuZyIgcmVsPSJzaG9ydGN1dCBpY29uIiB0eXBlPSJpbWFnZS9pY28iIC8+CiAgICA8bGluayBocmVmPSJjc3MvaW5kZXguY3NzIiByZWw9InN0eWxlc2hlZXQiIHR5cGU9InRleHQvY3NzIiAvPgogCiAgICA8c2NyaXB0IHR5cGU9Im1vZHVsZSI+CiAgICAgICAgaW1wb3J0ICcuL2pzL2VudGl0aWVzL2FybXMuY2xhc3MuanMnOwogICAgICAgIGltcG9ydCAnLi9qcy9lbnRpdGllcy9jYXIuY2xhc3MuanMnOwogICAgICAgIGltcG9ydCAnLi9qcy9lbnRpdGllcy9kaXJlY3Rvci5jbGFzcy5qcyc7CiAgICAgICAgaW1wb3J0ICcuL2pzL2VudGl0aWVzL2Vudmlyb25tZW50LmNsYXNzLmpzJzsKICAgICAgICBpbXBvcnQgJy4vanMvZW50aXRpZXMvZ2hvc3QuY2xhc3MuanMnOwogICAgICAgIGltcG9ydCAnLi9qcy9lbnRpdGllcy9tYW55ZmFjZXMuY2xhc3MuanMnOwogICAgICAgIGltcG9ydCAnLi9qcy9lbnRpdGllcy9vdmVybGF5LmNsYXNzLmpzJzsKICAgICAgICBpbXBvcnQgJy4vanMvZW50aXRpZXMvcGxheWVyLmNsYXNzLmpzJzsKICAgICAgICBpbXBvcnQgJy4vanMvZW50aXRpZXMvcm9hZC5jbGFzcy5qcyc7CiAgICAgICAgaW1wb3J0ICcuL2pzL2VudGl0aWVzL3NjYXJlY3Jvdy5jbGFzcy5qcyc7CiAgICAgICAgaW1wb3J0ICcuL2pzL2VudGl0aWVzL3NwaXJpdHMuY2xhc3MuanMnOwogICAgICAgIGltcG9ydCAnLi9qcy9lbnRpdGllcy90dW9uaS5jbGFzcy5qcyc7CiAgICAgICAgaW1wb3J0ICcuL2pzL2VudGl0aWVzL3RyYWluLmNsYXNzLmpzJzsKIAogICAgICAgIGltcG9ydCAnLi9qcy9nYW1lL2FwcC5jbGFzcy5qcyc7CiAgICA8L3NjcmlwdD4KPC9oZWFkPgogCjxib2R5PgogICAgPGNhbnZhcz4KICAgICAgICBDYW52YXMgaXMgbm90IHN1cHBvcnRlZAogICAgPC9jYW52YXM+CiAKICAgIDxkaXYgY2xhc3M9ImxvYWRpbmciPgogICAgICAgIDxkaXYgY2xhc3M9InRleHQiPgogICAgICAgICAgICBMT0FESU5HCiAgICAgICAgPC9kaXY+CiAKICAgICAgICA8ZGl2IGNsYXNzPSJkYXNoIj4KICAgICAgICA8L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJkYXNoIiBzdHlsZT0iYW5pbWF0aW9uLWRlbGF5Oi0yczsiPgogICAgICAgIDwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9ImRhc2giIHN0eWxlPSJhbmltYXRpb24tZGVsYXk6LTRzOyI+CiAgICAgICAgPC9kaXY+CiAgICA8L2Rpdj4KIAogICAgPGEgY2xhc3M9InNob3ctY3JlZGl0cyIgaHJlZj0iIyI+U0hPVyBDUkVESVRTPC9hPgogCiAgICA8ZGl2IGNsYXNzPSJjcmVkaXRzIj4KICAgICAgICA8ZGl2IGNsYXNzPSJjcmVkaXRzLWxlZnQiPgogICAgICAgICAgICA8aW1nIHNyYz0iLi9pbWFnZXMvdGl0bGUucG5nIiBhbHQ9ImxvZ28iIC8+CiAKICAgICAgICAgICAgPGJyIC8+CiAKICAgICAgICAgICAgPGgzPkRldmVsb3BlZCBieSA8YSBocmVmPSJodHRwczovL2Rvbml0ei5pdGNoLmlvLyIgdGFyZ2V0PSJfYmxhbmsiPkRvbml0ejwvYT48L2gzPgogCiAgICAgICAgICAgIDxiciAvPgogCiAgICAgICAgICAgIDxoMz5Qb3dlcmVkIGJ5IDxhIGhyZWY9Imh0dHBzOi8vdGhyZWVqcy5vcmcvIiB0YXJnZXQ9Il9ibGFuayI+VGhyZWUuanM8L2E+PC9oMz4KIAogICAgICAgICAgICA8YnIgLz4KIAogICAgICAgICAgICA8aDM+RmFjZXMgY3JlYXRlZCB1c2luZyA8YSBocmVmPSJodHRwOi8vd3d3Lm1ha2VodW1hbmNvbW11bml0eS5vcmcvIiB0YXJnZXQ9Il9ibGFuayI+TWFrZUh1bWFuPC9hPjwvaDM+CiAKICAgICAgICAgICAgPGJyIC8+CiAgICAgICAgICAgIDxiciAvPgogCiAgICAgICAgICAgIDxoMz5Nb2RlbHMgLSA8c21hbGw+QWxsIGluZ2FtZSBtb2RlbHMgYXJlIHJlbWl4ZWQ8L3NtYWxsPjo8L2gzPgogICAgICAgICAgICA8dWw+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGgzPlRoZSBmb2xsb3dpbmcgbW9kZWxzIGFyZSBsaWNlbnNlZCB1bmRlciA8YSBocmVmPSJodHRwczovL2NyZWF0aXZlY29tbW9ucy5vcmcvcHVibGljZG9tYWluL3plcm8vMS4wLyIgdGFyZ2V0PSJfYmxhbmsiPkNDMCAxLjA8L2E+OjwvaDM+CiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxhIGhyZWY9Imh0dHBzOi8vYmxlbmRzd2FwLmNvbS9ibGVuZC82MzgzIiB0YXJnZXQ9Il9ibGFuayI+IlNrZWxldG9uIFVucmlnZ2VkIjwvYT4KICAgICAgICAgICAgICAgICAgICBieSBrbmlnaHQ3MjUKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGJyIC8+CiAgICAgICAgICAgICAgICAgICAgPGgzPlRoZSBmb2xsb3dpbmcgbW9kZWxzIGFyZSBsaWNlbnNlZCB1bmRlciA8YSBocmVmPSJodHRwczovL2NyZWF0aXZlY29tbW9ucy5vcmcvbGljZW5zZXMvYnkvMy4wLyIgdGFyZ2V0PSJfYmxhbmsiPkNDIEJZIDMuMDwvYT46PC9oMz4KICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9ibGVuZHN3YXAuY29tL2JsZW5kLzY3MzciIHRhcmdldD0iX2JsYW5rIj4iVmVyeSBMb3cgUG9seSBIdW1hbiBCYXNlbWVzaCI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgdHdlZWRpZQogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YnIgLz4KICAgICAgICAgICAgICAgICAgICA8aDM+VGhlIGZvbGxvd2luZyBtb2RlbHMgYXJlIGxpY2Vuc2VkIHVuZGVyIDxhIGhyZWY9Imh0dHBzOi8vY3JlYXRpdmVjb21tb25zLm9yZy9saWNlbnNlcy9ieS80LjAvIiB0YXJnZXQ9Il9ibGFuayI+Q0MgQlkgNC4wPC9hPjo8L2gzPgogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YSBocmVmPSJodHRwczovL3NrZXRjaGZhYi5jb20vM2QtbW9kZWxzL2xvdy1wb2x5LWNhci0yYTg3NTczNTk5NjI0Yjg2YTg0YWQ4NmRmMDU1MDJmOSIgdGFyZ2V0PSJfYmxhbmsiPiJMb3ctUG9seSBDYXIiPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IHBvb3Bvb2R1ZnUKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9za2V0Y2hmYWIuY29tLzNkLW1vZGVscy9sb3ctcG9seS1naXJsLTNlNzlmZWY5ZGE1ZjRkYjdiNmE0NmYzZTBmZjg5MzI4IiB0YXJnZXQ9Il9ibGFuayI+Ikxvdy1wb2x5IEdpcmwiPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IFNpbmdsZVdheSAtIFJhenZhbiBTYXZlc2N1CiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxhIGhyZWY9Imh0dHBzOi8vc2tldGNoZmFiLmNvbS8zZC1tb2RlbHMvbG93LXBvbHktYmljeWNsZXMtYzI1NmU5NzBlMjg3NGFkMGFjMDRkY2VmNzMwODYzYWYiIHRhcmdldD0iX2JsYW5rIj4iTG93IFBvbHkgQmljeWNsZXMiPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IEVkd2luUkMKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgIDwvdWw+CiAKICAgICAgICAgICAgPGgzPlRleHR1cmVzIC0gPHNtYWxsPkFsbCBpbmdhbWUgdGV4dHVyZXMgYXJlIHJlbWl4ZWQ8L3NtYWxsPjo8L2gzPgogICAgICAgICAgICA8dWw+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGgzPlRoZSBmb2xsb3dpbmcgdGV4dHVyZXMgYXJlIGxpY2Vuc2VkIHVuZGVyIDxhIGhyZWY9Imh0dHBzOi8vY3JlYXRpdmVjb21tb25zLm9yZy9wdWJsaWNkb21haW4vemVyby8xLjAvIiB0YXJnZXQ9Il9ibGFuayI+Q0MwIDEuMDwvYT46PC9oMz4KICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly93d3cuY2dib29rY2FzZS5jb20vdGV4dHVyZXMvdHdvLWxhbmUtcm9hZC1jbGVhbi0wMS8iIHRhcmdldD0iX2JsYW5rIj4iVHdvIExhbmUgUm9hZCBDbGVhbiAwMSI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgPGEgaHJlZj0iaHR0cHM6Ly93d3cuY2dib29rY2FzZS5jb20vIiB0YXJnZXQ9Il9ibGFuayI+Y2dib29rY2FzZS5jb208L2E+CiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgICJNb3NzMDAxIiwgIk1vc3MwMDQiLCAiR3JvdW5kMDIzIiwgIk1ldGFsMDM4Iiw8YnIgLz4gIldvb2QwNjIiLCAiQnJpY2tzMDQ2IiwgIkNvbmNyZXRlMDMwIiwgIkNvbmNyZXRlMDM0IgogICAgICAgICAgICAgICAgICAgIGJ5IDxhIGhyZWY9Imh0dHBzOi8vYW1iaWVudGNnLmNvbS8iIHRhcmdldD0iX2JsYW5rIj5hbWJpZW50Q0c8L2E+CiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxiciAvPgogICAgICAgICAgICAgICAgICAgIDxoMz5UaGUgZm9sbG93aW5nIHRleHR1cmVzIGFyZSBsaWNlbnNlZCB1bmRlciA8YSBocmVmPSJodHRwczovL2NyZWF0aXZlY29tbW9ucy5vcmcvbGljZW5zZXMvYnkvMy4wLyIgdGFyZ2V0PSJfYmxhbmsiPkNDIEJZIDMuMDwvYT46PC9oMz4KICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9vcGVuZ2FtZWFydC5vcmcvY29udGVudC91bHVrYWlzLXNwYWNlLXNreWJveGVzIiB0YXJnZXQ9Il9ibGFuayI+IlVsdWthaSdzIHNwYWNlIHNreWJveGVzIjwvYT4KICAgICAgICAgICAgICAgICAgICBieSBDYWxpbm91CiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxiciAvPgogICAgICAgICAgICAgICAgICAgIDxoMz5SZWQgc2t5Ym94IGNyZWF0ZWQgdXNpbmcgPGEgaHJlZj0iaHR0cHM6Ly93d3d0eXJvLmdpdGh1Yi5pby9zcGFjZS0zZC8iIHRhcmdldD0iX2JsYW5rIj5zcGFjZS0zZDwvYT48L2gzPgogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgPC91bD4KICAgICAgICA8L2Rpdj4KIAogICAgICAgIDxkaXYgY2xhc3M9ImNyZWRpdHMtcmlnaHQiPgogICAgICAgICAgICA8YnIgLz4KICAgICAgICAgICAgPGgzPlNvdW5kcyBlZmZlY3RzIGZyb20gPGEgaHJlZj0iaHR0cHM6Ly9mcmVlc291bmQub3JnLyIgdGFyZ2V0PSJfYmxhbmsiPmZyZWVzb3VuZC5vcmc8L2E+IC0gPHNtYWxsPk1vc3Qgc291bmQgZWZmZWN0cyBhcmUgcmVtaXhlZCBhbmQgcmVzYW1wbGVkPC9zbWFsbD46PC9oMz4KICAgICAgICAgICAgPHVsPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxoMz5UaGUgZm9sbG93aW5nIHNvdW5kcyBhcmUgbGljZW5zZWQgdW5kZXIgPGEgaHJlZj0iaHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL3B1YmxpY2RvbWFpbi96ZXJvLzEuMC8iIHRhcmdldD0iX2JsYW5rIj5DQzAgMS4wPC9hPjo8L2gzPgogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YSBocmVmPSJodHRwczovL2ZyZWVzb3VuZC5vcmcvcGVvcGxlL1Nob3J0UmVjb3JkL3NvdW5kcy81MjEyMzIvIiB0YXJnZXQ9Il9ibGFuayI+ImhvcnJvciBhbWJpZW50IGZhY3RvcnkgIzMubXAzIjwvYT4KICAgICAgICAgICAgICAgICAgICBieSBTaG9ydFJlY29yZAogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YSBocmVmPSJodHRwczovL2ZyZWVzb3VuZC5vcmcvcGVvcGxlL1Nob3J0UmVjb3JkL3NvdW5kcy81NDA2MzQvIiB0YXJnZXQ9Il9ibGFuayI+IkhvcnJvciBhbWJpZW50Lm1wMyI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgU2hvcnRSZWNvcmQKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9mcmVlc291bmQub3JnL3Blb3BsZS92eWtyb2Z0L3NvdW5kcy8zNjk5NzgvIiB0YXJnZXQ9Il9ibGFuayI+ImRlZXBfZ3Jvd2xfMi53YXYiPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IHZ5a3JvZnQKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9mcmVlc291bmQub3JnL3Blb3BsZS9Ob3hfU291bmQvc291bmRzLzUzMDkwOC8iIHRhcmdldD0iX2JsYW5rIj4iQW1iaWFuY2VfV2luZF9Gb3Jlc3RfVHJlZXNfTG9vcF8wMS53YXYiPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IE5veF9Tb3VuZAogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YSBocmVmPSJodHRwczovL2ZyZWVzb3VuZC5vcmcvcGVvcGxlL05veF9Tb3VuZC9zb3VuZHMvNTIyMjIyLyIgdGFyZ2V0PSJfYmxhbmsiPiJDYXJfUGFzc2J5X0V4dGVyaW9yLndhdiI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgTm94X1NvdW5kCiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxhIGhyZWY9Imh0dHBzOi8vZnJlZXNvdW5kLm9yZy9wZW9wbGUvTGl0cnV2L3NvdW5kcy8xNzU5NDQvIiB0YXJnZXQ9Il9ibGFuayI+Ikdob3N0IFdoaXNwZXJzIjwvYT4KICAgICAgICAgICAgICAgICAgICBieSBMaXRydXYKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9mcmVlc291bmQub3JnL3Blb3BsZS9sZW5ueWJveS9zb3VuZHMvMjQ0NDE3LyIgdGFyZ2V0PSJfYmxhbmsiPiJTY2FyeVZpb2xpbnMub2dnIjwvYT4KICAgICAgICAgICAgICAgICAgICBieSBsZW5ueWJveQogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YSBocmVmPSJodHRwczovL2ZyZWVzb3VuZC5vcmcvcGVvcGxlL0Zhc29sdC9zb3VuZHMvMTEzMTc1LyIgdGFyZ2V0PSJfYmxhbmsiPiJ3aW5kX2hvd2xpbmdfMDMud2F2IjwvYT4KICAgICAgICAgICAgICAgICAgICBieSBGYXNvbHQKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9mcmVlc291bmQub3JnL3Blb3BsZS9NYWdtaS5Tb3VuZHRyYWNrcy9zb3VuZHMvNDI1NDA5LyIgdGFyZ2V0PSJfYmxhbmsiPiJJbmRydXN0aWFsIGhvcnJvciBtdXNpYyAwMSI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgTWFnbWkuU291bmR0cmFja3MKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9mcmVlc291bmQub3JnL3Blb3BsZS9KYXNvbnRoZWRlbW9uL3NvdW5kcy8xODc3MzYvIiB0YXJnZXQ9Il9ibGFuayI+ImNyYXp5IGxhdWdoIGVjaG8ubXAzIjwvYT4KICAgICAgICAgICAgICAgICAgICBieSBKYXNvbnRoZWRlbW9uCiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxhIGhyZWY9Imh0dHBzOi8vZnJlZXNvdW5kLm9yZy9wZW9wbGUvZWR0aWpvL3NvdW5kcy8yNDEwNzEvIiB0YXJnZXQ9Il9ibGFuayI+IkFtYmllbnQgR3VpdGFyIFNvdW5kcyI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgZWR0aWpvCiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxhIGhyZWY9Imh0dHBzOi8vZnJlZXNvdW5kLm9yZy9wZW9wbGUvTmFkaWE0U291bmQvc291bmRzLzQzMjQ0Ni8iIHRhcmdldD0iX2JsYW5rIj4ic2FkIHBpYW5vIHBpZWNlIC53YXYiPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IE5hZGlhNFNvdW5kCiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxhIGhyZWY9Imh0dHBzOi8vZnJlZXNvdW5kLm9yZy9wZW9wbGUvMXN0aWNreTgvc291bmRzLzc4NDgzLyIgdGFyZ2V0PSJfYmxhbmsiPiJCaWtlX1dyZWNrLndhdiI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgMXN0aWNreTgKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9mcmVlc291bmQub3JnL3Blb3BsZS9xdWJvZHVwL3NvdW5kcy8xNjg3MDkvIiB0YXJnZXQ9Il9ibGFuayI+IkJlbGwgUmluZyI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgcXVib2R1cAogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YSBocmVmPSJodHRwczovL2ZyZWVzb3VuZC5vcmcvcGVvcGxlLzE0RlBhbnNrYUJ1YmlrX0x1a2FzL3NvdW5kcy80MTg1MzEvIiB0YXJnZXQ9Il9ibGFuayI+IkN5Y2xpbmcuV0FWIjwvYT4KICAgICAgICAgICAgICAgICAgICBieSAxNEZQYW5za2FCdWJpa19MdWthcwogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YSBocmVmPSJodHRwczovL2ZyZWVzb3VuZC5vcmcvcGVvcGxlL2Rhbmd0aGFpZHV5MDA3L3NvdW5kcy8zNDE2NjgvIiB0YXJnZXQ9Il9ibGFuayI+Ikp1bXAgc2NhcmUgc291bmQiPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IGRhbmd0aGFpZHV5MDA3CiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxhIGhyZWY9Imh0dHBzOi8vZnJlZXNvdW5kLm9yZy9wZW9wbGUvYmlnbWFuam9lL3NvdW5kcy80MDU2MTIvIiB0YXJnZXQ9Il9ibGFuayI+IkNlbGxpbGlpbGlsaWxpbGlsaS53YXYiPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IGJpZ21hbmpvZQogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YSBocmVmPSJodHRwczovL2ZyZWVzb3VuZC5vcmcvcGVvcGxlL01hZGFtVmljaW91cy9zb3VuZHMvMjE4MTcyLyIgdGFyZ2V0PSJfYmxhbmsiPiJXb21hbiBFdmlsIExhdWdoaW5nLndhdiI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgTWFkYW1WaWNpb3VzCiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxhIGhyZWY9Imh0dHBzOi8vZnJlZXNvdW5kLm9yZy9wZW9wbGUvbmljazEyMTA4Ny9zb3VuZHMvMzMzODMyLyIgdGFyZ2V0PSJfYmxhbmsiPiJEZW1vbmljIFdvbWFuIFNjcmVhbS53YXYiPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IG5pY2sxMjEwODcKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9mcmVlc291bmQub3JnL3Blb3BsZS9OYWNodG1haHJUVi9zb3VuZHMvNTU2NzAxLyIgdGFyZ2V0PSJfYmxhbmsiPiJHaG9zdCBNb25zdGVyIFNjcmVhbSI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgTmFjaHRtYWhyVFYKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9mcmVlc291bmQub3JnL3Blb3BsZS9jeWxvbjg0NzIvc291bmRzLzM2NjY3Mi8iIHRhcmdldD0iX2JsYW5rIj4iTW9uc3RlciBHcm93bF93aXRoIFJldmVyYi53YXYiPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IGN5bG9uODQ3MgogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YSBocmVmPSJodHRwczovL2ZyZWVzb3VuZC5vcmcvcGVvcGxlL2xkZXplbS9zb3VuZHMvMzg2MTc0LyIgdGFyZ2V0PSJfYmxhbmsiPiJDaGFpbiBwdWxsZXkgNzUwa2cgLSBDaGFpbiBwdWxsIjwvYT4KICAgICAgICAgICAgICAgICAgICBieSBsZGV6ZW0KICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9mcmVlc291bmQub3JnL3Blb3BsZS9IYWxncmltbS9zb3VuZHMvMTY5ODY3LyIgdGFyZ2V0PSJfYmxhbmsiPiJzd29vc2giPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IEhhbGdyaW1tCiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxhIGhyZWY9Imh0dHBzOi8vZnJlZXNvdW5kLm9yZy9wZW9wbGUvS2lldmluYXkvc291bmRzLzUxMjM4OS8iIHRhcmdldD0iX2JsYW5rIj4iQmFzcyBJbXBhY3QgLSBLaV8wMS5tcDMiPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IEtpZXZpbmF5CiAgICAgICAgICAgICAgICA8L2xpPgogICAgICAgICAgICAgICAgPGxpPgogICAgICAgICAgICAgICAgICAgIDxhIGhyZWY9Imh0dHBzOi8vZnJlZXNvdW5kLm9yZy9wZW9wbGUvSGVpZ2gtaG9vL3NvdW5kcy84MTIwOC8iIHRhcmdldD0iX2JsYW5rIj4ibm90X2luX3NlcnZpY2UuYWlmIjwvYT4KICAgICAgICAgICAgICAgICAgICBieSBIZWlnaC1ob28KICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9mcmVlc291bmQub3JnL3Blb3BsZS9DbWFuNjM0L3NvdW5kcy8yMzUyODQvIiB0YXJnZXQ9Il9ibGFuayI+IkJ1aWxkdXAvSnVtcHNjYXJlL1ZhbmlzaCBzb3VuZCI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgQ21hbjYzNAogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YSBocmVmPSJodHRwczovL2ZyZWVzb3VuZC5vcmcvcGVvcGxlL21hZ251c3dha2VyL3NvdW5kcy81MzA5MTkvIiB0YXJnZXQ9Il9ibGFuayI+Ikd1dCBSaXAgKFVuYmxhZGVkKSI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgbWFnbnVzd2FrZXIKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgICAgICA8bGk+CiAgICAgICAgICAgICAgICAgICAgPGEgaHJlZj0iaHR0cHM6Ly9mcmVlc291bmQub3JnL3Blb3BsZS9UaGFucmEvc291bmRzLzE3ODMxMy8iIHRhcmdldD0iX2JsYW5rIj4iTWFsZSBEZWF0aCBTY3JlYW0iPC9hPgogICAgICAgICAgICAgICAgICAgIGJ5IFRoYW5yYQogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YnIgLz4KICAgICAgICAgICAgICAgICAgICA8aDM+VGhlIGZvbGxvd2luZyBzb3VuZHMgYXJlIGxpY2Vuc2VkIHVuZGVyIDxhIGhyZWY9Imh0dHBzOi8vY3JlYXRpdmVjb21tb25zLm9yZy9saWNlbnNlcy9ieS8zLjAvIiB0YXJnZXQ9Il9ibGFuayI+Q0MgQlkgMy4wPC9hPjo8L2gzPgogICAgICAgICAgICAgICAgPC9saT4KICAgICAgICAgICAgICAgIDxsaT4KICAgICAgICAgICAgICAgICAgICA8YSBocmVmPSJodHRwczovL2ZyZWVzb3VuZC5vcmcvcGVvcGxlL0phY2tpZTRFdmVyL3NvdW5kcy84MzA5NS8iIHRhcmdldD0iX2JsYW5rIj4idGVuc2Vfc2hlcGFyZF9tb21lbnRfQjEuZmxhYyI8L2E+CiAgICAgICAgICAgICAgICAgICAgYnkgSmFja2llNEV2ZXIKICAgICAgICAgICAgICAgIDwvbGk+CiAgICAgICAgICAgIDwvdWw+CiAgICAgICAgPC9kaXY+CiAgICA8L2Rpdj4KPC9ib2R5PgogCjwvaHRtbD4K";
 
     const CLOAK_PRESETS = {
       drive: { title: "My Drive - Google Drive", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 87.3 78'%3E%3Cpath fill='%230066da' d='m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z'/%3E%3Cpath fill='%2300ac47' d='M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44A9.06 9.06 0 0 0 0 53h27.5z'/%3E%3Cpath fill='%23ea4335' d='m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z'/%3E%3Cpath fill='%2300832d' d='M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z'/%3E%3Cpath fill='%232684fc' d='M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5L72.35 24.7c-.8-1.4-1.95-2.5-3.3-3.3L55.3 45.2z'/%3E%3Cpath fill='%23ffba00' d='m73.55 76.8-13.75-23.8H27.5l13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h23.3c1.6 0 3.15-.4 4.5-1.2z'/%3E%3C/svg%3E" },
@@ -106,77 +106,177 @@
       setTabCloak(cloakSelect ? cloakSelect.value : 'drive');
     } catch(e) {}
 
+    function makeShim(tb) {
+      return '<script>' +
+        '(function(){' +
+        'var tb=' + JSON.stringify(tb) + ';' +
+        'if(!tb.endsWith("/"))tb+="/";' +
+        'var OrigImage=window.Image;' +
+        'window.Image=function(w,h){var img=new OrigImage(w,h);img.crossOrigin="anonymous";return img;};' +
+        'var origCE=document.createElement.bind(document);' +
+        'document.createElement=function(t,o){var el=origCE(t,o);if(t&&t.toLowerCase()==="img"){try{el.crossOrigin="anonymous";}catch(e){}}return el;};' +
+        'var OrigAudio=window.Audio;' +
+        'if(OrigAudio){window.Audio=function(s){var a=new OrigAudio();try{a.crossOrigin="anonymous";}catch(e){}if(s){if(typeof s==="string"&&!/^(https?:|data:|blob:)/i.test(s)){s=new URL(s,tb).href;}a.src=s;}return a;};}' +
+        'class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0||bStr.indexOf("file:")===0){bStr=tb;}try{super(u,bStr);}catch(e){super(u,tb);}}}' +
+        'window.URL=PatchedURL;' +
+        'var origFetch=window.fetch;' +
+        'if(origFetch){window.fetch=function(inp,init){if(typeof inp==="string"){if(!/^(https?:|data:|blob:)/i.test(inp)){inp=new URL(inp,tb).href;}}else if(inp&&typeof inp==="object"&&inp.url){if(!/^(https?:|data:|blob:)/i.test(inp.url)){inp=new Request(new URL(inp.url,tb).href,inp);}}return origFetch.call(this,inp,init);};}' +
+        'var origXhrOpen=XMLHttpRequest.prototype.open;' +
+        'XMLHttpRequest.prototype.open=function(m,u){var args=Array.prototype.slice.call(arguments);if(typeof u==="string"&&!/^(https?:|data:|blob:)/i.test(u)){args[1]=new URL(u,tb).href;}return origXhrOpen.apply(this,args);};' +
+        'var pageLoaded=(document.readyState==="complete");' +
+        'window.addEventListener("load",function(){pageLoaded=true;},{capture:true});' +
+        'var origWinAEL=window.addEventListener.bind(window);' +
+        'window.addEventListener=function(t,l,o){if(t==="load"&&(pageLoaded||document.readyState==="complete")){setTimeout(function(){try{if(typeof l==="function")l.call(window,new Event("load"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("load"));}catch(e){}},15);}return origWinAEL(t,l,o);};' +
+        'var origOnload=null;' +
+        'Object.defineProperty(window,"onload",{get:function(){return origOnload;},set:function(fn){origOnload=fn;if(pageLoaded||document.readyState==="complete"){setTimeout(function(){try{if(typeof fn==="function")fn.call(window,new Event("load"));}catch(e){}},15);}},configurable:true});' +
+        'var domReady=(document.readyState==="interactive"||document.readyState==="complete");' +
+        'document.addEventListener("DOMContentLoaded",function(){domReady=true;},{capture:true});' +
+        'var origDocAEL=document.addEventListener.bind(document);' +
+        'document.addEventListener=function(t,l,o){if(t==="DOMContentLoaded"&&(domReady||document.readyState!=="loading")){setTimeout(function(){try{if(typeof l==="function")l.call(document,new Event("DOMContentLoaded"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("DOMContentLoaded"));}catch(e){}},15);}return origDocAEL(t,l,o);};' +
+        '})();<' + '/script>';
+    }
+
     async function resolveAndLoadGame() {
-      const base = document.baseURI || window.location.href;
       const enc = encodeURIComponent(GAME_FOLDER);
+      const isFile = window.location.protocol === 'file:' || (document.baseURI && document.baseURI.startsWith('file:'));
 
       if (IS_EMULATOR) {
-        const playerCandidates = [
-          new URL('emulator/player.html', base).href,
-          new URL('../emulator/player.html', base).href,
-          'http://localhost:8080/emulator/player.html',
-          TAILSCALE_ORIGIN + '/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html'
-        ];
+        const playerCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          playerCandidates.push(new URL('emulator/player.html', base).href);
+          playerCandidates.push(new URL('../emulator/player.html', base).href);
+        }
+        playerCandidates.push('http://localhost:8080/emulator/player.html');
+        playerCandidates.push('http://127.0.0.1:8080/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html');
+        playerCandidates.push(TAILSCALE_ORIGIN + '/emulator/player.html');
+
         for (const p of playerCandidates) {
           try {
-            const r = await fetch(p);
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const r = await fetch(p, { signal: c.signal });
+            clearTimeout(t);
             if (r.ok) {
               const html = await r.text();
-              const baseTag = '<base href="' + new URL('./', p).href + '">';
+              effectiveGameUrl = p;
+              const targetBase = new URL('./', p).href;
+              const baseTag = '<base href="' + targetBase + '">';
+              const shim = makeShim(targetBase);
               const injectScript = '<script>window.__INJECTED_QUERY__ = ' + JSON.stringify(QUERY_STR) + ';<' + '/script>';
-              const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + injectScript) : (baseTag + injectScript + html);
+              const full = html.includes('<head>')
+                ? html.replace('<head>', '<head>' + baseTag + shim + injectScript)
+                : (baseTag + shim + injectScript + html);
               frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
               return;
             }
           } catch(e) {}
         }
-        frame.src = new URL('emulator/player.svg?' + QUERY_STR, base).href;
+        frame.src = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.svg?' + QUERY_STR;
         return;
       }
 
-      if (INLINE_SRC && INLINE_SRC.length > 50) {
-        const targetBase = new URL('games/' + enc + '/', base).href;
-        const baseTag = '<base href="' + targetBase + '">';
-        const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-        const full = INLINE_SRC.includes('<head>') ? INLINE_SRC.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + INLINE_SRC);
+      let inlineHtml = '';
+      if (INLINE_B64) {
+        try { inlineHtml = decodeURIComponent(escape(atob(INLINE_B64))); }
+        catch(e) { try { inlineHtml = atob(INLINE_B64); } catch(e2) {} }
+      }
+
+      // Check if inlineHtml already has a hardcoded http/https <base href="...">
+      let preExistingBase = '';
+      if (inlineHtml) {
+        const baseTagIdx = inlineHtml.toLowerCase().indexOf('<base');
+        if (baseTagIdx !== -1) {
+          const snippet = inlineHtml.slice(baseTagIdx, baseTagIdx + 400);
+          const hrefIdx = snippet.toLowerCase().indexOf('href=');
+          if (hrefIdx !== -1) {
+            const q = snippet[hrefIdx + 5];
+            if (q === '"' || q === "'") {
+              const endQ = snippet.indexOf(q, hrefIdx + 6);
+              if (endQ !== -1) {
+                const val = snippet.slice(hrefIdx + 6, endQ);
+                if (val.startsWith('http://') || val.startsWith('https://')) {
+                  preExistingBase = val;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      let activeBase = '';
+      let fetchedHtml = '';
+
+      if (preExistingBase) {
+        activeBase = preExistingBase;
+      } else {
+        const baseCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          baseCandidates.push(new URL('games/' + enc + '/', base).href);
+          baseCandidates.push(new URL('../games/' + enc + '/', base).href);
+        }
+        baseCandidates.push('http://localhost:8080/games/' + enc + '/');
+        baseCandidates.push('http://127.0.0.1:8080/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/');
+        baseCandidates.push(TAILSCALE_ORIGIN + '/games/' + enc + '/');
+
+        for (const b of baseCandidates) {
+          try {
+            const probe = b.endsWith('/') ? b + 'index.html' : b + '/index.html';
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const res = await fetch(probe, { signal: c.signal });
+            clearTimeout(t);
+            if (res.ok) {
+              const txt = await res.text();
+              if (txt.includes('Package size exceeded') || txt.includes('Cannot find "') || txt.trim().startsWith('404')) continue;
+              activeBase = b;
+              fetchedHtml = txt;
+              break;
+            }
+          } catch(e) {}
+        }
+        if (!activeBase) {
+          activeBase = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/';
+        }
+      }
+
+      let rawHtml = (inlineHtml && inlineHtml.length > 50) ? inlineHtml : fetchedHtml;
+
+      if (!rawHtml) {
+        try {
+          const probe = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
+          const c = new AbortController();
+          const t = setTimeout(() => c.abort(), 2500);
+          const res = await fetch(probe, { signal: c.signal });
+          clearTimeout(t);
+          if (res.ok) rawHtml = await res.text();
+        } catch(e) {}
+      }
+
+      if (rawHtml) {
+        effectiveGameUrl = activeBase;
+        const shim = makeShim(activeBase);
+        let full = rawHtml;
+        if (!preExistingBase) {
+          const baseTag = '<base href="' + activeBase + '">';
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + baseTag + shim)
+            : (baseTag + shim + full);
+        } else {
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + shim)
+            : (shim + full);
+        }
         frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
         return;
       }
 
-      const candidates = [
-        new URL('games/' + enc + '/index.html', base).href,
-        new URL('../games/' + enc + '/index.html', base).href,
-        'http://localhost:8080/games/' + enc + '/index.html',
-        TAILSCALE_ORIGIN + '/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesv7iskewl/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/index.html'
-      ];
-
-      for (const url of candidates) {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 2500);
-          const res = await fetch(url, { signal: timer.signal });
-          clearTimeout(timer);
-          if (res.ok) {
-            let html = await res.text();
-            if (html.includes('Package size exceeded') || html.includes('Cannot find "') || html.trim().startsWith('404')) continue;
-            effectiveGameUrl = url;
-            const targetBase = new URL('./', url).href;
-            const baseTag = '<base href="' + targetBase + '">';
-            const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-            const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + html);
-            frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
-            return;
-          }
-        } catch(e) {}
-      }
-
-      effectiveGameUrl = TAILSCALE_ORIGIN + '/games/' + enc + '/index.html';
+      effectiveGameUrl = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
       frame.src = effectiveGameUrl;
     }
 

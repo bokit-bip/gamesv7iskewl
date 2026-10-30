@@ -29,7 +29,7 @@
     const GAME_FOLDER = "papaspancakeria";
     const IS_EMULATOR = false;
     const QUERY_STR = "";
-    const INLINE_SRC = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Papa's Pancakeria</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    html, body {\n      width: 100%;\n      height: 100%;\n      overflow: hidden;\n      background-color: #0b0e14;\n      display: flex;\n      flex-direction: column;\n      font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;\n      user-select: none;\n    }\n\n    /* Top Bar with Easter Egg Buttons */\n    #top-bar {\n      height: 48px;\n      background: #141720;\n      border-bottom: 1px solid rgba(255, 255, 255, 0.08);\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      padding: 0 16px;\n      color: #e2e8f0;\n      z-index: 20;\n    }\n    .game-title-group {\n      display: flex;\n      align-items: center;\n      gap: 10px;\n      font-weight: 600;\n      font-size: 15px;\n    }\n    .status-badge {\n      font-size: 12px;\n      padding: 3px 8px;\n      border-radius: 12px;\n      background: rgba(255, 255, 255, 0.06);\n      color: #94a3b8;\n      transition: all 0.3s ease;\n      font-weight: 500;\n    }\n    .status-badge.active {\n      background: linear-gradient(135deg, #f59e0b, #d97706);\n      color: #ffffff;\n      box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);\n      font-weight: 700;\n    }\n\n    /* Easter Egg Combo Buttons */\n    .easter-egg-bar {\n      display: flex;\n      align-items: center;\n      gap: 8px;\n    }\n    .combo-hint {\n      font-size: 12px;\n      color: #64748b;\n      margin-right: 4px;\n    }\n    .egg-btn {\n      width: 32px;\n      height: 32px;\n      border-radius: 6px;\n      border: 1px solid rgba(255, 255, 255, 0.12);\n      background: #1e2330;\n      color: #ffffff;\n      font-size: 16px;\n      cursor: pointer;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      transition: all 0.15s ease;\n    }\n    .egg-btn:hover {\n      background: #283042;\n      border-color: rgba(255, 255, 255, 0.3);\n      transform: scale(1.08);\n    }\n    .egg-btn:active, .egg-btn.pressed {\n      transform: scale(0.92);\n      background: #f59e0b;\n      border-color: #fbbf24;\n    }\n\n    /* Game Container */\n    #game-container {\n      flex: 1;\n      width: 100%;\n      height: calc(100% - 48px);\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      position: relative;\n    }\n    ruffle-player {\n      width: 100% !important;\n      height: 100% !important;\n    }\n\n    /* Loading Overlay */\n    #loading-overlay {\n      position: absolute;\n      inset: 0;\n      background: #0b0e14;\n      display: flex;\n      flex-direction: column;\n      align-items: center;\n      justify-content: center;\n      gap: 14px;\n      color: #9ba1b0;\n      font-size: 14px;\n      font-weight: 500;\n      z-index: 10;\n      transition: opacity 0.3s ease;\n      pointer-events: none;\n    }\n    .spinner {\n      width: 40px;\n      height: 40px;\n      border: 3px solid rgba(255, 255, 255, 0.1);\n      border-top-color: #f59e0b;\n      border-radius: 50%;\n      animation: spin 0.8s linear infinite;\n    }\n    @keyframes spin {\n      to { transform: rotate(360deg); }\n    }\n\n    /* Notification Banner */\n    #cheat-toast {\n      position: absolute;\n      top: 16px;\n      left: 50%;\n      transform: translateX(-50%) translateY(-100px);\n      background: linear-gradient(135deg, #1e293b, #0f172a);\n      border: 2px solid #f59e0b;\n      color: #fef3c7;\n      padding: 12px 24px;\n      border-radius: 10px;\n      font-weight: 600;\n      font-size: 14px;\n      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(245, 158, 11, 0.4);\n      z-index: 30;\n      opacity: 0;\n      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);\n      pointer-events: none;\n      display: flex;\n      align-items: center;\n      gap: 10px;\n    }\n    #cheat-toast.show {\n      transform: translateX(-50%) translateY(0);\n      opacity: 1;\n    }\n\n    /* Confetti Canvas */\n    #confetti-canvas {\n      position: absolute;\n      inset: 0;\n      width: 100%;\n      height: 100%;\n      pointer-events: none;\n      z-index: 25;\n    }\n  </style>\n  <script src=\"/ruffle/ruffle.js\"><\\/script>\n</head>\n<body>\n  <div id=\"top-bar\">\n    <div class=\"game-title-group\">\n      <span>🥞 Papa's Pancakeria</span>\n      <span id=\"cheat-badge\" class=\"status-badge\">Normal</span>\n    </div>\n\n    <div class=\"easter-egg-bar\">\n      <span class=\"combo-hint\">Easter Egg:</span>\n      <button class=\"egg-btn\" data-key=\"chef\" title=\"Chef Hat\">👨‍🍳</button>\n      <button class=\"egg-btn\" data-key=\"food\" title=\"Papa's Pancakeria\">🥞</button>\n      <button class=\"egg-btn\" data-key=\"star\" title=\"Star Review\">⭐</button>\n      <button class=\"egg-btn\" data-key=\"perfect\" title=\"100% Score\">💯</button>\n    </div>\n  </div>\n\n  <div id=\"game-container\">\n    <canvas id=\"confetti-canvas\"></canvas>\n    <div id=\"cheat-toast\">✨ EASTER EGG UNLOCKED: 100% CUSTOMER SATISFACTION ACTIVATED! ✨</div>\n    <div id=\"loading-overlay\">\n      <div class=\"spinner\"></div>\n      <div>Loading Papa's Pancakeria via Ruffle...</div>\n    </div>\n  </div>\n\n  <script>\n    (function() {\n      // Configuration & Easter Egg Combo\n      const REQUIRED_COMBO = ['chef', 'food', 'star', 'perfect'];\n      let currentComboInput = [];\n      let is100PercentCheatActive = false;\n      let rufflePlayer = null;\n\n      window.RufflePlayer = window.RufflePlayer || {};\n      window.RufflePlayer.config = {\n        letterbox: \"on\",\n        autoplay: \"on\",\n        splashScreen: false,\n        unmuteOverlay: \"hidden\",\n        upgradeToHttps: false,\n        warnOnUnsupportedContent: false,\n        contextMenu: \"rightClick\"\n      };\n\n      // Sound synthesizer for fanfare\n      function playChime(success = true) {\n        try {\n          const ctx = new (window.AudioContext || window.webkitAudioContext)();\n          const now = ctx.currentTime;\n          if (success) {\n            // Ascending major arpeggio\n            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {\n              const osc = ctx.createOscillator();\n              const gain = ctx.createGain();\n              osc.type = 'triangle';\n              osc.frequency.setValueAtTime(freq, now + i * 0.1);\n              gain.gain.setValueAtTime(0.18, now + i * 0.1);\n              gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.35);\n              osc.connect(gain);\n              gain.connect(ctx.destination);\n              osc.start(now + i * 0.1);\n              osc.stop(now + i * 0.1 + 0.4);\n            });\n          } else {\n            // Click pop\n            const osc = ctx.createOscillator();\n            const gain = ctx.createGain();\n            osc.frequency.setValueAtTime(440, now);\n            gain.gain.setValueAtTime(0.08, now);\n            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);\n            osc.connect(gain);\n            gain.connect(ctx.destination);\n            osc.start(now);\n            osc.stop(now + 0.06);\n          }\n        } catch(e) {}\n      }\n\n      // Confetti animation\n      function triggerConfetti() {\n        const canvas = document.getElementById('confetti-canvas');\n        if (!canvas) return;\n        canvas.width = canvas.clientWidth;\n        canvas.height = canvas.clientHeight;\n        const ctx = canvas.getContext('2d');\n        const particles = [];\n        const colors = ['#f59e0b', '#fbbf24', '#f43f5e', '#10b981', '#3b82f6', '#ffffff'];\n\n        for (let i = 0; i < 90; i++) {\n          particles.push({\n            x: canvas.width / 2 + (Math.random() - 0.5) * 100,\n            y: canvas.height / 3,\n            vx: (Math.random() - 0.5) * 14,\n            vy: -7 - Math.random() * 8,\n            color: colors[Math.floor(Math.random() * colors.length)],\n            size: 6 + Math.random() * 8,\n            rot: Math.random() * 360,\n            rotSpeed: (Math.random() - 0.5) * 10,\n            gravity: 0.35,\n            alpha: 1.0\n          });\n        }\n\n        let animId;\n        function update() {\n          ctx.clearRect(0, 0, canvas.width, canvas.height);\n          let alive = false;\n          particles.forEach(p => {\n            p.x += p.vx;\n            p.y += p.vy;\n            p.vy += p.gravity;\n            p.rot += p.rotSpeed;\n            p.alpha -= 0.012;\n            if (p.alpha > 0) {\n              alive = true;\n              ctx.save();\n              ctx.translate(p.x, p.y);\n              ctx.rotate(p.rot * Math.PI / 180);\n              ctx.fillStyle = p.color;\n              ctx.globalAlpha = Math.max(0, p.alpha);\n              ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);\n              ctx.restore();\n            }\n          });\n          if (alive) {\n            animId = requestAnimationFrame(update);\n          } else {\n            ctx.clearRect(0, 0, canvas.width, canvas.height);\n          }\n        }\n        update();\n      }\n\n      function showToast(msg) {\n        const toast = document.getElementById('cheat-toast');\n        if (!toast) return;\n        toast.textContent = msg;\n        toast.classList.add('show');\n        setTimeout(() => toast.classList.remove('show'), 4000);\n      }\n\n      function toggle100PercentCheat() {\n        is100PercentCheatActive = !is100PercentCheatActive;\n        const badge = document.getElementById('cheat-badge');\n        \n        if (is100PercentCheatActive) {\n          playChime(true);\n          triggerConfetti();\n          badge.textContent = '✨ 100% Perfect Cheat Active ✨';\n          badge.classList.add('active');\n          showToast('🌟 EASTER EGG UNLOCKED! Customers Will Always Award 100% Scores! 🌟');\n\n          // Hot-swap to 100% patched SWF\n          if (rufflePlayer) {\n            rufflePlayer.load('game_100.swf').catch(e => console.error(e));\n          }\n        } else {\n          playChime(false);\n          badge.textContent = 'Normal';\n          badge.classList.remove('active');\n          showToast('Standard mode restored.');\n\n          if (rufflePlayer) {\n            rufflePlayer.load('game.swf').catch(e => console.error(e));\n          }\n        }\n      }\n\n      // Handle Easter egg button clicks\n      document.querySelectorAll('.egg-btn').forEach(btn => {\n        btn.addEventListener('click', () => {\n          const key = btn.getAttribute('data-key');\n          btn.classList.add('pressed');\n          setTimeout(() => btn.classList.remove('pressed'), 200);\n\n          currentComboInput.push(key);\n          playChime(false);\n\n          // Verify prefix match\n          const idx = currentComboInput.length - 1;\n          if (currentComboInput[idx] !== REQUIRED_COMBO[idx]) {\n            // Reset combo if wrong button\n            currentComboInput = key === REQUIRED_COMBO[0] ? [key] : [];\n          }\n\n          // Complete combo\n          if (currentComboInput.length === REQUIRED_COMBO.length) {\n            currentComboInput = [];\n            toggle100PercentCheat();\n          }\n        });\n      });\n\n      // Keyboard Easter Egg: Typing '100' or 'papa'\n      let keyBuffer = '';\n      window.addEventListener('keydown', (e) => {\n        keyBuffer += e.key.toLowerCase();\n        if (keyBuffer.length > 8) keyBuffer = keyBuffer.slice(-8);\n        if (keyBuffer.endsWith('100') || keyBuffer.endsWith('papa')) {\n          keyBuffer = '';\n          toggle100PercentCheat();\n        }\n      });\n\n      // Start Ruffle Player\n      function startRuffle() {\n        const container = document.getElementById('game-container');\n        const overlay = document.getElementById('loading-overlay');\n        \n        try {\n          const ruffle = window.RufflePlayer.newest ? window.RufflePlayer.newest() : window.RufflePlayer;\n          if (!ruffle || !ruffle.createPlayer) throw new Error(\"Ruffle player factory unavailable\");\n          \n          rufflePlayer = ruffle.createPlayer();\n          rufflePlayer.id = \"ruffle-player\";\n          container.appendChild(rufflePlayer);\n\n          const targetSwf = is100PercentCheatActive ? 'game_100.swf' : 'game.swf';\n          rufflePlayer.load(targetSwf).then(() => {\n            if (overlay) {\n              overlay.style.opacity = '0';\n              setTimeout(() => overlay.remove(), 400);\n            }\n          }).catch((err) => {\n            console.error(\"Error loading SWF:\", err);\n            if (overlay) {\n              overlay.innerHTML = '<div style=\"color:#ed4245;font-weight:600;\">Failed to load game SWF</div>';\n            }\n          });\n\n          window.addEventListener('click', () => {\n            try { rufflePlayer.focus(); } catch(e) {}\n          });\n        } catch (e) {\n          console.error(\"Failed to initialize Ruffle:\", e);\n          if (overlay) {\n            overlay.innerHTML = '<div style=\"color:#ed4245;font-weight:600;\">Error initializing Ruffle emulator</div>';\n          }\n        }\n      }\n\n      if (typeof window.RufflePlayer !== 'undefined' && window.RufflePlayer.newest) {\n        startRuffle();\n      } else {\n        const s = document.createElement('script');\n        s.src = \"/ruffle/ruffle.js\";\n        s.onload = () => setTimeout(startRuffle, 50);\n        document.head.appendChild(s);\n      }\n    })();\n  <\\/script>\n</body>\n</html>\n";
+    const INLINE_B64 = "PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CiAgPG1ldGEgY2hhcnNldD0idXRmLTgiPgogIDxtZXRhIG5hbWU9InZpZXdwb3J0IiBjb250ZW50PSJ3aWR0aD1kZXZpY2Utd2lkdGgsIGluaXRpYWwtc2NhbGU9MS4wIj4KICA8dGl0bGU+UGFwYSdzIFBhbmNha2VyaWE8L3RpdGxlPgogIDxzdHlsZT4KICAgICogeyBtYXJnaW46IDA7IHBhZGRpbmc6IDA7IGJveC1zaXppbmc6IGJvcmRlci1ib3g7IH0KICAgIGh0bWwsIGJvZHkgewogICAgICB3aWR0aDogMTAwJTsKICAgICAgaGVpZ2h0OiAxMDAlOwogICAgICBvdmVyZmxvdzogaGlkZGVuOwogICAgICBiYWNrZ3JvdW5kLWNvbG9yOiAjMGIwZTE0OwogICAgICBkaXNwbGF5OiBmbGV4OwogICAgICBmbGV4LWRpcmVjdGlvbjogY29sdW1uOwogICAgICBmb250LWZhbWlseTogLWFwcGxlLXN5c3RlbSwgQmxpbmtNYWNTeXN0ZW1Gb250LCAiU2Vnb2UgVUkiLCBSb2JvdG8sIHNhbnMtc2VyaWY7CiAgICAgIHVzZXItc2VsZWN0OiBub25lOwogICAgfQoKICAgIC8qIFRvcCBCYXIgd2l0aCBFYXN0ZXIgRWdnIEJ1dHRvbnMgKi8KICAgICN0b3AtYmFyIHsKICAgICAgaGVpZ2h0OiA0OHB4OwogICAgICBiYWNrZ3JvdW5kOiAjMTQxNzIwOwogICAgICBib3JkZXItYm90dG9tOiAxcHggc29saWQgcmdiYSgyNTUsIDI1NSwgMjU1LCAwLjA4KTsKICAgICAgZGlzcGxheTogZmxleDsKICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjsKICAgICAganVzdGlmeS1jb250ZW50OiBzcGFjZS1iZXR3ZWVuOwogICAgICBwYWRkaW5nOiAwIDE2cHg7CiAgICAgIGNvbG9yOiAjZTJlOGYwOwogICAgICB6LWluZGV4OiAyMDsKICAgIH0KICAgIC5nYW1lLXRpdGxlLWdyb3VwIHsKICAgICAgZGlzcGxheTogZmxleDsKICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjsKICAgICAgZ2FwOiAxMHB4OwogICAgICBmb250LXdlaWdodDogNjAwOwogICAgICBmb250LXNpemU6IDE1cHg7CiAgICB9CiAgICAuc3RhdHVzLWJhZGdlIHsKICAgICAgZm9udC1zaXplOiAxMnB4OwogICAgICBwYWRkaW5nOiAzcHggOHB4OwogICAgICBib3JkZXItcmFkaXVzOiAxMnB4OwogICAgICBiYWNrZ3JvdW5kOiByZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMDYpOwogICAgICBjb2xvcjogIzk0YTNiODsKICAgICAgdHJhbnNpdGlvbjogYWxsIDAuM3MgZWFzZTsKICAgICAgZm9udC13ZWlnaHQ6IDUwMDsKICAgIH0KICAgIC5zdGF0dXMtYmFkZ2UuYWN0aXZlIHsKICAgICAgYmFja2dyb3VuZDogbGluZWFyLWdyYWRpZW50KDEzNWRlZywgI2Y1OWUwYiwgI2Q5NzcwNik7CiAgICAgIGNvbG9yOiAjZmZmZmZmOwogICAgICBib3gtc2hhZG93OiAwIDAgMTJweCByZ2JhKDI0NSwgMTU4LCAxMSwgMC41KTsKICAgICAgZm9udC13ZWlnaHQ6IDcwMDsKICAgIH0KCiAgICAvKiBFYXN0ZXIgRWdnIENvbWJvIEJ1dHRvbnMgKi8KICAgIC5lYXN0ZXItZWdnLWJhciB7CiAgICAgIGRpc3BsYXk6IGZsZXg7CiAgICAgIGFsaWduLWl0ZW1zOiBjZW50ZXI7CiAgICAgIGdhcDogOHB4OwogICAgfQogICAgLmNvbWJvLWhpbnQgewogICAgICBmb250LXNpemU6IDEycHg7CiAgICAgIGNvbG9yOiAjNjQ3NDhiOwogICAgICBtYXJnaW4tcmlnaHQ6IDRweDsKICAgIH0KICAgIC5lZ2ctYnRuIHsKICAgICAgd2lkdGg6IDMycHg7CiAgICAgIGhlaWdodDogMzJweDsKICAgICAgYm9yZGVyLXJhZGl1czogNnB4OwogICAgICBib3JkZXI6IDFweCBzb2xpZCByZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMTIpOwogICAgICBiYWNrZ3JvdW5kOiAjMWUyMzMwOwogICAgICBjb2xvcjogI2ZmZmZmZjsKICAgICAgZm9udC1zaXplOiAxNnB4OwogICAgICBjdXJzb3I6IHBvaW50ZXI7CiAgICAgIGRpc3BsYXk6IGZsZXg7CiAgICAgIGFsaWduLWl0ZW1zOiBjZW50ZXI7CiAgICAgIGp1c3RpZnktY29udGVudDogY2VudGVyOwogICAgICB0cmFuc2l0aW9uOiBhbGwgMC4xNXMgZWFzZTsKICAgIH0KICAgIC5lZ2ctYnRuOmhvdmVyIHsKICAgICAgYmFja2dyb3VuZDogIzI4MzA0MjsKICAgICAgYm9yZGVyLWNvbG9yOiByZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMyk7CiAgICAgIHRyYW5zZm9ybTogc2NhbGUoMS4wOCk7CiAgICB9CiAgICAuZWdnLWJ0bjphY3RpdmUsIC5lZ2ctYnRuLnByZXNzZWQgewogICAgICB0cmFuc2Zvcm06IHNjYWxlKDAuOTIpOwogICAgICBiYWNrZ3JvdW5kOiAjZjU5ZTBiOwogICAgICBib3JkZXItY29sb3I6ICNmYmJmMjQ7CiAgICB9CgogICAgLyogR2FtZSBDb250YWluZXIgKi8KICAgICNnYW1lLWNvbnRhaW5lciB7CiAgICAgIGZsZXg6IDE7CiAgICAgIHdpZHRoOiAxMDAlOwogICAgICBoZWlnaHQ6IGNhbGMoMTAwJSAtIDQ4cHgpOwogICAgICBkaXNwbGF5OiBmbGV4OwogICAgICBhbGlnbi1pdGVtczogY2VudGVyOwogICAgICBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjsKICAgICAgcG9zaXRpb246IHJlbGF0aXZlOwogICAgfQogICAgcnVmZmxlLXBsYXllciB7CiAgICAgIHdpZHRoOiAxMDAlICFpbXBvcnRhbnQ7CiAgICAgIGhlaWdodDogMTAwJSAhaW1wb3J0YW50OwogICAgfQoKICAgIC8qIExvYWRpbmcgT3ZlcmxheSAqLwogICAgI2xvYWRpbmctb3ZlcmxheSB7CiAgICAgIHBvc2l0aW9uOiBhYnNvbHV0ZTsKICAgICAgaW5zZXQ6IDA7CiAgICAgIGJhY2tncm91bmQ6ICMwYjBlMTQ7CiAgICAgIGRpc3BsYXk6IGZsZXg7CiAgICAgIGZsZXgtZGlyZWN0aW9uOiBjb2x1bW47CiAgICAgIGFsaWduLWl0ZW1zOiBjZW50ZXI7CiAgICAgIGp1c3RpZnktY29udGVudDogY2VudGVyOwogICAgICBnYXA6IDE0cHg7CiAgICAgIGNvbG9yOiAjOWJhMWIwOwogICAgICBmb250LXNpemU6IDE0cHg7CiAgICAgIGZvbnQtd2VpZ2h0OiA1MDA7CiAgICAgIHotaW5kZXg6IDEwOwogICAgICB0cmFuc2l0aW9uOiBvcGFjaXR5IDAuM3MgZWFzZTsKICAgICAgcG9pbnRlci1ldmVudHM6IG5vbmU7CiAgICB9CiAgICAuc3Bpbm5lciB7CiAgICAgIHdpZHRoOiA0MHB4OwogICAgICBoZWlnaHQ6IDQwcHg7CiAgICAgIGJvcmRlcjogM3B4IHNvbGlkIHJnYmEoMjU1LCAyNTUsIDI1NSwgMC4xKTsKICAgICAgYm9yZGVyLXRvcC1jb2xvcjogI2Y1OWUwYjsKICAgICAgYm9yZGVyLXJhZGl1czogNTAlOwogICAgICBhbmltYXRpb246IHNwaW4gMC44cyBsaW5lYXIgaW5maW5pdGU7CiAgICB9CiAgICBAa2V5ZnJhbWVzIHNwaW4gewogICAgICB0byB7IHRyYW5zZm9ybTogcm90YXRlKDM2MGRlZyk7IH0KICAgIH0KCiAgICAvKiBOb3RpZmljYXRpb24gQmFubmVyICovCiAgICAjY2hlYXQtdG9hc3QgewogICAgICBwb3NpdGlvbjogYWJzb2x1dGU7CiAgICAgIHRvcDogMTZweDsKICAgICAgbGVmdDogNTAlOwogICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVgoLTUwJSkgdHJhbnNsYXRlWSgtMTAwcHgpOwogICAgICBiYWNrZ3JvdW5kOiBsaW5lYXItZ3JhZGllbnQoMTM1ZGVnLCAjMWUyOTNiLCAjMGYxNzJhKTsKICAgICAgYm9yZGVyOiAycHggc29saWQgI2Y1OWUwYjsKICAgICAgY29sb3I6ICNmZWYzYzc7CiAgICAgIHBhZGRpbmc6IDEycHggMjRweDsKICAgICAgYm9yZGVyLXJhZGl1czogMTBweDsKICAgICAgZm9udC13ZWlnaHQ6IDYwMDsKICAgICAgZm9udC1zaXplOiAxNHB4OwogICAgICBib3gtc2hhZG93OiAwIDEwcHggMzBweCByZ2JhKDAsIDAsIDAsIDAuNyksIDAgMCAyMHB4IHJnYmEoMjQ1LCAxNTgsIDExLCAwLjQpOwogICAgICB6LWluZGV4OiAzMDsKICAgICAgb3BhY2l0eTogMDsKICAgICAgdHJhbnNpdGlvbjogYWxsIDAuNHMgY3ViaWMtYmV6aWVyKDAuMTc1LCAwLjg4NSwgMC4zMiwgMS4yNzUpOwogICAgICBwb2ludGVyLWV2ZW50czogbm9uZTsKICAgICAgZGlzcGxheTogZmxleDsKICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjsKICAgICAgZ2FwOiAxMHB4OwogICAgfQogICAgI2NoZWF0LXRvYXN0LnNob3cgewogICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVgoLTUwJSkgdHJhbnNsYXRlWSgwKTsKICAgICAgb3BhY2l0eTogMTsKICAgIH0KCiAgICAvKiBDb25mZXR0aSBDYW52YXMgKi8KICAgICNjb25mZXR0aS1jYW52YXMgewogICAgICBwb3NpdGlvbjogYWJzb2x1dGU7CiAgICAgIGluc2V0OiAwOwogICAgICB3aWR0aDogMTAwJTsKICAgICAgaGVpZ2h0OiAxMDAlOwogICAgICBwb2ludGVyLWV2ZW50czogbm9uZTsKICAgICAgei1pbmRleDogMjU7CiAgICB9CiAgPC9zdHlsZT4KICA8c2NyaXB0IHNyYz0iL3J1ZmZsZS9ydWZmbGUuanMiPjwvc2NyaXB0Pgo8L2hlYWQ+Cjxib2R5PgogIDxkaXYgaWQ9InRvcC1iYXIiPgogICAgPGRpdiBjbGFzcz0iZ2FtZS10aXRsZS1ncm91cCI+CiAgICAgIDxzcGFuPvCfpZ4gUGFwYSdzIFBhbmNha2VyaWE8L3NwYW4+CiAgICAgIDxzcGFuIGlkPSJjaGVhdC1iYWRnZSIgY2xhc3M9InN0YXR1cy1iYWRnZSI+Tm9ybWFsPC9zcGFuPgogICAgPC9kaXY+CgogICAgPGRpdiBjbGFzcz0iZWFzdGVyLWVnZy1iYXIiPgogICAgICA8c3BhbiBjbGFzcz0iY29tYm8taGludCI+RWFzdGVyIEVnZzo8L3NwYW4+CiAgICAgIDxidXR0b24gY2xhc3M9ImVnZy1idG4iIGRhdGEta2V5PSJjaGVmIiB0aXRsZT0iQ2hlZiBIYXQiPvCfkajigI3wn42zPC9idXR0b24+CiAgICAgIDxidXR0b24gY2xhc3M9ImVnZy1idG4iIGRhdGEta2V5PSJmb29kIiB0aXRsZT0iUGFwYSdzIFBhbmNha2VyaWEiPvCfpZ48L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBjbGFzcz0iZWdnLWJ0biIgZGF0YS1rZXk9InN0YXIiIHRpdGxlPSJTdGFyIFJldmlldyI+4q2QPC9idXR0b24+CiAgICAgIDxidXR0b24gY2xhc3M9ImVnZy1idG4iIGRhdGEta2V5PSJwZXJmZWN0IiB0aXRsZT0iMTAwJSBTY29yZSI+8J+SrzwvYnV0dG9uPgogICAgPC9kaXY+CiAgPC9kaXY+CgogIDxkaXYgaWQ9ImdhbWUtY29udGFpbmVyIj4KICAgIDxjYW52YXMgaWQ9ImNvbmZldHRpLWNhbnZhcyI+PC9jYW52YXM+CiAgICA8ZGl2IGlkPSJjaGVhdC10b2FzdCI+4pyoIEVBU1RFUiBFR0cgVU5MT0NLRUQ6IDEwMCUgQ1VTVE9NRVIgU0FUSVNGQUNUSU9OIEFDVElWQVRFRCEg4pyoPC9kaXY+CiAgICA8ZGl2IGlkPSJsb2FkaW5nLW92ZXJsYXkiPgogICAgICA8ZGl2IGNsYXNzPSJzcGlubmVyIj48L2Rpdj4KICAgICAgPGRpdj5Mb2FkaW5nIFBhcGEncyBQYW5jYWtlcmlhIHZpYSBSdWZmbGUuLi48L2Rpdj4KICAgIDwvZGl2PgogIDwvZGl2PgoKICA8c2NyaXB0PgogICAgKGZ1bmN0aW9uKCkgewogICAgICAvLyBDb25maWd1cmF0aW9uICYgRWFzdGVyIEVnZyBDb21ibwogICAgICBjb25zdCBSRVFVSVJFRF9DT01CTyA9IFsnY2hlZicsICdmb29kJywgJ3N0YXInLCAncGVyZmVjdCddOwogICAgICBsZXQgY3VycmVudENvbWJvSW5wdXQgPSBbXTsKICAgICAgbGV0IGlzMTAwUGVyY2VudENoZWF0QWN0aXZlID0gZmFsc2U7CiAgICAgIGxldCBydWZmbGVQbGF5ZXIgPSBudWxsOwoKICAgICAgd2luZG93LlJ1ZmZsZVBsYXllciA9IHdpbmRvdy5SdWZmbGVQbGF5ZXIgfHwge307CiAgICAgIHdpbmRvdy5SdWZmbGVQbGF5ZXIuY29uZmlnID0gewogICAgICAgIGxldHRlcmJveDogIm9uIiwKICAgICAgICBhdXRvcGxheTogIm9uIiwKICAgICAgICBzcGxhc2hTY3JlZW46IGZhbHNlLAogICAgICAgIHVubXV0ZU92ZXJsYXk6ICJoaWRkZW4iLAogICAgICAgIHVwZ3JhZGVUb0h0dHBzOiBmYWxzZSwKICAgICAgICB3YXJuT25VbnN1cHBvcnRlZENvbnRlbnQ6IGZhbHNlLAogICAgICAgIGNvbnRleHRNZW51OiAicmlnaHRDbGljayIKICAgICAgfTsKCiAgICAgIC8vIFNvdW5kIHN5bnRoZXNpemVyIGZvciBmYW5mYXJlCiAgICAgIGZ1bmN0aW9uIHBsYXlDaGltZShzdWNjZXNzID0gdHJ1ZSkgewogICAgICAgIHRyeSB7CiAgICAgICAgICBjb25zdCBjdHggPSBuZXcgKHdpbmRvdy5BdWRpb0NvbnRleHQgfHwgd2luZG93LndlYmtpdEF1ZGlvQ29udGV4dCkoKTsKICAgICAgICAgIGNvbnN0IG5vdyA9IGN0eC5jdXJyZW50VGltZTsKICAgICAgICAgIGlmIChzdWNjZXNzKSB7CiAgICAgICAgICAgIC8vIEFzY2VuZGluZyBtYWpvciBhcnBlZ2dpbwogICAgICAgICAgICBbNTIzLjI1LCA2NTkuMjUsIDc4My45OSwgMTA0Ni41MF0uZm9yRWFjaCgoZnJlcSwgaSkgPT4gewogICAgICAgICAgICAgIGNvbnN0IG9zYyA9IGN0eC5jcmVhdGVPc2NpbGxhdG9yKCk7CiAgICAgICAgICAgICAgY29uc3QgZ2FpbiA9IGN0eC5jcmVhdGVHYWluKCk7CiAgICAgICAgICAgICAgb3NjLnR5cGUgPSAndHJpYW5nbGUnOwogICAgICAgICAgICAgIG9zYy5mcmVxdWVuY3kuc2V0VmFsdWVBdFRpbWUoZnJlcSwgbm93ICsgaSAqIDAuMSk7CiAgICAgICAgICAgICAgZ2Fpbi5nYWluLnNldFZhbHVlQXRUaW1lKDAuMTgsIG5vdyArIGkgKiAwLjEpOwogICAgICAgICAgICAgIGdhaW4uZ2Fpbi5leHBvbmVudGlhbFJhbXBUb1ZhbHVlQXRUaW1lKDAuMDAxLCBub3cgKyBpICogMC4xICsgMC4zNSk7CiAgICAgICAgICAgICAgb3NjLmNvbm5lY3QoZ2Fpbik7CiAgICAgICAgICAgICAgZ2Fpbi5jb25uZWN0KGN0eC5kZXN0aW5hdGlvbik7CiAgICAgICAgICAgICAgb3NjLnN0YXJ0KG5vdyArIGkgKiAwLjEpOwogICAgICAgICAgICAgIG9zYy5zdG9wKG5vdyArIGkgKiAwLjEgKyAwLjQpOwogICAgICAgICAgICB9KTsKICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgIC8vIENsaWNrIHBvcAogICAgICAgICAgICBjb25zdCBvc2MgPSBjdHguY3JlYXRlT3NjaWxsYXRvcigpOwogICAgICAgICAgICBjb25zdCBnYWluID0gY3R4LmNyZWF0ZUdhaW4oKTsKICAgICAgICAgICAgb3NjLmZyZXF1ZW5jeS5zZXRWYWx1ZUF0VGltZSg0NDAsIG5vdyk7CiAgICAgICAgICAgIGdhaW4uZ2Fpbi5zZXRWYWx1ZUF0VGltZSgwLjA4LCBub3cpOwogICAgICAgICAgICBnYWluLmdhaW4uZXhwb25lbnRpYWxSYW1wVG9WYWx1ZUF0VGltZSgwLjAwMSwgbm93ICsgMC4wNSk7CiAgICAgICAgICAgIG9zYy5jb25uZWN0KGdhaW4pOwogICAgICAgICAgICBnYWluLmNvbm5lY3QoY3R4LmRlc3RpbmF0aW9uKTsKICAgICAgICAgICAgb3NjLnN0YXJ0KG5vdyk7CiAgICAgICAgICAgIG9zYy5zdG9wKG5vdyArIDAuMDYpOwogICAgICAgICAgfQogICAgICAgIH0gY2F0Y2goZSkge30KICAgICAgfQoKICAgICAgLy8gQ29uZmV0dGkgYW5pbWF0aW9uCiAgICAgIGZ1bmN0aW9uIHRyaWdnZXJDb25mZXR0aSgpIHsKICAgICAgICBjb25zdCBjYW52YXMgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnY29uZmV0dGktY2FudmFzJyk7CiAgICAgICAgaWYgKCFjYW52YXMpIHJldHVybjsKICAgICAgICBjYW52YXMud2lkdGggPSBjYW52YXMuY2xpZW50V2lkdGg7CiAgICAgICAgY2FudmFzLmhlaWdodCA9IGNhbnZhcy5jbGllbnRIZWlnaHQ7CiAgICAgICAgY29uc3QgY3R4ID0gY2FudmFzLmdldENvbnRleHQoJzJkJyk7CiAgICAgICAgY29uc3QgcGFydGljbGVzID0gW107CiAgICAgICAgY29uc3QgY29sb3JzID0gWycjZjU5ZTBiJywgJyNmYmJmMjQnLCAnI2Y0M2Y1ZScsICcjMTBiOTgxJywgJyMzYjgyZjYnLCAnI2ZmZmZmZiddOwoKICAgICAgICBmb3IgKGxldCBpID0gMDsgaSA8IDkwOyBpKyspIHsKICAgICAgICAgIHBhcnRpY2xlcy5wdXNoKHsKICAgICAgICAgICAgeDogY2FudmFzLndpZHRoIC8gMiArIChNYXRoLnJhbmRvbSgpIC0gMC41KSAqIDEwMCwKICAgICAgICAgICAgeTogY2FudmFzLmhlaWdodCAvIDMsCiAgICAgICAgICAgIHZ4OiAoTWF0aC5yYW5kb20oKSAtIDAuNSkgKiAxNCwKICAgICAgICAgICAgdnk6IC03IC0gTWF0aC5yYW5kb20oKSAqIDgsCiAgICAgICAgICAgIGNvbG9yOiBjb2xvcnNbTWF0aC5mbG9vcihNYXRoLnJhbmRvbSgpICogY29sb3JzLmxlbmd0aCldLAogICAgICAgICAgICBzaXplOiA2ICsgTWF0aC5yYW5kb20oKSAqIDgsCiAgICAgICAgICAgIHJvdDogTWF0aC5yYW5kb20oKSAqIDM2MCwKICAgICAgICAgICAgcm90U3BlZWQ6IChNYXRoLnJhbmRvbSgpIC0gMC41KSAqIDEwLAogICAgICAgICAgICBncmF2aXR5OiAwLjM1LAogICAgICAgICAgICBhbHBoYTogMS4wCiAgICAgICAgICB9KTsKICAgICAgICB9CgogICAgICAgIGxldCBhbmltSWQ7CiAgICAgICAgZnVuY3Rpb24gdXBkYXRlKCkgewogICAgICAgICAgY3R4LmNsZWFyUmVjdCgwLCAwLCBjYW52YXMud2lkdGgsIGNhbnZhcy5oZWlnaHQpOwogICAgICAgICAgbGV0IGFsaXZlID0gZmFsc2U7CiAgICAgICAgICBwYXJ0aWNsZXMuZm9yRWFjaChwID0+IHsKICAgICAgICAgICAgcC54ICs9IHAudng7CiAgICAgICAgICAgIHAueSArPSBwLnZ5OwogICAgICAgICAgICBwLnZ5ICs9IHAuZ3Jhdml0eTsKICAgICAgICAgICAgcC5yb3QgKz0gcC5yb3RTcGVlZDsKICAgICAgICAgICAgcC5hbHBoYSAtPSAwLjAxMjsKICAgICAgICAgICAgaWYgKHAuYWxwaGEgPiAwKSB7CiAgICAgICAgICAgICAgYWxpdmUgPSB0cnVlOwogICAgICAgICAgICAgIGN0eC5zYXZlKCk7CiAgICAgICAgICAgICAgY3R4LnRyYW5zbGF0ZShwLngsIHAueSk7CiAgICAgICAgICAgICAgY3R4LnJvdGF0ZShwLnJvdCAqIE1hdGguUEkgLyAxODApOwogICAgICAgICAgICAgIGN0eC5maWxsU3R5bGUgPSBwLmNvbG9yOwogICAgICAgICAgICAgIGN0eC5nbG9iYWxBbHBoYSA9IE1hdGgubWF4KDAsIHAuYWxwaGEpOwogICAgICAgICAgICAgIGN0eC5maWxsUmVjdCgtcC5zaXplIC8gMiwgLXAuc2l6ZSAvIDIsIHAuc2l6ZSwgcC5zaXplICogMC42KTsKICAgICAgICAgICAgICBjdHgucmVzdG9yZSgpOwogICAgICAgICAgICB9CiAgICAgICAgICB9KTsKICAgICAgICAgIGlmIChhbGl2ZSkgewogICAgICAgICAgICBhbmltSWQgPSByZXF1ZXN0QW5pbWF0aW9uRnJhbWUodXBkYXRlKTsKICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgIGN0eC5jbGVhclJlY3QoMCwgMCwgY2FudmFzLndpZHRoLCBjYW52YXMuaGVpZ2h0KTsKICAgICAgICAgIH0KICAgICAgICB9CiAgICAgICAgdXBkYXRlKCk7CiAgICAgIH0KCiAgICAgIGZ1bmN0aW9uIHNob3dUb2FzdChtc2cpIHsKICAgICAgICBjb25zdCB0b2FzdCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdjaGVhdC10b2FzdCcpOwogICAgICAgIGlmICghdG9hc3QpIHJldHVybjsKICAgICAgICB0b2FzdC50ZXh0Q29udGVudCA9IG1zZzsKICAgICAgICB0b2FzdC5jbGFzc0xpc3QuYWRkKCdzaG93Jyk7CiAgICAgICAgc2V0VGltZW91dCgoKSA9PiB0b2FzdC5jbGFzc0xpc3QucmVtb3ZlKCdzaG93JyksIDQwMDApOwogICAgICB9CgogICAgICBmdW5jdGlvbiB0b2dnbGUxMDBQZXJjZW50Q2hlYXQoKSB7CiAgICAgICAgaXMxMDBQZXJjZW50Q2hlYXRBY3RpdmUgPSAhaXMxMDBQZXJjZW50Q2hlYXRBY3RpdmU7CiAgICAgICAgY29uc3QgYmFkZ2UgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnY2hlYXQtYmFkZ2UnKTsKICAgICAgICAKICAgICAgICBpZiAoaXMxMDBQZXJjZW50Q2hlYXRBY3RpdmUpIHsKICAgICAgICAgIHBsYXlDaGltZSh0cnVlKTsKICAgICAgICAgIHRyaWdnZXJDb25mZXR0aSgpOwogICAgICAgICAgYmFkZ2UudGV4dENvbnRlbnQgPSAn4pyoIDEwMCUgUGVyZmVjdCBDaGVhdCBBY3RpdmUg4pyoJzsKICAgICAgICAgIGJhZGdlLmNsYXNzTGlzdC5hZGQoJ2FjdGl2ZScpOwogICAgICAgICAgc2hvd1RvYXN0KCfwn4yfIEVBU1RFUiBFR0cgVU5MT0NLRUQhIEN1c3RvbWVycyBXaWxsIEFsd2F5cyBBd2FyZCAxMDAlIFNjb3JlcyEg8J+MnycpOwoKICAgICAgICAgIC8vIEhvdC1zd2FwIHRvIDEwMCUgcGF0Y2hlZCBTV0YKICAgICAgICAgIGlmIChydWZmbGVQbGF5ZXIpIHsKICAgICAgICAgICAgcnVmZmxlUGxheWVyLmxvYWQoJ2dhbWVfMTAwLnN3ZicpLmNhdGNoKGUgPT4gY29uc29sZS5lcnJvcihlKSk7CiAgICAgICAgICB9CiAgICAgICAgfSBlbHNlIHsKICAgICAgICAgIHBsYXlDaGltZShmYWxzZSk7CiAgICAgICAgICBiYWRnZS50ZXh0Q29udGVudCA9ICdOb3JtYWwnOwogICAgICAgICAgYmFkZ2UuY2xhc3NMaXN0LnJlbW92ZSgnYWN0aXZlJyk7CiAgICAgICAgICBzaG93VG9hc3QoJ1N0YW5kYXJkIG1vZGUgcmVzdG9yZWQuJyk7CgogICAgICAgICAgaWYgKHJ1ZmZsZVBsYXllcikgewogICAgICAgICAgICBydWZmbGVQbGF5ZXIubG9hZCgnZ2FtZS5zd2YnKS5jYXRjaChlID0+IGNvbnNvbGUuZXJyb3IoZSkpOwogICAgICAgICAgfQogICAgICAgIH0KICAgICAgfQoKICAgICAgLy8gSGFuZGxlIEVhc3RlciBlZ2cgYnV0dG9uIGNsaWNrcwogICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCcuZWdnLWJ0bicpLmZvckVhY2goYnRuID0+IHsKICAgICAgICBidG4uYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLCAoKSA9PiB7CiAgICAgICAgICBjb25zdCBrZXkgPSBidG4uZ2V0QXR0cmlidXRlKCdkYXRhLWtleScpOwogICAgICAgICAgYnRuLmNsYXNzTGlzdC5hZGQoJ3ByZXNzZWQnKTsKICAgICAgICAgIHNldFRpbWVvdXQoKCkgPT4gYnRuLmNsYXNzTGlzdC5yZW1vdmUoJ3ByZXNzZWQnKSwgMjAwKTsKCiAgICAgICAgICBjdXJyZW50Q29tYm9JbnB1dC5wdXNoKGtleSk7CiAgICAgICAgICBwbGF5Q2hpbWUoZmFsc2UpOwoKICAgICAgICAgIC8vIFZlcmlmeSBwcmVmaXggbWF0Y2gKICAgICAgICAgIGNvbnN0IGlkeCA9IGN1cnJlbnRDb21ib0lucHV0Lmxlbmd0aCAtIDE7CiAgICAgICAgICBpZiAoY3VycmVudENvbWJvSW5wdXRbaWR4XSAhPT0gUkVRVUlSRURfQ09NQk9baWR4XSkgewogICAgICAgICAgICAvLyBSZXNldCBjb21ibyBpZiB3cm9uZyBidXR0b24KICAgICAgICAgICAgY3VycmVudENvbWJvSW5wdXQgPSBrZXkgPT09IFJFUVVJUkVEX0NPTUJPWzBdID8gW2tleV0gOiBbXTsKICAgICAgICAgIH0KCiAgICAgICAgICAvLyBDb21wbGV0ZSBjb21ibwogICAgICAgICAgaWYgKGN1cnJlbnRDb21ib0lucHV0Lmxlbmd0aCA9PT0gUkVRVUlSRURfQ09NQk8ubGVuZ3RoKSB7CiAgICAgICAgICAgIGN1cnJlbnRDb21ib0lucHV0ID0gW107CiAgICAgICAgICAgIHRvZ2dsZTEwMFBlcmNlbnRDaGVhdCgpOwogICAgICAgICAgfQogICAgICAgIH0pOwogICAgICB9KTsKCiAgICAgIC8vIEtleWJvYXJkIEVhc3RlciBFZ2c6IFR5cGluZyAnMTAwJyBvciAncGFwYScKICAgICAgbGV0IGtleUJ1ZmZlciA9ICcnOwogICAgICB3aW5kb3cuYWRkRXZlbnRMaXN0ZW5lcigna2V5ZG93bicsIChlKSA9PiB7CiAgICAgICAga2V5QnVmZmVyICs9IGUua2V5LnRvTG93ZXJDYXNlKCk7CiAgICAgICAgaWYgKGtleUJ1ZmZlci5sZW5ndGggPiA4KSBrZXlCdWZmZXIgPSBrZXlCdWZmZXIuc2xpY2UoLTgpOwogICAgICAgIGlmIChrZXlCdWZmZXIuZW5kc1dpdGgoJzEwMCcpIHx8IGtleUJ1ZmZlci5lbmRzV2l0aCgncGFwYScpKSB7CiAgICAgICAgICBrZXlCdWZmZXIgPSAnJzsKICAgICAgICAgIHRvZ2dsZTEwMFBlcmNlbnRDaGVhdCgpOwogICAgICAgIH0KICAgICAgfSk7CgogICAgICAvLyBTdGFydCBSdWZmbGUgUGxheWVyCiAgICAgIGZ1bmN0aW9uIHN0YXJ0UnVmZmxlKCkgewogICAgICAgIGNvbnN0IGNvbnRhaW5lciA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdnYW1lLWNvbnRhaW5lcicpOwogICAgICAgIGNvbnN0IG92ZXJsYXkgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbG9hZGluZy1vdmVybGF5Jyk7CiAgICAgICAgCiAgICAgICAgdHJ5IHsKICAgICAgICAgIGNvbnN0IHJ1ZmZsZSA9IHdpbmRvdy5SdWZmbGVQbGF5ZXIubmV3ZXN0ID8gd2luZG93LlJ1ZmZsZVBsYXllci5uZXdlc3QoKSA6IHdpbmRvdy5SdWZmbGVQbGF5ZXI7CiAgICAgICAgICBpZiAoIXJ1ZmZsZSB8fCAhcnVmZmxlLmNyZWF0ZVBsYXllcikgdGhyb3cgbmV3IEVycm9yKCJSdWZmbGUgcGxheWVyIGZhY3RvcnkgdW5hdmFpbGFibGUiKTsKICAgICAgICAgIAogICAgICAgICAgcnVmZmxlUGxheWVyID0gcnVmZmxlLmNyZWF0ZVBsYXllcigpOwogICAgICAgICAgcnVmZmxlUGxheWVyLmlkID0gInJ1ZmZsZS1wbGF5ZXIiOwogICAgICAgICAgY29udGFpbmVyLmFwcGVuZENoaWxkKHJ1ZmZsZVBsYXllcik7CgogICAgICAgICAgY29uc3QgdGFyZ2V0U3dmID0gaXMxMDBQZXJjZW50Q2hlYXRBY3RpdmUgPyAnZ2FtZV8xMDAuc3dmJyA6ICdnYW1lLnN3Zic7CiAgICAgICAgICBydWZmbGVQbGF5ZXIubG9hZCh0YXJnZXRTd2YpLnRoZW4oKCkgPT4gewogICAgICAgICAgICBpZiAob3ZlcmxheSkgewogICAgICAgICAgICAgIG92ZXJsYXkuc3R5bGUub3BhY2l0eSA9ICcwJzsKICAgICAgICAgICAgICBzZXRUaW1lb3V0KCgpID0+IG92ZXJsYXkucmVtb3ZlKCksIDQwMCk7CiAgICAgICAgICAgIH0KICAgICAgICAgIH0pLmNhdGNoKChlcnIpID0+IHsKICAgICAgICAgICAgY29uc29sZS5lcnJvcigiRXJyb3IgbG9hZGluZyBTV0Y6IiwgZXJyKTsKICAgICAgICAgICAgaWYgKG92ZXJsYXkpIHsKICAgICAgICAgICAgICBvdmVybGF5LmlubmVySFRNTCA9ICc8ZGl2IHN0eWxlPSJjb2xvcjojZWQ0MjQ1O2ZvbnQtd2VpZ2h0OjYwMDsiPkZhaWxlZCB0byBsb2FkIGdhbWUgU1dGPC9kaXY+JzsKICAgICAgICAgICAgfQogICAgICAgICAgfSk7CgogICAgICAgICAgd2luZG93LmFkZEV2ZW50TGlzdGVuZXIoJ2NsaWNrJywgKCkgPT4gewogICAgICAgICAgICB0cnkgeyBydWZmbGVQbGF5ZXIuZm9jdXMoKTsgfSBjYXRjaChlKSB7fQogICAgICAgICAgfSk7CiAgICAgICAgfSBjYXRjaCAoZSkgewogICAgICAgICAgY29uc29sZS5lcnJvcigiRmFpbGVkIHRvIGluaXRpYWxpemUgUnVmZmxlOiIsIGUpOwogICAgICAgICAgaWYgKG92ZXJsYXkpIHsKICAgICAgICAgICAgb3ZlcmxheS5pbm5lckhUTUwgPSAnPGRpdiBzdHlsZT0iY29sb3I6I2VkNDI0NTtmb250LXdlaWdodDo2MDA7Ij5FcnJvciBpbml0aWFsaXppbmcgUnVmZmxlIGVtdWxhdG9yPC9kaXY+JzsKICAgICAgICAgIH0KICAgICAgICB9CiAgICAgIH0KCiAgICAgIGlmICh0eXBlb2Ygd2luZG93LlJ1ZmZsZVBsYXllciAhPT0gJ3VuZGVmaW5lZCcgJiYgd2luZG93LlJ1ZmZsZVBsYXllci5uZXdlc3QpIHsKICAgICAgICBzdGFydFJ1ZmZsZSgpOwogICAgICB9IGVsc2UgewogICAgICAgIGNvbnN0IHMgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCdzY3JpcHQnKTsKICAgICAgICBzLnNyYyA9ICIvcnVmZmxlL3J1ZmZsZS5qcyI7CiAgICAgICAgcy5vbmxvYWQgPSAoKSA9PiBzZXRUaW1lb3V0KHN0YXJ0UnVmZmxlLCA1MCk7CiAgICAgICAgZG9jdW1lbnQuaGVhZC5hcHBlbmRDaGlsZChzKTsKICAgICAgfQogICAgfSkoKTsKICA8L3NjcmlwdD4KPC9ib2R5Pgo8L2h0bWw+Cg==";
 
     const CLOAK_PRESETS = {
       drive: { title: "My Drive - Google Drive", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 87.3 78'%3E%3Cpath fill='%230066da' d='m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z'/%3E%3Cpath fill='%2300ac47' d='M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44A9.06 9.06 0 0 0 0 53h27.5z'/%3E%3Cpath fill='%23ea4335' d='m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z'/%3E%3Cpath fill='%2300832d' d='M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z'/%3E%3Cpath fill='%232684fc' d='M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5L72.35 24.7c-.8-1.4-1.95-2.5-3.3-3.3L55.3 45.2z'/%3E%3Cpath fill='%23ffba00' d='m73.55 76.8-13.75-23.8H27.5l13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h23.3c1.6 0 3.15-.4 4.5-1.2z'/%3E%3C/svg%3E" },
@@ -106,77 +106,177 @@
       setTabCloak(cloakSelect ? cloakSelect.value : 'drive');
     } catch(e) {}
 
+    function makeShim(tb) {
+      return '<script>' +
+        '(function(){' +
+        'var tb=' + JSON.stringify(tb) + ';' +
+        'if(!tb.endsWith("/"))tb+="/";' +
+        'var OrigImage=window.Image;' +
+        'window.Image=function(w,h){var img=new OrigImage(w,h);img.crossOrigin="anonymous";return img;};' +
+        'var origCE=document.createElement.bind(document);' +
+        'document.createElement=function(t,o){var el=origCE(t,o);if(t&&t.toLowerCase()==="img"){try{el.crossOrigin="anonymous";}catch(e){}}return el;};' +
+        'var OrigAudio=window.Audio;' +
+        'if(OrigAudio){window.Audio=function(s){var a=new OrigAudio();try{a.crossOrigin="anonymous";}catch(e){}if(s){if(typeof s==="string"&&!/^(https?:|data:|blob:)/i.test(s)){s=new URL(s,tb).href;}a.src=s;}return a;};}' +
+        'class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0||bStr.indexOf("file:")===0){bStr=tb;}try{super(u,bStr);}catch(e){super(u,tb);}}}' +
+        'window.URL=PatchedURL;' +
+        'var origFetch=window.fetch;' +
+        'if(origFetch){window.fetch=function(inp,init){if(typeof inp==="string"){if(!/^(https?:|data:|blob:)/i.test(inp)){inp=new URL(inp,tb).href;}}else if(inp&&typeof inp==="object"&&inp.url){if(!/^(https?:|data:|blob:)/i.test(inp.url)){inp=new Request(new URL(inp.url,tb).href,inp);}}return origFetch.call(this,inp,init);};}' +
+        'var origXhrOpen=XMLHttpRequest.prototype.open;' +
+        'XMLHttpRequest.prototype.open=function(m,u){var args=Array.prototype.slice.call(arguments);if(typeof u==="string"&&!/^(https?:|data:|blob:)/i.test(u)){args[1]=new URL(u,tb).href;}return origXhrOpen.apply(this,args);};' +
+        'var pageLoaded=(document.readyState==="complete");' +
+        'window.addEventListener("load",function(){pageLoaded=true;},{capture:true});' +
+        'var origWinAEL=window.addEventListener.bind(window);' +
+        'window.addEventListener=function(t,l,o){if(t==="load"&&(pageLoaded||document.readyState==="complete")){setTimeout(function(){try{if(typeof l==="function")l.call(window,new Event("load"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("load"));}catch(e){}},15);}return origWinAEL(t,l,o);};' +
+        'var origOnload=null;' +
+        'Object.defineProperty(window,"onload",{get:function(){return origOnload;},set:function(fn){origOnload=fn;if(pageLoaded||document.readyState==="complete"){setTimeout(function(){try{if(typeof fn==="function")fn.call(window,new Event("load"));}catch(e){}},15);}},configurable:true});' +
+        'var domReady=(document.readyState==="interactive"||document.readyState==="complete");' +
+        'document.addEventListener("DOMContentLoaded",function(){domReady=true;},{capture:true});' +
+        'var origDocAEL=document.addEventListener.bind(document);' +
+        'document.addEventListener=function(t,l,o){if(t==="DOMContentLoaded"&&(domReady||document.readyState!=="loading")){setTimeout(function(){try{if(typeof l==="function")l.call(document,new Event("DOMContentLoaded"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("DOMContentLoaded"));}catch(e){}},15);}return origDocAEL(t,l,o);};' +
+        '})();<' + '/script>';
+    }
+
     async function resolveAndLoadGame() {
-      const base = document.baseURI || window.location.href;
       const enc = encodeURIComponent(GAME_FOLDER);
+      const isFile = window.location.protocol === 'file:' || (document.baseURI && document.baseURI.startsWith('file:'));
 
       if (IS_EMULATOR) {
-        const playerCandidates = [
-          new URL('emulator/player.html', base).href,
-          new URL('../emulator/player.html', base).href,
-          'http://localhost:8080/emulator/player.html',
-          TAILSCALE_ORIGIN + '/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html'
-        ];
+        const playerCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          playerCandidates.push(new URL('emulator/player.html', base).href);
+          playerCandidates.push(new URL('../emulator/player.html', base).href);
+        }
+        playerCandidates.push('http://localhost:8080/emulator/player.html');
+        playerCandidates.push('http://127.0.0.1:8080/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html');
+        playerCandidates.push(TAILSCALE_ORIGIN + '/emulator/player.html');
+
         for (const p of playerCandidates) {
           try {
-            const r = await fetch(p);
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const r = await fetch(p, { signal: c.signal });
+            clearTimeout(t);
             if (r.ok) {
               const html = await r.text();
-              const baseTag = '<base href="' + new URL('./', p).href + '">';
+              effectiveGameUrl = p;
+              const targetBase = new URL('./', p).href;
+              const baseTag = '<base href="' + targetBase + '">';
+              const shim = makeShim(targetBase);
               const injectScript = '<script>window.__INJECTED_QUERY__ = ' + JSON.stringify(QUERY_STR) + ';<' + '/script>';
-              const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + injectScript) : (baseTag + injectScript + html);
+              const full = html.includes('<head>')
+                ? html.replace('<head>', '<head>' + baseTag + shim + injectScript)
+                : (baseTag + shim + injectScript + html);
               frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
               return;
             }
           } catch(e) {}
         }
-        frame.src = new URL('emulator/player.svg?' + QUERY_STR, base).href;
+        frame.src = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.svg?' + QUERY_STR;
         return;
       }
 
-      if (INLINE_SRC && INLINE_SRC.length > 50) {
-        const targetBase = new URL('games/' + enc + '/', base).href;
-        const baseTag = '<base href="' + targetBase + '">';
-        const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-        const full = INLINE_SRC.includes('<head>') ? INLINE_SRC.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + INLINE_SRC);
+      let inlineHtml = '';
+      if (INLINE_B64) {
+        try { inlineHtml = decodeURIComponent(escape(atob(INLINE_B64))); }
+        catch(e) { try { inlineHtml = atob(INLINE_B64); } catch(e2) {} }
+      }
+
+      // Check if inlineHtml already has a hardcoded http/https <base href="...">
+      let preExistingBase = '';
+      if (inlineHtml) {
+        const baseTagIdx = inlineHtml.toLowerCase().indexOf('<base');
+        if (baseTagIdx !== -1) {
+          const snippet = inlineHtml.slice(baseTagIdx, baseTagIdx + 400);
+          const hrefIdx = snippet.toLowerCase().indexOf('href=');
+          if (hrefIdx !== -1) {
+            const q = snippet[hrefIdx + 5];
+            if (q === '"' || q === "'") {
+              const endQ = snippet.indexOf(q, hrefIdx + 6);
+              if (endQ !== -1) {
+                const val = snippet.slice(hrefIdx + 6, endQ);
+                if (val.startsWith('http://') || val.startsWith('https://')) {
+                  preExistingBase = val;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      let activeBase = '';
+      let fetchedHtml = '';
+
+      if (preExistingBase) {
+        activeBase = preExistingBase;
+      } else {
+        const baseCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          baseCandidates.push(new URL('games/' + enc + '/', base).href);
+          baseCandidates.push(new URL('../games/' + enc + '/', base).href);
+        }
+        baseCandidates.push('http://localhost:8080/games/' + enc + '/');
+        baseCandidates.push('http://127.0.0.1:8080/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/');
+        baseCandidates.push(TAILSCALE_ORIGIN + '/games/' + enc + '/');
+
+        for (const b of baseCandidates) {
+          try {
+            const probe = b.endsWith('/') ? b + 'index.html' : b + '/index.html';
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const res = await fetch(probe, { signal: c.signal });
+            clearTimeout(t);
+            if (res.ok) {
+              const txt = await res.text();
+              if (txt.includes('Package size exceeded') || txt.includes('Cannot find "') || txt.trim().startsWith('404')) continue;
+              activeBase = b;
+              fetchedHtml = txt;
+              break;
+            }
+          } catch(e) {}
+        }
+        if (!activeBase) {
+          activeBase = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/';
+        }
+      }
+
+      let rawHtml = (inlineHtml && inlineHtml.length > 50) ? inlineHtml : fetchedHtml;
+
+      if (!rawHtml) {
+        try {
+          const probe = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
+          const c = new AbortController();
+          const t = setTimeout(() => c.abort(), 2500);
+          const res = await fetch(probe, { signal: c.signal });
+          clearTimeout(t);
+          if (res.ok) rawHtml = await res.text();
+        } catch(e) {}
+      }
+
+      if (rawHtml) {
+        effectiveGameUrl = activeBase;
+        const shim = makeShim(activeBase);
+        let full = rawHtml;
+        if (!preExistingBase) {
+          const baseTag = '<base href="' + activeBase + '">';
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + baseTag + shim)
+            : (baseTag + shim + full);
+        } else {
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + shim)
+            : (shim + full);
+        }
         frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
         return;
       }
 
-      const candidates = [
-        new URL('games/' + enc + '/index.html', base).href,
-        new URL('../games/' + enc + '/index.html', base).href,
-        'http://localhost:8080/games/' + enc + '/index.html',
-        TAILSCALE_ORIGIN + '/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesv7iskewl/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/index.html'
-      ];
-
-      for (const url of candidates) {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 2500);
-          const res = await fetch(url, { signal: timer.signal });
-          clearTimeout(timer);
-          if (res.ok) {
-            let html = await res.text();
-            if (html.includes('Package size exceeded') || html.includes('Cannot find "') || html.trim().startsWith('404')) continue;
-            effectiveGameUrl = url;
-            const targetBase = new URL('./', url).href;
-            const baseTag = '<base href="' + targetBase + '">';
-            const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-            const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + html);
-            frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
-            return;
-          }
-        } catch(e) {}
-      }
-
-      effectiveGameUrl = TAILSCALE_ORIGIN + '/games/' + enc + '/index.html';
+      effectiveGameUrl = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
       frame.src = effectiveGameUrl;
     }
 

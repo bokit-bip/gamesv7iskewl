@@ -29,7 +29,7 @@
     const GAME_FOLDER = "deltarune";
     const IS_EMULATOR = false;
     const QUERY_STR = "";
-    const INLINE_SRC = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>DELTARUNE (Chapters 1-5)</title>\n  <link rel=\"stylesheet\" href=\"style.css\">\n  <style>\n    * {\n      -webkit-appearance: none;\n      -webkit-tap-highlight-color: transparent;\n      -webkit-text-size-adjust: 100%;\n      -webkit-font-smoothing: antialiased;\n      box-sizing: border-box;\n    }\n    *:focus {\n      outline: none;\n      -webkit-focus-ring-color: transparent;\n    }\n    ::-webkit-scrollbar {\n      display: none;\n    }\n    body {\n      background-color: #000;\n      color: #fff;\n      font-family: 'Retro Gaming', monospace, sans-serif;\n      margin: 0;\n      padding: 20px;\n      display: flex;\n      flex-direction: column;\n      align-items: center;\n      justify-content: center;\n      min-height: 100vh;\n    }\n    .logo-container {\n      margin-bottom: 24px;\n      text-align: center;\n    }\n    .logo {\n      max-width: 90vw;\n      width: 440px;\n      height: auto;\n      image-rendering: pixelated;\n    }\n    .menu {\n      display: flex;\n      flex-direction: column;\n      gap: 12px;\n      width: 100%;\n      max-width: 480px;\n    }\n    .row {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      padding: 12px 18px;\n      background: rgba(255, 255, 255, 0.05);\n      border: 2px solid #333;\n      border-radius: 8px;\n      text-decoration: none;\n      color: #fff;\n      transition: all 0.2s ease;\n      cursor: pointer;\n    }\n    .row:hover, .row.selected {\n      background: rgba(255, 255, 255, 0.15);\n      border-color: #ff3366;\n      transform: scale(1.02);\n      box-shadow: 0 0 15px rgba(255, 51, 102, 0.4);\n    }\n    .disabled-row {\n      display: flex;\n      align-items: center;\n      justify-content: space-between;\n      padding: 12px 18px;\n      background: rgba(255, 255, 255, 0.02);\n      border: 2px solid #222;\n      border-radius: 8px;\n      color: #666;\n      cursor: not-allowed;\n    }\n    .chapter {\n      font-weight: bold;\n      font-size: 15px;\n      color: #ffcc00;\n    }\n    .title {\n      font-size: 14px;\n      color: #eee;\n    }\n    .disabled-title {\n      font-size: 14px;\n      color: #555;\n    }\n    .row img, .disabled-row img {\n      width: 26px;\n      height: 23px;\n      image-rendering: pixelated;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"logo-container\">\n    <img src=\"logo.png\" alt=\"DELTARUNE\" class=\"logo\">\n  </div>\n  <div class=\"menu\">\n    <a href=\"chapter1/index.html\" class=\"row\">\n      <span class=\"chapter\">Chapter 1</span>\n      <span class=\"title\">The Beginning</span>\n      <img src=\"icons/1.png\" alt=\"Ch 1\">\n    </a>\n    <a href=\"chapter2/index.html\" class=\"row\">\n      <span class=\"chapter\">Chapter 2</span>\n      <span class=\"title\">A Cyber's World</span>\n      <img src=\"icons/2.png\" alt=\"Ch 2\">\n    </a>\n    <a href=\"chapter3/index.html\" class=\"row\">\n      <span class=\"chapter\">Chapter 3</span>\n      <span class=\"title\">Late Night</span>\n      <img src=\"icons/3.png\" alt=\"Ch 3\">\n    </a>\n    <a href=\"chapter4/index.html\" class=\"row\">\n      <span class=\"chapter\">Chapter 4</span>\n      <span class=\"title\">Prophecy</span>\n      <img src=\"icons/4.png\" alt=\"Ch 4\">\n    </a>\n    <a href=\"chapter5/index.html\" class=\"row\">\n      <span class=\"chapter\">Chapter 5</span>\n      <span class=\"title\">Festival Day</span>\n      <img src=\"icons/5.png\" alt=\"Ch 5\">\n    </a>\n    <div class=\"disabled-row\">\n      <span class=\"chapter\">Chapter 6</span>\n      <span class=\"disabled-title\">Coming Soon</span>\n      <img src=\"icons/0.png\" alt=\"Ch 6\">\n    </div>\n    <div class=\"disabled-row\">\n      <span class=\"chapter\">Chapter 7</span>\n      <span class=\"disabled-title\">Coming Soon</span>\n      <img src=\"icons/0.png\" alt=\"Ch 7\">\n    </div>\n  </div>\n\n  <script>\n    let selectedIndex = 0;\n    const rows = document.querySelectorAll('.row');\n    if (rows.length > 0) rows[0].classList.add('selected');\n\n    document.addEventListener('keydown', function(event) {\n      if (rows.length === 0) return;\n      if (event.key === 'ArrowUp') {\n        event.preventDefault();\n        rows[selectedIndex].classList.remove('selected');\n        selectedIndex = (selectedIndex - 1 + rows.length) % rows.length;\n        rows[selectedIndex].classList.add('selected');\n      } else if (event.key === 'ArrowDown') {\n        event.preventDefault();\n        rows[selectedIndex].classList.remove('selected');\n        selectedIndex = (selectedIndex + 1) % rows.length;\n        rows[selectedIndex].classList.add('selected');\n      } else if (event.key === 'Enter') {\n        event.preventDefault();\n        rows[selectedIndex].click();\n      }\n    });\n\n    rows.forEach((row, i) => {\n      row.addEventListener('mouseenter', () => {\n        rows[selectedIndex].classList.remove('selected');\n        selectedIndex = i;\n        rows[selectedIndex].classList.add('selected');\n      });\n    });\n  <\\/script>\n</body>\n</html>\n";
+    const INLINE_B64 = "PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CiAgPG1ldGEgY2hhcnNldD0iVVRGLTgiPgogIDxtZXRhIG5hbWU9InZpZXdwb3J0IiBjb250ZW50PSJ3aWR0aD1kZXZpY2Utd2lkdGgsIGluaXRpYWwtc2NhbGU9MS4wIj4KICA8dGl0bGU+REVMVEFSVU5FIChDaGFwdGVycyAxLTUpPC90aXRsZT4KICA8bGluayByZWw9InN0eWxlc2hlZXQiIGhyZWY9InN0eWxlLmNzcyI+CiAgPHN0eWxlPgogICAgKiB7CiAgICAgIC13ZWJraXQtYXBwZWFyYW5jZTogbm9uZTsKICAgICAgLXdlYmtpdC10YXAtaGlnaGxpZ2h0LWNvbG9yOiB0cmFuc3BhcmVudDsKICAgICAgLXdlYmtpdC10ZXh0LXNpemUtYWRqdXN0OiAxMDAlOwogICAgICAtd2Via2l0LWZvbnQtc21vb3RoaW5nOiBhbnRpYWxpYXNlZDsKICAgICAgYm94LXNpemluZzogYm9yZGVyLWJveDsKICAgIH0KICAgICo6Zm9jdXMgewogICAgICBvdXRsaW5lOiBub25lOwogICAgICAtd2Via2l0LWZvY3VzLXJpbmctY29sb3I6IHRyYW5zcGFyZW50OwogICAgfQogICAgOjotd2Via2l0LXNjcm9sbGJhciB7CiAgICAgIGRpc3BsYXk6IG5vbmU7CiAgICB9CiAgICBib2R5IHsKICAgICAgYmFja2dyb3VuZC1jb2xvcjogIzAwMDsKICAgICAgY29sb3I6ICNmZmY7CiAgICAgIGZvbnQtZmFtaWx5OiAnUmV0cm8gR2FtaW5nJywgbW9ub3NwYWNlLCBzYW5zLXNlcmlmOwogICAgICBtYXJnaW46IDA7CiAgICAgIHBhZGRpbmc6IDIwcHg7CiAgICAgIGRpc3BsYXk6IGZsZXg7CiAgICAgIGZsZXgtZGlyZWN0aW9uOiBjb2x1bW47CiAgICAgIGFsaWduLWl0ZW1zOiBjZW50ZXI7CiAgICAgIGp1c3RpZnktY29udGVudDogY2VudGVyOwogICAgICBtaW4taGVpZ2h0OiAxMDB2aDsKICAgIH0KICAgIC5sb2dvLWNvbnRhaW5lciB7CiAgICAgIG1hcmdpbi1ib3R0b206IDI0cHg7CiAgICAgIHRleHQtYWxpZ246IGNlbnRlcjsKICAgIH0KICAgIC5sb2dvIHsKICAgICAgbWF4LXdpZHRoOiA5MHZ3OwogICAgICB3aWR0aDogNDQwcHg7CiAgICAgIGhlaWdodDogYXV0bzsKICAgICAgaW1hZ2UtcmVuZGVyaW5nOiBwaXhlbGF0ZWQ7CiAgICB9CiAgICAubWVudSB7CiAgICAgIGRpc3BsYXk6IGZsZXg7CiAgICAgIGZsZXgtZGlyZWN0aW9uOiBjb2x1bW47CiAgICAgIGdhcDogMTJweDsKICAgICAgd2lkdGg6IDEwMCU7CiAgICAgIG1heC13aWR0aDogNDgwcHg7CiAgICB9CiAgICAucm93IHsKICAgICAgZGlzcGxheTogZmxleDsKICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjsKICAgICAganVzdGlmeS1jb250ZW50OiBzcGFjZS1iZXR3ZWVuOwogICAgICBwYWRkaW5nOiAxMnB4IDE4cHg7CiAgICAgIGJhY2tncm91bmQ6IHJnYmEoMjU1LCAyNTUsIDI1NSwgMC4wNSk7CiAgICAgIGJvcmRlcjogMnB4IHNvbGlkICMzMzM7CiAgICAgIGJvcmRlci1yYWRpdXM6IDhweDsKICAgICAgdGV4dC1kZWNvcmF0aW9uOiBub25lOwogICAgICBjb2xvcjogI2ZmZjsKICAgICAgdHJhbnNpdGlvbjogYWxsIDAuMnMgZWFzZTsKICAgICAgY3Vyc29yOiBwb2ludGVyOwogICAgfQogICAgLnJvdzpob3ZlciwgLnJvdy5zZWxlY3RlZCB7CiAgICAgIGJhY2tncm91bmQ6IHJnYmEoMjU1LCAyNTUsIDI1NSwgMC4xNSk7CiAgICAgIGJvcmRlci1jb2xvcjogI2ZmMzM2NjsKICAgICAgdHJhbnNmb3JtOiBzY2FsZSgxLjAyKTsKICAgICAgYm94LXNoYWRvdzogMCAwIDE1cHggcmdiYSgyNTUsIDUxLCAxMDIsIDAuNCk7CiAgICB9CiAgICAuZGlzYWJsZWQtcm93IHsKICAgICAgZGlzcGxheTogZmxleDsKICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjsKICAgICAganVzdGlmeS1jb250ZW50OiBzcGFjZS1iZXR3ZWVuOwogICAgICBwYWRkaW5nOiAxMnB4IDE4cHg7CiAgICAgIGJhY2tncm91bmQ6IHJnYmEoMjU1LCAyNTUsIDI1NSwgMC4wMik7CiAgICAgIGJvcmRlcjogMnB4IHNvbGlkICMyMjI7CiAgICAgIGJvcmRlci1yYWRpdXM6IDhweDsKICAgICAgY29sb3I6ICM2NjY7CiAgICAgIGN1cnNvcjogbm90LWFsbG93ZWQ7CiAgICB9CiAgICAuY2hhcHRlciB7CiAgICAgIGZvbnQtd2VpZ2h0OiBib2xkOwogICAgICBmb250LXNpemU6IDE1cHg7CiAgICAgIGNvbG9yOiAjZmZjYzAwOwogICAgfQogICAgLnRpdGxlIHsKICAgICAgZm9udC1zaXplOiAxNHB4OwogICAgICBjb2xvcjogI2VlZTsKICAgIH0KICAgIC5kaXNhYmxlZC10aXRsZSB7CiAgICAgIGZvbnQtc2l6ZTogMTRweDsKICAgICAgY29sb3I6ICM1NTU7CiAgICB9CiAgICAucm93IGltZywgLmRpc2FibGVkLXJvdyBpbWcgewogICAgICB3aWR0aDogMjZweDsKICAgICAgaGVpZ2h0OiAyM3B4OwogICAgICBpbWFnZS1yZW5kZXJpbmc6IHBpeGVsYXRlZDsKICAgIH0KICA8L3N0eWxlPgo8L2hlYWQ+Cjxib2R5PgogIDxkaXYgY2xhc3M9ImxvZ28tY29udGFpbmVyIj4KICAgIDxpbWcgc3JjPSJsb2dvLnBuZyIgYWx0PSJERUxUQVJVTkUiIGNsYXNzPSJsb2dvIj4KICA8L2Rpdj4KICA8ZGl2IGNsYXNzPSJtZW51Ij4KICAgIDxhIGhyZWY9ImNoYXB0ZXIxL2luZGV4Lmh0bWwiIGNsYXNzPSJyb3ciPgogICAgICA8c3BhbiBjbGFzcz0iY2hhcHRlciI+Q2hhcHRlciAxPC9zcGFuPgogICAgICA8c3BhbiBjbGFzcz0idGl0bGUiPlRoZSBCZWdpbm5pbmc8L3NwYW4+CiAgICAgIDxpbWcgc3JjPSJpY29ucy8xLnBuZyIgYWx0PSJDaCAxIj4KICAgIDwvYT4KICAgIDxhIGhyZWY9ImNoYXB0ZXIyL2luZGV4Lmh0bWwiIGNsYXNzPSJyb3ciPgogICAgICA8c3BhbiBjbGFzcz0iY2hhcHRlciI+Q2hhcHRlciAyPC9zcGFuPgogICAgICA8c3BhbiBjbGFzcz0idGl0bGUiPkEgQ3liZXIncyBXb3JsZDwvc3Bhbj4KICAgICAgPGltZyBzcmM9Imljb25zLzIucG5nIiBhbHQ9IkNoIDIiPgogICAgPC9hPgogICAgPGEgaHJlZj0iY2hhcHRlcjMvaW5kZXguaHRtbCIgY2xhc3M9InJvdyI+CiAgICAgIDxzcGFuIGNsYXNzPSJjaGFwdGVyIj5DaGFwdGVyIDM8L3NwYW4+CiAgICAgIDxzcGFuIGNsYXNzPSJ0aXRsZSI+TGF0ZSBOaWdodDwvc3Bhbj4KICAgICAgPGltZyBzcmM9Imljb25zLzMucG5nIiBhbHQ9IkNoIDMiPgogICAgPC9hPgogICAgPGEgaHJlZj0iY2hhcHRlcjQvaW5kZXguaHRtbCIgY2xhc3M9InJvdyI+CiAgICAgIDxzcGFuIGNsYXNzPSJjaGFwdGVyIj5DaGFwdGVyIDQ8L3NwYW4+CiAgICAgIDxzcGFuIGNsYXNzPSJ0aXRsZSI+UHJvcGhlY3k8L3NwYW4+CiAgICAgIDxpbWcgc3JjPSJpY29ucy80LnBuZyIgYWx0PSJDaCA0Ij4KICAgIDwvYT4KICAgIDxhIGhyZWY9ImNoYXB0ZXI1L2luZGV4Lmh0bWwiIGNsYXNzPSJyb3ciPgogICAgICA8c3BhbiBjbGFzcz0iY2hhcHRlciI+Q2hhcHRlciA1PC9zcGFuPgogICAgICA8c3BhbiBjbGFzcz0idGl0bGUiPkZlc3RpdmFsIERheTwvc3Bhbj4KICAgICAgPGltZyBzcmM9Imljb25zLzUucG5nIiBhbHQ9IkNoIDUiPgogICAgPC9hPgogICAgPGRpdiBjbGFzcz0iZGlzYWJsZWQtcm93Ij4KICAgICAgPHNwYW4gY2xhc3M9ImNoYXB0ZXIiPkNoYXB0ZXIgNjwvc3Bhbj4KICAgICAgPHNwYW4gY2xhc3M9ImRpc2FibGVkLXRpdGxlIj5Db21pbmcgU29vbjwvc3Bhbj4KICAgICAgPGltZyBzcmM9Imljb25zLzAucG5nIiBhbHQ9IkNoIDYiPgogICAgPC9kaXY+CiAgICA8ZGl2IGNsYXNzPSJkaXNhYmxlZC1yb3ciPgogICAgICA8c3BhbiBjbGFzcz0iY2hhcHRlciI+Q2hhcHRlciA3PC9zcGFuPgogICAgICA8c3BhbiBjbGFzcz0iZGlzYWJsZWQtdGl0bGUiPkNvbWluZyBTb29uPC9zcGFuPgogICAgICA8aW1nIHNyYz0iaWNvbnMvMC5wbmciIGFsdD0iQ2ggNyI+CiAgICA8L2Rpdj4KICA8L2Rpdj4KCiAgPHNjcmlwdD4KICAgIGxldCBzZWxlY3RlZEluZGV4ID0gMDsKICAgIGNvbnN0IHJvd3MgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCcucm93Jyk7CiAgICBpZiAocm93cy5sZW5ndGggPiAwKSByb3dzWzBdLmNsYXNzTGlzdC5hZGQoJ3NlbGVjdGVkJyk7CgogICAgZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcigna2V5ZG93bicsIGZ1bmN0aW9uKGV2ZW50KSB7CiAgICAgIGlmIChyb3dzLmxlbmd0aCA9PT0gMCkgcmV0dXJuOwogICAgICBpZiAoZXZlbnQua2V5ID09PSAnQXJyb3dVcCcpIHsKICAgICAgICBldmVudC5wcmV2ZW50RGVmYXVsdCgpOwogICAgICAgIHJvd3Nbc2VsZWN0ZWRJbmRleF0uY2xhc3NMaXN0LnJlbW92ZSgnc2VsZWN0ZWQnKTsKICAgICAgICBzZWxlY3RlZEluZGV4ID0gKHNlbGVjdGVkSW5kZXggLSAxICsgcm93cy5sZW5ndGgpICUgcm93cy5sZW5ndGg7CiAgICAgICAgcm93c1tzZWxlY3RlZEluZGV4XS5jbGFzc0xpc3QuYWRkKCdzZWxlY3RlZCcpOwogICAgICB9IGVsc2UgaWYgKGV2ZW50LmtleSA9PT0gJ0Fycm93RG93bicpIHsKICAgICAgICBldmVudC5wcmV2ZW50RGVmYXVsdCgpOwogICAgICAgIHJvd3Nbc2VsZWN0ZWRJbmRleF0uY2xhc3NMaXN0LnJlbW92ZSgnc2VsZWN0ZWQnKTsKICAgICAgICBzZWxlY3RlZEluZGV4ID0gKHNlbGVjdGVkSW5kZXggKyAxKSAlIHJvd3MubGVuZ3RoOwogICAgICAgIHJvd3Nbc2VsZWN0ZWRJbmRleF0uY2xhc3NMaXN0LmFkZCgnc2VsZWN0ZWQnKTsKICAgICAgfSBlbHNlIGlmIChldmVudC5rZXkgPT09ICdFbnRlcicpIHsKICAgICAgICBldmVudC5wcmV2ZW50RGVmYXVsdCgpOwogICAgICAgIHJvd3Nbc2VsZWN0ZWRJbmRleF0uY2xpY2soKTsKICAgICAgfQogICAgfSk7CgogICAgcm93cy5mb3JFYWNoKChyb3csIGkpID0+IHsKICAgICAgcm93LmFkZEV2ZW50TGlzdGVuZXIoJ21vdXNlZW50ZXInLCAoKSA9PiB7CiAgICAgICAgcm93c1tzZWxlY3RlZEluZGV4XS5jbGFzc0xpc3QucmVtb3ZlKCdzZWxlY3RlZCcpOwogICAgICAgIHNlbGVjdGVkSW5kZXggPSBpOwogICAgICAgIHJvd3Nbc2VsZWN0ZWRJbmRleF0uY2xhc3NMaXN0LmFkZCgnc2VsZWN0ZWQnKTsKICAgICAgfSk7CiAgICB9KTsKICA8L3NjcmlwdD4KPC9ib2R5Pgo8L2h0bWw+Cg==";
 
     const CLOAK_PRESETS = {
       drive: { title: "My Drive - Google Drive", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 87.3 78'%3E%3Cpath fill='%230066da' d='m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z'/%3E%3Cpath fill='%2300ac47' d='M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44A9.06 9.06 0 0 0 0 53h27.5z'/%3E%3Cpath fill='%23ea4335' d='m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z'/%3E%3Cpath fill='%2300832d' d='M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z'/%3E%3Cpath fill='%232684fc' d='M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5L72.35 24.7c-.8-1.4-1.95-2.5-3.3-3.3L55.3 45.2z'/%3E%3Cpath fill='%23ffba00' d='m73.55 76.8-13.75-23.8H27.5l13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h23.3c1.6 0 3.15-.4 4.5-1.2z'/%3E%3C/svg%3E" },
@@ -106,77 +106,177 @@
       setTabCloak(cloakSelect ? cloakSelect.value : 'drive');
     } catch(e) {}
 
+    function makeShim(tb) {
+      return '<script>' +
+        '(function(){' +
+        'var tb=' + JSON.stringify(tb) + ';' +
+        'if(!tb.endsWith("/"))tb+="/";' +
+        'var OrigImage=window.Image;' +
+        'window.Image=function(w,h){var img=new OrigImage(w,h);img.crossOrigin="anonymous";return img;};' +
+        'var origCE=document.createElement.bind(document);' +
+        'document.createElement=function(t,o){var el=origCE(t,o);if(t&&t.toLowerCase()==="img"){try{el.crossOrigin="anonymous";}catch(e){}}return el;};' +
+        'var OrigAudio=window.Audio;' +
+        'if(OrigAudio){window.Audio=function(s){var a=new OrigAudio();try{a.crossOrigin="anonymous";}catch(e){}if(s){if(typeof s==="string"&&!/^(https?:|data:|blob:)/i.test(s)){s=new URL(s,tb).href;}a.src=s;}return a;};}' +
+        'class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0||bStr.indexOf("file:")===0){bStr=tb;}try{super(u,bStr);}catch(e){super(u,tb);}}}' +
+        'window.URL=PatchedURL;' +
+        'var origFetch=window.fetch;' +
+        'if(origFetch){window.fetch=function(inp,init){if(typeof inp==="string"){if(!/^(https?:|data:|blob:)/i.test(inp)){inp=new URL(inp,tb).href;}}else if(inp&&typeof inp==="object"&&inp.url){if(!/^(https?:|data:|blob:)/i.test(inp.url)){inp=new Request(new URL(inp.url,tb).href,inp);}}return origFetch.call(this,inp,init);};}' +
+        'var origXhrOpen=XMLHttpRequest.prototype.open;' +
+        'XMLHttpRequest.prototype.open=function(m,u){var args=Array.prototype.slice.call(arguments);if(typeof u==="string"&&!/^(https?:|data:|blob:)/i.test(u)){args[1]=new URL(u,tb).href;}return origXhrOpen.apply(this,args);};' +
+        'var pageLoaded=(document.readyState==="complete");' +
+        'window.addEventListener("load",function(){pageLoaded=true;},{capture:true});' +
+        'var origWinAEL=window.addEventListener.bind(window);' +
+        'window.addEventListener=function(t,l,o){if(t==="load"&&(pageLoaded||document.readyState==="complete")){setTimeout(function(){try{if(typeof l==="function")l.call(window,new Event("load"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("load"));}catch(e){}},15);}return origWinAEL(t,l,o);};' +
+        'var origOnload=null;' +
+        'Object.defineProperty(window,"onload",{get:function(){return origOnload;},set:function(fn){origOnload=fn;if(pageLoaded||document.readyState==="complete"){setTimeout(function(){try{if(typeof fn==="function")fn.call(window,new Event("load"));}catch(e){}},15);}},configurable:true});' +
+        'var domReady=(document.readyState==="interactive"||document.readyState==="complete");' +
+        'document.addEventListener("DOMContentLoaded",function(){domReady=true;},{capture:true});' +
+        'var origDocAEL=document.addEventListener.bind(document);' +
+        'document.addEventListener=function(t,l,o){if(t==="DOMContentLoaded"&&(domReady||document.readyState!=="loading")){setTimeout(function(){try{if(typeof l==="function")l.call(document,new Event("DOMContentLoaded"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("DOMContentLoaded"));}catch(e){}},15);}return origDocAEL(t,l,o);};' +
+        '})();<' + '/script>';
+    }
+
     async function resolveAndLoadGame() {
-      const base = document.baseURI || window.location.href;
       const enc = encodeURIComponent(GAME_FOLDER);
+      const isFile = window.location.protocol === 'file:' || (document.baseURI && document.baseURI.startsWith('file:'));
 
       if (IS_EMULATOR) {
-        const playerCandidates = [
-          new URL('emulator/player.html', base).href,
-          new URL('../emulator/player.html', base).href,
-          'http://localhost:8080/emulator/player.html',
-          TAILSCALE_ORIGIN + '/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html'
-        ];
+        const playerCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          playerCandidates.push(new URL('emulator/player.html', base).href);
+          playerCandidates.push(new URL('../emulator/player.html', base).href);
+        }
+        playerCandidates.push('http://localhost:8080/emulator/player.html');
+        playerCandidates.push('http://127.0.0.1:8080/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html');
+        playerCandidates.push(TAILSCALE_ORIGIN + '/emulator/player.html');
+
         for (const p of playerCandidates) {
           try {
-            const r = await fetch(p);
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const r = await fetch(p, { signal: c.signal });
+            clearTimeout(t);
             if (r.ok) {
               const html = await r.text();
-              const baseTag = '<base href="' + new URL('./', p).href + '">';
+              effectiveGameUrl = p;
+              const targetBase = new URL('./', p).href;
+              const baseTag = '<base href="' + targetBase + '">';
+              const shim = makeShim(targetBase);
               const injectScript = '<script>window.__INJECTED_QUERY__ = ' + JSON.stringify(QUERY_STR) + ';<' + '/script>';
-              const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + injectScript) : (baseTag + injectScript + html);
+              const full = html.includes('<head>')
+                ? html.replace('<head>', '<head>' + baseTag + shim + injectScript)
+                : (baseTag + shim + injectScript + html);
               frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
               return;
             }
           } catch(e) {}
         }
-        frame.src = new URL('emulator/player.svg?' + QUERY_STR, base).href;
+        frame.src = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.svg?' + QUERY_STR;
         return;
       }
 
-      if (INLINE_SRC && INLINE_SRC.length > 50) {
-        const targetBase = new URL('games/' + enc + '/', base).href;
-        const baseTag = '<base href="' + targetBase + '">';
-        const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-        const full = INLINE_SRC.includes('<head>') ? INLINE_SRC.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + INLINE_SRC);
+      let inlineHtml = '';
+      if (INLINE_B64) {
+        try { inlineHtml = decodeURIComponent(escape(atob(INLINE_B64))); }
+        catch(e) { try { inlineHtml = atob(INLINE_B64); } catch(e2) {} }
+      }
+
+      // Check if inlineHtml already has a hardcoded http/https <base href="...">
+      let preExistingBase = '';
+      if (inlineHtml) {
+        const baseTagIdx = inlineHtml.toLowerCase().indexOf('<base');
+        if (baseTagIdx !== -1) {
+          const snippet = inlineHtml.slice(baseTagIdx, baseTagIdx + 400);
+          const hrefIdx = snippet.toLowerCase().indexOf('href=');
+          if (hrefIdx !== -1) {
+            const q = snippet[hrefIdx + 5];
+            if (q === '"' || q === "'") {
+              const endQ = snippet.indexOf(q, hrefIdx + 6);
+              if (endQ !== -1) {
+                const val = snippet.slice(hrefIdx + 6, endQ);
+                if (val.startsWith('http://') || val.startsWith('https://')) {
+                  preExistingBase = val;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      let activeBase = '';
+      let fetchedHtml = '';
+
+      if (preExistingBase) {
+        activeBase = preExistingBase;
+      } else {
+        const baseCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          baseCandidates.push(new URL('games/' + enc + '/', base).href);
+          baseCandidates.push(new URL('../games/' + enc + '/', base).href);
+        }
+        baseCandidates.push('http://localhost:8080/games/' + enc + '/');
+        baseCandidates.push('http://127.0.0.1:8080/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/');
+        baseCandidates.push(TAILSCALE_ORIGIN + '/games/' + enc + '/');
+
+        for (const b of baseCandidates) {
+          try {
+            const probe = b.endsWith('/') ? b + 'index.html' : b + '/index.html';
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const res = await fetch(probe, { signal: c.signal });
+            clearTimeout(t);
+            if (res.ok) {
+              const txt = await res.text();
+              if (txt.includes('Package size exceeded') || txt.includes('Cannot find "') || txt.trim().startsWith('404')) continue;
+              activeBase = b;
+              fetchedHtml = txt;
+              break;
+            }
+          } catch(e) {}
+        }
+        if (!activeBase) {
+          activeBase = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/';
+        }
+      }
+
+      let rawHtml = (inlineHtml && inlineHtml.length > 50) ? inlineHtml : fetchedHtml;
+
+      if (!rawHtml) {
+        try {
+          const probe = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
+          const c = new AbortController();
+          const t = setTimeout(() => c.abort(), 2500);
+          const res = await fetch(probe, { signal: c.signal });
+          clearTimeout(t);
+          if (res.ok) rawHtml = await res.text();
+        } catch(e) {}
+      }
+
+      if (rawHtml) {
+        effectiveGameUrl = activeBase;
+        const shim = makeShim(activeBase);
+        let full = rawHtml;
+        if (!preExistingBase) {
+          const baseTag = '<base href="' + activeBase + '">';
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + baseTag + shim)
+            : (baseTag + shim + full);
+        } else {
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + shim)
+            : (shim + full);
+        }
         frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
         return;
       }
 
-      const candidates = [
-        new URL('games/' + enc + '/index.html', base).href,
-        new URL('../games/' + enc + '/index.html', base).href,
-        'http://localhost:8080/games/' + enc + '/index.html',
-        TAILSCALE_ORIGIN + '/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesv7iskewl/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/index.html'
-      ];
-
-      for (const url of candidates) {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 2500);
-          const res = await fetch(url, { signal: timer.signal });
-          clearTimeout(timer);
-          if (res.ok) {
-            let html = await res.text();
-            if (html.includes('Package size exceeded') || html.includes('Cannot find "') || html.trim().startsWith('404')) continue;
-            effectiveGameUrl = url;
-            const targetBase = new URL('./', url).href;
-            const baseTag = '<base href="' + targetBase + '">';
-            const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-            const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + html);
-            frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
-            return;
-          }
-        } catch(e) {}
-      }
-
-      effectiveGameUrl = TAILSCALE_ORIGIN + '/games/' + enc + '/index.html';
+      effectiveGameUrl = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
       frame.src = effectiveGameUrl;
     }
 

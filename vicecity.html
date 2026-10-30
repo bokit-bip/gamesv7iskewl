@@ -29,7 +29,7 @@
     const GAME_FOLDER = "vicecity";
     const IS_EMULATOR = false;
     const QUERY_STR = "";
-    const INLINE_SRC = "<!doctype html>\n<html lang=\"en-us\">\n\n<head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\"\n        content=\"width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no\" />\n    <title>Grand Theft Auto: Vice City</title>\n    <link rel=\"stylesheet\" href=\"style.css\">\n\n<script>\n  window.dataLayer = window.dataLayer || [];\n  function gtag() {\n    dataLayer.push(arguments);\n  }\n  gtag(\"js\", new Date());\n  gtag(\"config\", \"G-PXHK7Q7G3Z\");\n<\\/script>\n</head>\n\n<body\n    data-is-touch=\"0\"\n    data-state-car=\"0\"\n    data-state-car-gun=\"0\"\n    data-state-gun=\"0\"\n    data-state-bike=\"0\"\n    data-state-menu=\"1\"\n    data-state-cutscene=\"0\"\n    data-state-mobring=\"0\"\n    data-state-job=\"0\"\n    data-state-disable-controls=\"0\"\n    data-state-panzer=\"0\"\n    data-state-car-with-weapon=\"0\"\n    data-state-hunter=\"0\"\n    data-state-scope-mode=\"0\"\n    data-state-scope-gun=\"0\"\n>\n    <div id=\"loading-text\" style=\"color: white; font-size: 48px; font-family: cursive; text-align: center; margin-top: 20px;\"> LOADING... </div>\n    <div class=\"wasted-container\" hidden>\n\n    </div>\n    <div class=\"intro-container\" hidden>\n        </video>\n\n        <div class=\"loader-container\">\n            <div class=\"progress-bar-container\" id='spinner'>\n                <div class=\"progress-bar-fill\"></div>\n            </div>\n            <div id=\"status\">Downloading...</div>\n            <div>\n                <progress id=\"progress\"></progress>\n            </div>\n        </div>\n    </div>\n\n    <input type=\"file\" id=\"original-game-file\" hidden>\n\n\n    <canvas class=\"emscripten\" id=\"canvas\" oncontextmenu=\"event.preventDefault()\"></canvas>\n\n    <div class=\"touch-controls-wrapper\">\n        <div id=\"move\"></div>\n        <div id=\"look\"></div>\n\n        <div class=\"touch-control radio\"></div>\n        <div class=\"touch-control weapon\"></div>\n        <div class=\"touch-control menu\"></div>\n        <div class=\"touch-control fist\"></div>\n        <div class=\"touch-control drift\"></div>\n        <div class=\"touch-control run\"></div>\n        <div class=\"touch-control car getIn\"></div>\n        <div class=\"touch-control left\"></div>\n        <div class=\"touch-control right\"></div>\n        <div class=\"touch-control jump\"></div>\n        <div class=\"touch-control car getOut\"></div>\n        <div class=\"touch-control camera\"></div>\n        <div class=\"touch-control mobile\"></div>\n        <div class=\"touch-control job\"></div>\n        <div class=\"touch-control horn\"></div>\n        <div class=\"touch-control fireRight\"></div>\n        <div class=\"touch-control fireLeft\"></div>\n    </div>\n\n    <script>\n    <\\/script>\n<script>\nconst loadingText = document.querySelector(\"#loading-text\");\nlet loadedBytes = 0;\nconst DB_NAME = \"gameFilesDB\";\nconst STORE_NAME = \"files\";\n\n// Open or create IndexedDB\nfunction openDB() {\n    return new Promise((resolve, reject) => {\n        const request = indexedDB.open(DB_NAME, 1);\n        request.onupgradeneeded = e => {\n            const db = e.target.result;\n            if (!db.objectStoreNames.contains(STORE_NAME)) {\n                db.createObjectStore(STORE_NAME);\n            }\n        };\n        request.onsuccess = e => resolve(e.target.result);\n        request.onerror = e => reject(e.target.error);\n    });\n}\n\n// Save file to IndexedDB\nasync function saveFile(name, buffer) {\n    const db = await openDB();\n    return new Promise((resolve, reject) => {\n        const tx = db.transaction(STORE_NAME, \"readwrite\");\n        const store = tx.objectStore(STORE_NAME);\n        store.put(buffer, name);\n        tx.oncomplete = () => resolve();\n        tx.onerror = e => reject(e.target.error);\n    });\n}\n\n// Get file from IndexedDB\nasync function getFile(name) {\n    const db = await openDB();\n    return new Promise((resolve, reject) => {\n        const tx = db.transaction(STORE_NAME, \"readonly\");\n        const store = tx.objectStore(STORE_NAME);\n        const request = store.get(name);\n        request.onsuccess = e => resolve(e.target.result);\n        request.onerror = e => reject(e.target.error);\n    });\n}\n\n// Fetch with progress and caching\nasync function fetchWithCache(name, url) {\n    let cached = await getFile(name);\n    if (cached) return cached; // Return cached version\n\n    const response = await fetch(url);\n    const reader = response.body.getReader();\n    let chunks = [];\n    let received = 0;\n\n    while (true) {\n        const { done, value } = await reader.read();\n        if (done) break;\n        received += value.length;\n        loadedBytes += value.length;\n        chunks.push(value);\n\n        let mbDone = (loadedBytes / (1024 * 1024)).toFixed(2);\n        let mbTotal = '633.45';\n        loadingText.textContent = `LOADING... ${mbDone} MB / ${mbTotal} MB`;\n    }\n\n    let fullBuffer = new Uint8Array(received);\n    let offset = 0;\n    for (let chunk of chunks) {\n        fullBuffer.set(chunk, offset);\n        offset += chunk.length;\n    }\n\n    await saveFile(name, fullBuffer.buffer); // Cache it\n    return fullBuffer.buffer;\n}\n\n// Merge multiple parts\nasync function mergeFiles(fileParts, namePrefix) {\n    const buffers = [];\n    for (let i = 0; i < fileParts.length; i++) {\n        const buffer = await fetchWithCache(`${namePrefix}.part${i+1}`, fileParts[i]);\n        buffers.push(buffer);\n    }\n    const mergedBlob = new Blob(buffers);\n    return URL.createObjectURL(mergedBlob);\n}\n\n// Generate part URLs\nfunction getParts(file, start, end) {\n    let parts = [];\n    for (let i = start; i <= end; i++) {\n        parts.push(file + \".part\" + i);\n    }\n    return parts;\n}\n\n// Start fetching and caching\nPromise.all([\n    mergeFiles(getParts(\"index.data\", 1, 7), \"index.data\"),\n    mergeFiles(getParts(\"audio/emotion.adf\", 1, 3), \"emotion.adf\"),\n    mergeFiles(getParts(\"audio/espant.adf\", 1, 3), \"espant.adf\"),\n    mergeFiles(getParts(\"audio/fever.adf\", 1, 3), \"fever.adf\"),\n    mergeFiles(getParts(\"audio/flash.adf\", 1, 3), \"flash.adf\"),\n    mergeFiles(getParts(\"audio/kchat.adf\", 1, 3), \"kchat.adf\"),\n    mergeFiles(getParts(\"audio/vcpr.adf\", 1, 2), \"vcpr.adf\"),\n    mergeFiles(getParts(\"audio/vrock.adf\", 1, 4), \"vrock.adf\"),\n    mergeFiles(getParts(\"audio/wave.adf\", 1, 4), \"wave.adf\"),\n    mergeFiles(getParts(\"audio/wild.adf\", 1, 4), \"wild.adf\"),\n]).then(([indexdataurl, EMOTIONadfurl, ESPANTadfurl, FEVERadfurl, FLASHadfurl, KCHATadfurl, VCPRadfurl, VROCKadfurl, WAVEadfurl, WILDadfurl]) => {\n    \n    function sanitizeUrl(rawUrl) {\n        if (!rawUrl) return rawUrl;\n        let u = String(rawUrl);\n        // If it's already a blob URL, don't modify it\n        if (u.startsWith('blob:')) return u;\n\n        // Normalize backslashes to forward slashes\n        u = u.replace(/\\\\/g, '/');\n\n        // Strip hardcoded external prefixes\n        u = u.replace(/^https?:\\/\\/cdn\\.dos\\.zone\\/vcsky\\/(fetched\\/)?/i, '');\n\n        // Map cached radio/data blobs\n        const lower = u.toLowerCase();\n        if (lower.includes(\"index.data\")) return indexdataurl;\n        if (lower.includes(\"emotion.adf\")) return EMOTIONadfurl;\n        if (lower.includes(\"espant.adf\")) return ESPANTadfurl;\n        if (lower.includes(\"fever.adf\")) return FEVERadfurl;\n        if (lower.includes(\"flash.adf\")) return FLASHadfurl;\n        if (lower.includes(\"kchat.adf\")) return KCHATadfurl;\n        if (lower.includes(\"vcpr.adf\")) return VCPRadfurl;\n        if (lower.includes(\"vrock.adf\")) return VROCKadfurl;\n        if (lower.includes(\"wave.adf\")) return WAVEadfurl;\n        if (lower.includes(\"wild.adf\")) return WILDadfurl;\n\n        // If it's not a blob, lowercase it so Linux paths match\n        return u.toLowerCase();\n    }\n\n    // Override fetch to use cached URLs\n    const originalFetch = window.fetch;\n    window.fetch = async function(input, init) {\n        if (input instanceof Request) {\n            const cleanUrl = sanitizeUrl(input.url);\n            if (cleanUrl !== input.url) {\n                input = new Request(cleanUrl, input);\n            }\n            return originalFetch(input, init);\n        } else {\n            return originalFetch(sanitizeUrl(input), init);\n        }\n    };\n\n    // Similarly override XHR\n    const originalOpen = XMLHttpRequest.prototype.open;\n    XMLHttpRequest.prototype.open = function(method, url, ...rest) {\n        return originalOpen.call(this, method, sanitizeUrl(url), ...rest);\n    };\n\n    // Load game scripts\n    [\"gamepademulator.js\", \"idbfs.js\", \"game.js\"].forEach(src => {\n        const script = document.createElement(\"script\");\n        script.src = src;\n        document.body.appendChild(script);\n    });\n\n    loadingText.remove();\n});\n<\\/script>\n\n</body>\n\n</html>\n";
+    const INLINE_B64 = "PCFkb2N0eXBlIGh0bWw+CjxodG1sIGxhbmc9ImVuLXVzIj4KCjxoZWFkPgogICAgPG1ldGEgY2hhcnNldD0idXRmLTgiPgogICAgPG1ldGEgbmFtZT0idmlld3BvcnQiCiAgICAgICAgY29udGVudD0id2lkdGg9ZGV2aWNlLXdpZHRoLCBpbml0aWFsLXNjYWxlPTEsIG1heGltdW0tc2NhbGU9MSwgbWluaW11bS1zY2FsZT0xLCB1c2VyLXNjYWxhYmxlPW5vIiAvPgogICAgPHRpdGxlPkdyYW5kIFRoZWZ0IEF1dG86IFZpY2UgQ2l0eTwvdGl0bGU+CiAgICA8bGluayByZWw9InN0eWxlc2hlZXQiIGhyZWY9InN0eWxlLmNzcyI+Cgo8c2NyaXB0PgogIHdpbmRvdy5kYXRhTGF5ZXIgPSB3aW5kb3cuZGF0YUxheWVyIHx8IFtdOwogIGZ1bmN0aW9uIGd0YWcoKSB7CiAgICBkYXRhTGF5ZXIucHVzaChhcmd1bWVudHMpOwogIH0KICBndGFnKCJqcyIsIG5ldyBEYXRlKCkpOwogIGd0YWcoImNvbmZpZyIsICJHLVBYSEs3UTdHM1oiKTsKPC9zY3JpcHQ+CjwvaGVhZD4KCjxib2R5CiAgICBkYXRhLWlzLXRvdWNoPSIwIgogICAgZGF0YS1zdGF0ZS1jYXI9IjAiCiAgICBkYXRhLXN0YXRlLWNhci1ndW49IjAiCiAgICBkYXRhLXN0YXRlLWd1bj0iMCIKICAgIGRhdGEtc3RhdGUtYmlrZT0iMCIKICAgIGRhdGEtc3RhdGUtbWVudT0iMSIKICAgIGRhdGEtc3RhdGUtY3V0c2NlbmU9IjAiCiAgICBkYXRhLXN0YXRlLW1vYnJpbmc9IjAiCiAgICBkYXRhLXN0YXRlLWpvYj0iMCIKICAgIGRhdGEtc3RhdGUtZGlzYWJsZS1jb250cm9scz0iMCIKICAgIGRhdGEtc3RhdGUtcGFuemVyPSIwIgogICAgZGF0YS1zdGF0ZS1jYXItd2l0aC13ZWFwb249IjAiCiAgICBkYXRhLXN0YXRlLWh1bnRlcj0iMCIKICAgIGRhdGEtc3RhdGUtc2NvcGUtbW9kZT0iMCIKICAgIGRhdGEtc3RhdGUtc2NvcGUtZ3VuPSIwIgo+CiAgICA8ZGl2IGlkPSJsb2FkaW5nLXRleHQiIHN0eWxlPSJjb2xvcjogd2hpdGU7IGZvbnQtc2l6ZTogNDhweDsgZm9udC1mYW1pbHk6IGN1cnNpdmU7IHRleHQtYWxpZ246IGNlbnRlcjsgbWFyZ2luLXRvcDogMjBweDsiPiBMT0FESU5HLi4uIDwvZGl2PgogICAgPGRpdiBjbGFzcz0id2FzdGVkLWNvbnRhaW5lciIgaGlkZGVuPgoKICAgIDwvZGl2PgogICAgPGRpdiBjbGFzcz0iaW50cm8tY29udGFpbmVyIiBoaWRkZW4+CiAgICAgICAgPC92aWRlbz4KCiAgICAgICAgPGRpdiBjbGFzcz0ibG9hZGVyLWNvbnRhaW5lciI+CiAgICAgICAgICAgIDxkaXYgY2xhc3M9InByb2dyZXNzLWJhci1jb250YWluZXIiIGlkPSdzcGlubmVyJz4KICAgICAgICAgICAgICAgIDxkaXYgY2xhc3M9InByb2dyZXNzLWJhci1maWxsIj48L2Rpdj4KICAgICAgICAgICAgPC9kaXY+CiAgICAgICAgICAgIDxkaXYgaWQ9InN0YXR1cyI+RG93bmxvYWRpbmcuLi48L2Rpdj4KICAgICAgICAgICAgPGRpdj4KICAgICAgICAgICAgICAgIDxwcm9ncmVzcyBpZD0icHJvZ3Jlc3MiPjwvcHJvZ3Jlc3M+CiAgICAgICAgICAgIDwvZGl2PgogICAgICAgIDwvZGl2PgogICAgPC9kaXY+CgogICAgPGlucHV0IHR5cGU9ImZpbGUiIGlkPSJvcmlnaW5hbC1nYW1lLWZpbGUiIGhpZGRlbj4KCgogICAgPGNhbnZhcyBjbGFzcz0iZW1zY3JpcHRlbiIgaWQ9ImNhbnZhcyIgb25jb250ZXh0bWVudT0iZXZlbnQucHJldmVudERlZmF1bHQoKSI+PC9jYW52YXM+CgogICAgPGRpdiBjbGFzcz0idG91Y2gtY29udHJvbHMtd3JhcHBlciI+CiAgICAgICAgPGRpdiBpZD0ibW92ZSI+PC9kaXY+CiAgICAgICAgPGRpdiBpZD0ibG9vayI+PC9kaXY+CgogICAgICAgIDxkaXYgY2xhc3M9InRvdWNoLWNvbnRyb2wgcmFkaW8iPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9InRvdWNoLWNvbnRyb2wgd2VhcG9uIj48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJ0b3VjaC1jb250cm9sIG1lbnUiPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9InRvdWNoLWNvbnRyb2wgZmlzdCI+PC9kaXY+CiAgICAgICAgPGRpdiBjbGFzcz0idG91Y2gtY29udHJvbCBkcmlmdCI+PC9kaXY+CiAgICAgICAgPGRpdiBjbGFzcz0idG91Y2gtY29udHJvbCBydW4iPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9InRvdWNoLWNvbnRyb2wgY2FyIGdldEluIj48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJ0b3VjaC1jb250cm9sIGxlZnQiPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9InRvdWNoLWNvbnRyb2wgcmlnaHQiPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9InRvdWNoLWNvbnRyb2wganVtcCI+PC9kaXY+CiAgICAgICAgPGRpdiBjbGFzcz0idG91Y2gtY29udHJvbCBjYXIgZ2V0T3V0Ij48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJ0b3VjaC1jb250cm9sIGNhbWVyYSI+PC9kaXY+CiAgICAgICAgPGRpdiBjbGFzcz0idG91Y2gtY29udHJvbCBtb2JpbGUiPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9InRvdWNoLWNvbnRyb2wgam9iIj48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJ0b3VjaC1jb250cm9sIGhvcm4iPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9InRvdWNoLWNvbnRyb2wgZmlyZVJpZ2h0Ij48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJ0b3VjaC1jb250cm9sIGZpcmVMZWZ0Ij48L2Rpdj4KICAgIDwvZGl2PgoKICAgIDxzY3JpcHQ+CiAgICA8L3NjcmlwdD4KPHNjcmlwdD4KY29uc3QgbG9hZGluZ1RleHQgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKCIjbG9hZGluZy10ZXh0Iik7CmxldCBsb2FkZWRCeXRlcyA9IDA7CmNvbnN0IERCX05BTUUgPSAiZ2FtZUZpbGVzREIiOwpjb25zdCBTVE9SRV9OQU1FID0gImZpbGVzIjsKCi8vIE9wZW4gb3IgY3JlYXRlIEluZGV4ZWREQgpmdW5jdGlvbiBvcGVuREIoKSB7CiAgICByZXR1cm4gbmV3IFByb21pc2UoKHJlc29sdmUsIHJlamVjdCkgPT4gewogICAgICAgIGNvbnN0IHJlcXVlc3QgPSBpbmRleGVkREIub3BlbihEQl9OQU1FLCAxKTsKICAgICAgICByZXF1ZXN0Lm9udXBncmFkZW5lZWRlZCA9IGUgPT4gewogICAgICAgICAgICBjb25zdCBkYiA9IGUudGFyZ2V0LnJlc3VsdDsKICAgICAgICAgICAgaWYgKCFkYi5vYmplY3RTdG9yZU5hbWVzLmNvbnRhaW5zKFNUT1JFX05BTUUpKSB7CiAgICAgICAgICAgICAgICBkYi5jcmVhdGVPYmplY3RTdG9yZShTVE9SRV9OQU1FKTsKICAgICAgICAgICAgfQogICAgICAgIH07CiAgICAgICAgcmVxdWVzdC5vbnN1Y2Nlc3MgPSBlID0+IHJlc29sdmUoZS50YXJnZXQucmVzdWx0KTsKICAgICAgICByZXF1ZXN0Lm9uZXJyb3IgPSBlID0+IHJlamVjdChlLnRhcmdldC5lcnJvcik7CiAgICB9KTsKfQoKLy8gU2F2ZSBmaWxlIHRvIEluZGV4ZWREQgphc3luYyBmdW5jdGlvbiBzYXZlRmlsZShuYW1lLCBidWZmZXIpIHsKICAgIGNvbnN0IGRiID0gYXdhaXQgb3BlbkRCKCk7CiAgICByZXR1cm4gbmV3IFByb21pc2UoKHJlc29sdmUsIHJlamVjdCkgPT4gewogICAgICAgIGNvbnN0IHR4ID0gZGIudHJhbnNhY3Rpb24oU1RPUkVfTkFNRSwgInJlYWR3cml0ZSIpOwogICAgICAgIGNvbnN0IHN0b3JlID0gdHgub2JqZWN0U3RvcmUoU1RPUkVfTkFNRSk7CiAgICAgICAgc3RvcmUucHV0KGJ1ZmZlciwgbmFtZSk7CiAgICAgICAgdHgub25jb21wbGV0ZSA9ICgpID0+IHJlc29sdmUoKTsKICAgICAgICB0eC5vbmVycm9yID0gZSA9PiByZWplY3QoZS50YXJnZXQuZXJyb3IpOwogICAgfSk7Cn0KCi8vIEdldCBmaWxlIGZyb20gSW5kZXhlZERCCmFzeW5jIGZ1bmN0aW9uIGdldEZpbGUobmFtZSkgewogICAgY29uc3QgZGIgPSBhd2FpdCBvcGVuREIoKTsKICAgIHJldHVybiBuZXcgUHJvbWlzZSgocmVzb2x2ZSwgcmVqZWN0KSA9PiB7CiAgICAgICAgY29uc3QgdHggPSBkYi50cmFuc2FjdGlvbihTVE9SRV9OQU1FLCAicmVhZG9ubHkiKTsKICAgICAgICBjb25zdCBzdG9yZSA9IHR4Lm9iamVjdFN0b3JlKFNUT1JFX05BTUUpOwogICAgICAgIGNvbnN0IHJlcXVlc3QgPSBzdG9yZS5nZXQobmFtZSk7CiAgICAgICAgcmVxdWVzdC5vbnN1Y2Nlc3MgPSBlID0+IHJlc29sdmUoZS50YXJnZXQucmVzdWx0KTsKICAgICAgICByZXF1ZXN0Lm9uZXJyb3IgPSBlID0+IHJlamVjdChlLnRhcmdldC5lcnJvcik7CiAgICB9KTsKfQoKLy8gRmV0Y2ggd2l0aCBwcm9ncmVzcyBhbmQgY2FjaGluZwphc3luYyBmdW5jdGlvbiBmZXRjaFdpdGhDYWNoZShuYW1lLCB1cmwpIHsKICAgIGxldCBjYWNoZWQgPSBhd2FpdCBnZXRGaWxlKG5hbWUpOwogICAgaWYgKGNhY2hlZCkgcmV0dXJuIGNhY2hlZDsgLy8gUmV0dXJuIGNhY2hlZCB2ZXJzaW9uCgogICAgY29uc3QgcmVzcG9uc2UgPSBhd2FpdCBmZXRjaCh1cmwpOwogICAgY29uc3QgcmVhZGVyID0gcmVzcG9uc2UuYm9keS5nZXRSZWFkZXIoKTsKICAgIGxldCBjaHVua3MgPSBbXTsKICAgIGxldCByZWNlaXZlZCA9IDA7CgogICAgd2hpbGUgKHRydWUpIHsKICAgICAgICBjb25zdCB7IGRvbmUsIHZhbHVlIH0gPSBhd2FpdCByZWFkZXIucmVhZCgpOwogICAgICAgIGlmIChkb25lKSBicmVhazsKICAgICAgICByZWNlaXZlZCArPSB2YWx1ZS5sZW5ndGg7CiAgICAgICAgbG9hZGVkQnl0ZXMgKz0gdmFsdWUubGVuZ3RoOwogICAgICAgIGNodW5rcy5wdXNoKHZhbHVlKTsKCiAgICAgICAgbGV0IG1iRG9uZSA9IChsb2FkZWRCeXRlcyAvICgxMDI0ICogMTAyNCkpLnRvRml4ZWQoMik7CiAgICAgICAgbGV0IG1iVG90YWwgPSAnNjMzLjQ1JzsKICAgICAgICBsb2FkaW5nVGV4dC50ZXh0Q29udGVudCA9IGBMT0FESU5HLi4uICR7bWJEb25lfSBNQiAvICR7bWJUb3RhbH0gTUJgOwogICAgfQoKICAgIGxldCBmdWxsQnVmZmVyID0gbmV3IFVpbnQ4QXJyYXkocmVjZWl2ZWQpOwogICAgbGV0IG9mZnNldCA9IDA7CiAgICBmb3IgKGxldCBjaHVuayBvZiBjaHVua3MpIHsKICAgICAgICBmdWxsQnVmZmVyLnNldChjaHVuaywgb2Zmc2V0KTsKICAgICAgICBvZmZzZXQgKz0gY2h1bmsubGVuZ3RoOwogICAgfQoKICAgIGF3YWl0IHNhdmVGaWxlKG5hbWUsIGZ1bGxCdWZmZXIuYnVmZmVyKTsgLy8gQ2FjaGUgaXQKICAgIHJldHVybiBmdWxsQnVmZmVyLmJ1ZmZlcjsKfQoKLy8gTWVyZ2UgbXVsdGlwbGUgcGFydHMKYXN5bmMgZnVuY3Rpb24gbWVyZ2VGaWxlcyhmaWxlUGFydHMsIG5hbWVQcmVmaXgpIHsKICAgIGNvbnN0IGJ1ZmZlcnMgPSBbXTsKICAgIGZvciAobGV0IGkgPSAwOyBpIDwgZmlsZVBhcnRzLmxlbmd0aDsgaSsrKSB7CiAgICAgICAgY29uc3QgYnVmZmVyID0gYXdhaXQgZmV0Y2hXaXRoQ2FjaGUoYCR7bmFtZVByZWZpeH0ucGFydCR7aSsxfWAsIGZpbGVQYXJ0c1tpXSk7CiAgICAgICAgYnVmZmVycy5wdXNoKGJ1ZmZlcik7CiAgICB9CiAgICBjb25zdCBtZXJnZWRCbG9iID0gbmV3IEJsb2IoYnVmZmVycyk7CiAgICByZXR1cm4gVVJMLmNyZWF0ZU9iamVjdFVSTChtZXJnZWRCbG9iKTsKfQoKLy8gR2VuZXJhdGUgcGFydCBVUkxzCmZ1bmN0aW9uIGdldFBhcnRzKGZpbGUsIHN0YXJ0LCBlbmQpIHsKICAgIGxldCBwYXJ0cyA9IFtdOwogICAgZm9yIChsZXQgaSA9IHN0YXJ0OyBpIDw9IGVuZDsgaSsrKSB7CiAgICAgICAgcGFydHMucHVzaChmaWxlICsgIi5wYXJ0IiArIGkpOwogICAgfQogICAgcmV0dXJuIHBhcnRzOwp9CgovLyBTdGFydCBmZXRjaGluZyBhbmQgY2FjaGluZwpQcm9taXNlLmFsbChbCiAgICBtZXJnZUZpbGVzKGdldFBhcnRzKCJpbmRleC5kYXRhIiwgMSwgNyksICJpbmRleC5kYXRhIiksCiAgICBtZXJnZUZpbGVzKGdldFBhcnRzKCJhdWRpby9lbW90aW9uLmFkZiIsIDEsIDMpLCAiZW1vdGlvbi5hZGYiKSwKICAgIG1lcmdlRmlsZXMoZ2V0UGFydHMoImF1ZGlvL2VzcGFudC5hZGYiLCAxLCAzKSwgImVzcGFudC5hZGYiKSwKICAgIG1lcmdlRmlsZXMoZ2V0UGFydHMoImF1ZGlvL2ZldmVyLmFkZiIsIDEsIDMpLCAiZmV2ZXIuYWRmIiksCiAgICBtZXJnZUZpbGVzKGdldFBhcnRzKCJhdWRpby9mbGFzaC5hZGYiLCAxLCAzKSwgImZsYXNoLmFkZiIpLAogICAgbWVyZ2VGaWxlcyhnZXRQYXJ0cygiYXVkaW8va2NoYXQuYWRmIiwgMSwgMyksICJrY2hhdC5hZGYiKSwKICAgIG1lcmdlRmlsZXMoZ2V0UGFydHMoImF1ZGlvL3ZjcHIuYWRmIiwgMSwgMiksICJ2Y3ByLmFkZiIpLAogICAgbWVyZ2VGaWxlcyhnZXRQYXJ0cygiYXVkaW8vdnJvY2suYWRmIiwgMSwgNCksICJ2cm9jay5hZGYiKSwKICAgIG1lcmdlRmlsZXMoZ2V0UGFydHMoImF1ZGlvL3dhdmUuYWRmIiwgMSwgNCksICJ3YXZlLmFkZiIpLAogICAgbWVyZ2VGaWxlcyhnZXRQYXJ0cygiYXVkaW8vd2lsZC5hZGYiLCAxLCA0KSwgIndpbGQuYWRmIiksCl0pLnRoZW4oKFtpbmRleGRhdGF1cmwsIEVNT1RJT05hZGZ1cmwsIEVTUEFOVGFkZnVybCwgRkVWRVJhZGZ1cmwsIEZMQVNIYWRmdXJsLCBLQ0hBVGFkZnVybCwgVkNQUmFkZnVybCwgVlJPQ0thZGZ1cmwsIFdBVkVhZGZ1cmwsIFdJTERhZGZ1cmxdKSA9PiB7CiAgICAKICAgIGZ1bmN0aW9uIHNhbml0aXplVXJsKHJhd1VybCkgewogICAgICAgIGlmICghcmF3VXJsKSByZXR1cm4gcmF3VXJsOwogICAgICAgIGxldCB1ID0gU3RyaW5nKHJhd1VybCk7CiAgICAgICAgLy8gSWYgaXQncyBhbHJlYWR5IGEgYmxvYiBVUkwsIGRvbid0IG1vZGlmeSBpdAogICAgICAgIGlmICh1LnN0YXJ0c1dpdGgoJ2Jsb2I6JykpIHJldHVybiB1OwoKICAgICAgICAvLyBOb3JtYWxpemUgYmFja3NsYXNoZXMgdG8gZm9yd2FyZCBzbGFzaGVzCiAgICAgICAgdSA9IHUucmVwbGFjZSgvXFwvZywgJy8nKTsKCiAgICAgICAgLy8gU3RyaXAgaGFyZGNvZGVkIGV4dGVybmFsIHByZWZpeGVzCiAgICAgICAgdSA9IHUucmVwbGFjZSgvXmh0dHBzPzpcL1wvY2RuXC5kb3NcLnpvbmVcL3Zjc2t5XC8oZmV0Y2hlZFwvKT8vaSwgJycpOwoKICAgICAgICAvLyBNYXAgY2FjaGVkIHJhZGlvL2RhdGEgYmxvYnMKICAgICAgICBjb25zdCBsb3dlciA9IHUudG9Mb3dlckNhc2UoKTsKICAgICAgICBpZiAobG93ZXIuaW5jbHVkZXMoImluZGV4LmRhdGEiKSkgcmV0dXJuIGluZGV4ZGF0YXVybDsKICAgICAgICBpZiAobG93ZXIuaW5jbHVkZXMoImVtb3Rpb24uYWRmIikpIHJldHVybiBFTU9USU9OYWRmdXJsOwogICAgICAgIGlmIChsb3dlci5pbmNsdWRlcygiZXNwYW50LmFkZiIpKSByZXR1cm4gRVNQQU5UYWRmdXJsOwogICAgICAgIGlmIChsb3dlci5pbmNsdWRlcygiZmV2ZXIuYWRmIikpIHJldHVybiBGRVZFUmFkZnVybDsKICAgICAgICBpZiAobG93ZXIuaW5jbHVkZXMoImZsYXNoLmFkZiIpKSByZXR1cm4gRkxBU0hhZGZ1cmw7CiAgICAgICAgaWYgKGxvd2VyLmluY2x1ZGVzKCJrY2hhdC5hZGYiKSkgcmV0dXJuIEtDSEFUYWRmdXJsOwogICAgICAgIGlmIChsb3dlci5pbmNsdWRlcygidmNwci5hZGYiKSkgcmV0dXJuIFZDUFJhZGZ1cmw7CiAgICAgICAgaWYgKGxvd2VyLmluY2x1ZGVzKCJ2cm9jay5hZGYiKSkgcmV0dXJuIFZST0NLYWRmdXJsOwogICAgICAgIGlmIChsb3dlci5pbmNsdWRlcygid2F2ZS5hZGYiKSkgcmV0dXJuIFdBVkVhZGZ1cmw7CiAgICAgICAgaWYgKGxvd2VyLmluY2x1ZGVzKCJ3aWxkLmFkZiIpKSByZXR1cm4gV0lMRGFkZnVybDsKCiAgICAgICAgLy8gSWYgaXQncyBub3QgYSBibG9iLCBsb3dlcmNhc2UgaXQgc28gTGludXggcGF0aHMgbWF0Y2gKICAgICAgICByZXR1cm4gdS50b0xvd2VyQ2FzZSgpOwogICAgfQoKICAgIC8vIE92ZXJyaWRlIGZldGNoIHRvIHVzZSBjYWNoZWQgVVJMcwogICAgY29uc3Qgb3JpZ2luYWxGZXRjaCA9IHdpbmRvdy5mZXRjaDsKICAgIHdpbmRvdy5mZXRjaCA9IGFzeW5jIGZ1bmN0aW9uKGlucHV0LCBpbml0KSB7CiAgICAgICAgaWYgKGlucHV0IGluc3RhbmNlb2YgUmVxdWVzdCkgewogICAgICAgICAgICBjb25zdCBjbGVhblVybCA9IHNhbml0aXplVXJsKGlucHV0LnVybCk7CiAgICAgICAgICAgIGlmIChjbGVhblVybCAhPT0gaW5wdXQudXJsKSB7CiAgICAgICAgICAgICAgICBpbnB1dCA9IG5ldyBSZXF1ZXN0KGNsZWFuVXJsLCBpbnB1dCk7CiAgICAgICAgICAgIH0KICAgICAgICAgICAgcmV0dXJuIG9yaWdpbmFsRmV0Y2goaW5wdXQsIGluaXQpOwogICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgIHJldHVybiBvcmlnaW5hbEZldGNoKHNhbml0aXplVXJsKGlucHV0KSwgaW5pdCk7CiAgICAgICAgfQogICAgfTsKCiAgICAvLyBTaW1pbGFybHkgb3ZlcnJpZGUgWEhSCiAgICBjb25zdCBvcmlnaW5hbE9wZW4gPSBYTUxIdHRwUmVxdWVzdC5wcm90b3R5cGUub3BlbjsKICAgIFhNTEh0dHBSZXF1ZXN0LnByb3RvdHlwZS5vcGVuID0gZnVuY3Rpb24obWV0aG9kLCB1cmwsIC4uLnJlc3QpIHsKICAgICAgICByZXR1cm4gb3JpZ2luYWxPcGVuLmNhbGwodGhpcywgbWV0aG9kLCBzYW5pdGl6ZVVybCh1cmwpLCAuLi5yZXN0KTsKICAgIH07CgogICAgLy8gTG9hZCBnYW1lIHNjcmlwdHMKICAgIFsiZ2FtZXBhZGVtdWxhdG9yLmpzIiwgImlkYmZzLmpzIiwgImdhbWUuanMiXS5mb3JFYWNoKHNyYyA9PiB7CiAgICAgICAgY29uc3Qgc2NyaXB0ID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgic2NyaXB0Iik7CiAgICAgICAgc2NyaXB0LnNyYyA9IHNyYzsKICAgICAgICBkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKHNjcmlwdCk7CiAgICB9KTsKCiAgICBsb2FkaW5nVGV4dC5yZW1vdmUoKTsKfSk7Cjwvc2NyaXB0PgoKPC9ib2R5PgoKPC9odG1sPgo=";
 
     const CLOAK_PRESETS = {
       drive: { title: "My Drive - Google Drive", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 87.3 78'%3E%3Cpath fill='%230066da' d='m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z'/%3E%3Cpath fill='%2300ac47' d='M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44A9.06 9.06 0 0 0 0 53h27.5z'/%3E%3Cpath fill='%23ea4335' d='m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z'/%3E%3Cpath fill='%2300832d' d='M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z'/%3E%3Cpath fill='%232684fc' d='M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5L72.35 24.7c-.8-1.4-1.95-2.5-3.3-3.3L55.3 45.2z'/%3E%3Cpath fill='%23ffba00' d='m73.55 76.8-13.75-23.8H27.5l13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h23.3c1.6 0 3.15-.4 4.5-1.2z'/%3E%3C/svg%3E" },
@@ -106,77 +106,177 @@
       setTabCloak(cloakSelect ? cloakSelect.value : 'drive');
     } catch(e) {}
 
+    function makeShim(tb) {
+      return '<script>' +
+        '(function(){' +
+        'var tb=' + JSON.stringify(tb) + ';' +
+        'if(!tb.endsWith("/"))tb+="/";' +
+        'var OrigImage=window.Image;' +
+        'window.Image=function(w,h){var img=new OrigImage(w,h);img.crossOrigin="anonymous";return img;};' +
+        'var origCE=document.createElement.bind(document);' +
+        'document.createElement=function(t,o){var el=origCE(t,o);if(t&&t.toLowerCase()==="img"){try{el.crossOrigin="anonymous";}catch(e){}}return el;};' +
+        'var OrigAudio=window.Audio;' +
+        'if(OrigAudio){window.Audio=function(s){var a=new OrigAudio();try{a.crossOrigin="anonymous";}catch(e){}if(s){if(typeof s==="string"&&!/^(https?:|data:|blob:)/i.test(s)){s=new URL(s,tb).href;}a.src=s;}return a;};}' +
+        'class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0||bStr.indexOf("file:")===0){bStr=tb;}try{super(u,bStr);}catch(e){super(u,tb);}}}' +
+        'window.URL=PatchedURL;' +
+        'var origFetch=window.fetch;' +
+        'if(origFetch){window.fetch=function(inp,init){if(typeof inp==="string"){if(!/^(https?:|data:|blob:)/i.test(inp)){inp=new URL(inp,tb).href;}}else if(inp&&typeof inp==="object"&&inp.url){if(!/^(https?:|data:|blob:)/i.test(inp.url)){inp=new Request(new URL(inp.url,tb).href,inp);}}return origFetch.call(this,inp,init);};}' +
+        'var origXhrOpen=XMLHttpRequest.prototype.open;' +
+        'XMLHttpRequest.prototype.open=function(m,u){var args=Array.prototype.slice.call(arguments);if(typeof u==="string"&&!/^(https?:|data:|blob:)/i.test(u)){args[1]=new URL(u,tb).href;}return origXhrOpen.apply(this,args);};' +
+        'var pageLoaded=(document.readyState==="complete");' +
+        'window.addEventListener("load",function(){pageLoaded=true;},{capture:true});' +
+        'var origWinAEL=window.addEventListener.bind(window);' +
+        'window.addEventListener=function(t,l,o){if(t==="load"&&(pageLoaded||document.readyState==="complete")){setTimeout(function(){try{if(typeof l==="function")l.call(window,new Event("load"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("load"));}catch(e){}},15);}return origWinAEL(t,l,o);};' +
+        'var origOnload=null;' +
+        'Object.defineProperty(window,"onload",{get:function(){return origOnload;},set:function(fn){origOnload=fn;if(pageLoaded||document.readyState==="complete"){setTimeout(function(){try{if(typeof fn==="function")fn.call(window,new Event("load"));}catch(e){}},15);}},configurable:true});' +
+        'var domReady=(document.readyState==="interactive"||document.readyState==="complete");' +
+        'document.addEventListener("DOMContentLoaded",function(){domReady=true;},{capture:true});' +
+        'var origDocAEL=document.addEventListener.bind(document);' +
+        'document.addEventListener=function(t,l,o){if(t==="DOMContentLoaded"&&(domReady||document.readyState!=="loading")){setTimeout(function(){try{if(typeof l==="function")l.call(document,new Event("DOMContentLoaded"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("DOMContentLoaded"));}catch(e){}},15);}return origDocAEL(t,l,o);};' +
+        '})();<' + '/script>';
+    }
+
     async function resolveAndLoadGame() {
-      const base = document.baseURI || window.location.href;
       const enc = encodeURIComponent(GAME_FOLDER);
+      const isFile = window.location.protocol === 'file:' || (document.baseURI && document.baseURI.startsWith('file:'));
 
       if (IS_EMULATOR) {
-        const playerCandidates = [
-          new URL('emulator/player.html', base).href,
-          new URL('../emulator/player.html', base).href,
-          'http://localhost:8080/emulator/player.html',
-          TAILSCALE_ORIGIN + '/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html'
-        ];
+        const playerCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          playerCandidates.push(new URL('emulator/player.html', base).href);
+          playerCandidates.push(new URL('../emulator/player.html', base).href);
+        }
+        playerCandidates.push('http://localhost:8080/emulator/player.html');
+        playerCandidates.push('http://127.0.0.1:8080/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html');
+        playerCandidates.push(TAILSCALE_ORIGIN + '/emulator/player.html');
+
         for (const p of playerCandidates) {
           try {
-            const r = await fetch(p);
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const r = await fetch(p, { signal: c.signal });
+            clearTimeout(t);
             if (r.ok) {
               const html = await r.text();
-              const baseTag = '<base href="' + new URL('./', p).href + '">';
+              effectiveGameUrl = p;
+              const targetBase = new URL('./', p).href;
+              const baseTag = '<base href="' + targetBase + '">';
+              const shim = makeShim(targetBase);
               const injectScript = '<script>window.__INJECTED_QUERY__ = ' + JSON.stringify(QUERY_STR) + ';<' + '/script>';
-              const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + injectScript) : (baseTag + injectScript + html);
+              const full = html.includes('<head>')
+                ? html.replace('<head>', '<head>' + baseTag + shim + injectScript)
+                : (baseTag + shim + injectScript + html);
               frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
               return;
             }
           } catch(e) {}
         }
-        frame.src = new URL('emulator/player.svg?' + QUERY_STR, base).href;
+        frame.src = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.svg?' + QUERY_STR;
         return;
       }
 
-      if (INLINE_SRC && INLINE_SRC.length > 50) {
-        const targetBase = new URL('games/' + enc + '/', base).href;
-        const baseTag = '<base href="' + targetBase + '">';
-        const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-        const full = INLINE_SRC.includes('<head>') ? INLINE_SRC.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + INLINE_SRC);
+      let inlineHtml = '';
+      if (INLINE_B64) {
+        try { inlineHtml = decodeURIComponent(escape(atob(INLINE_B64))); }
+        catch(e) { try { inlineHtml = atob(INLINE_B64); } catch(e2) {} }
+      }
+
+      // Check if inlineHtml already has a hardcoded http/https <base href="...">
+      let preExistingBase = '';
+      if (inlineHtml) {
+        const baseTagIdx = inlineHtml.toLowerCase().indexOf('<base');
+        if (baseTagIdx !== -1) {
+          const snippet = inlineHtml.slice(baseTagIdx, baseTagIdx + 400);
+          const hrefIdx = snippet.toLowerCase().indexOf('href=');
+          if (hrefIdx !== -1) {
+            const q = snippet[hrefIdx + 5];
+            if (q === '"' || q === "'") {
+              const endQ = snippet.indexOf(q, hrefIdx + 6);
+              if (endQ !== -1) {
+                const val = snippet.slice(hrefIdx + 6, endQ);
+                if (val.startsWith('http://') || val.startsWith('https://')) {
+                  preExistingBase = val;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      let activeBase = '';
+      let fetchedHtml = '';
+
+      if (preExistingBase) {
+        activeBase = preExistingBase;
+      } else {
+        const baseCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          baseCandidates.push(new URL('games/' + enc + '/', base).href);
+          baseCandidates.push(new URL('../games/' + enc + '/', base).href);
+        }
+        baseCandidates.push('http://localhost:8080/games/' + enc + '/');
+        baseCandidates.push('http://127.0.0.1:8080/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/');
+        baseCandidates.push(TAILSCALE_ORIGIN + '/games/' + enc + '/');
+
+        for (const b of baseCandidates) {
+          try {
+            const probe = b.endsWith('/') ? b + 'index.html' : b + '/index.html';
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const res = await fetch(probe, { signal: c.signal });
+            clearTimeout(t);
+            if (res.ok) {
+              const txt = await res.text();
+              if (txt.includes('Package size exceeded') || txt.includes('Cannot find "') || txt.trim().startsWith('404')) continue;
+              activeBase = b;
+              fetchedHtml = txt;
+              break;
+            }
+          } catch(e) {}
+        }
+        if (!activeBase) {
+          activeBase = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/';
+        }
+      }
+
+      let rawHtml = (inlineHtml && inlineHtml.length > 50) ? inlineHtml : fetchedHtml;
+
+      if (!rawHtml) {
+        try {
+          const probe = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
+          const c = new AbortController();
+          const t = setTimeout(() => c.abort(), 2500);
+          const res = await fetch(probe, { signal: c.signal });
+          clearTimeout(t);
+          if (res.ok) rawHtml = await res.text();
+        } catch(e) {}
+      }
+
+      if (rawHtml) {
+        effectiveGameUrl = activeBase;
+        const shim = makeShim(activeBase);
+        let full = rawHtml;
+        if (!preExistingBase) {
+          const baseTag = '<base href="' + activeBase + '">';
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + baseTag + shim)
+            : (baseTag + shim + full);
+        } else {
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + shim)
+            : (shim + full);
+        }
         frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
         return;
       }
 
-      const candidates = [
-        new URL('games/' + enc + '/index.html', base).href,
-        new URL('../games/' + enc + '/index.html', base).href,
-        'http://localhost:8080/games/' + enc + '/index.html',
-        TAILSCALE_ORIGIN + '/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesv7iskewl/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/index.html'
-      ];
-
-      for (const url of candidates) {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 2500);
-          const res = await fetch(url, { signal: timer.signal });
-          clearTimeout(timer);
-          if (res.ok) {
-            let html = await res.text();
-            if (html.includes('Package size exceeded') || html.includes('Cannot find "') || html.trim().startsWith('404')) continue;
-            effectiveGameUrl = url;
-            const targetBase = new URL('./', url).href;
-            const baseTag = '<base href="' + targetBase + '">';
-            const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-            const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + html);
-            frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
-            return;
-          }
-        } catch(e) {}
-      }
-
-      effectiveGameUrl = TAILSCALE_ORIGIN + '/games/' + enc + '/index.html';
+      effectiveGameUrl = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
       frame.src = effectiveGameUrl;
     }
 

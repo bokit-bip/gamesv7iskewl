@@ -29,7 +29,7 @@
     const GAME_FOLDER = "kindergarten2";
     const IS_EMULATOR = false;
     const QUERY_STR = "";
-    const INLINE_SRC = "<!DOCTYPE html>\n<html lang=\"en-us\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n    <title>gn-math.github.io | Kindergarten2</title>\n    <link rel=\"shortcut icon\" href=\"TemplateData/favicon.ico\" />\n    <link rel=\"stylesheet\" href=\"TemplateData/style.css\" />\n    <style>\n      html,\n      body {\n        margin: 0;\n        padding: 0;\n        overflow: hidden;\n        height: 100%;\n        width: 100%;\n      }\n\n      #unity-container {\n        width: 100%;\n        height: 100%;\n        position: fixed;\n        top: 0;\n        left: 0;\n      }\n    </style>\n  </head>\n\n  <body>\n    <div\n      id=\"loading-text\"\n      style=\"\n        color: black;\n        font-family: cursive;\n        font-size: 48px;\n        text-align: center;\n        margin-top: 20px;\n      \"\n    >\n      LOADING...\n    </div>\n    <div id=\"unity-container\" class=\"unity-desktop\" hidden>\n      <canvas id=\"unity-canvas\" tabindex=\"-1\"></canvas>\n      <div id=\"unity-loading-bar\">\n        <div id=\"unity-logo\"></div>\n        <div id=\"unity-progress-bar-empty\">\n          <div id=\"unity-progress-bar-full\"></div>\n        </div>\n      </div>\n      <div id=\"unity-warning\"></div>\n    </div>\n    <script>\n      var container = document.querySelector(\"#unity-container\");\n      var canvas = document.querySelector(\"#unity-canvas\");\n      var loadingBar = document.querySelector(\"#unity-loading-bar\");\n      var progressBarFull = document.querySelector(\"#unity-progress-bar-full\");\n      var fullscreenButton = document.querySelector(\"#unity-fullscreen-button\");\n      var warningBanner = document.querySelector(\"#unity-warning\");\n\n      function unityShowBanner(msg, type) {}\n\n      function mergeFiles(fileParts) {\n        return new Promise((resolve, reject) => {\n          let buffers = [];\n\n          function fetchPart(index) {\n            if (index >= fileParts.length) {\n              let mergedBlob = new Blob(buffers);\n              let mergedFileUrl = URL.createObjectURL(mergedBlob);\n              resolve(mergedFileUrl);\n              return;\n            }\n            fetch(fileParts[index])\n              .then((response) => response.arrayBuffer())\n              .then((data) => {\n                buffers.push(data);\n                fetchPart(index + 1);\n              })\n              .catch(reject);\n          }\n          fetchPart(0);\n        });\n      }\n\n      function getParts(file, start, end) {\n        let parts = [];\n        for (let i = start; i <= end; i++) {\n          parts.push(file + \".part\" + i);\n        }\n        return parts;\n      }\n      Promise.all([\n        mergeFiles(getParts(\"Build/Build.data\", 1, 2)),\n        mergeFiles(getParts(\"Build/Build.wasm\", 1, 3)),\n      ]).then(([dataUrl, wasmUrl]) => {\n        container.hidden = false;\n        var buildUrl = \"Build\";\n        var loaderUrl = buildUrl + \"/Build.loader.js\";\n        var config = {\n          dataUrl: dataUrl,\n          frameworkUrl: buildUrl + \"/Build.framework.js\",\n          codeUrl: wasmUrl,\n          streamingAssetsUrl: \"StreamingAssets\",\n          companyName: \"SmashGames\",\n          productName: \"Kindergarten2\",\n          productVersion: \"2.00\",\n          showBanner: unityShowBanner,\n        };\n        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {\n          var meta = document.createElement(\"meta\");\n          meta.name = \"viewport\";\n          meta.content =\n            \"width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes\";\n          document.getElementsByTagName(\"head\")[0].appendChild(meta);\n          container.className = \"unity-mobile\";\n          canvas.className = \"unity-mobile\";\n        } else {\n          function resizeCanvas() {\n            canvas.width = window.innerWidth;\n            canvas.height = window.innerHeight;\n            canvas.style.width = window.innerWidth + \"px\";\n            canvas.style.height = window.innerHeight + \"px\";\n          }\n          resizeCanvas();\n          window.addEventListener(\"resize\", resizeCanvas);\n        }\n        loadingBar.style.display = \"block\";\n        var script = document.createElement(\"script\");\n        script.src = loaderUrl;\n        script.onload = () => {\n          createUnityInstance(canvas, config, (progress) => {\n            progressBarFull.style.width = 100 * progress + \"%\";\n          })\n            .then((unityInstance) => {\n              loadingBar.style.display = \"none\";\n              document.querySelector(\"#loading-text\").remove();\n            })\n            .catch((message) => {\n              alert(message);\n            });\n        };\n        document.body.appendChild(script);\n      });\n    <\\/script>\n  \n</body>\n</html>\n";
+    const INLINE_B64 = "PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuLXVzIj4KICA8aGVhZD4KICAgIDxtZXRhIGNoYXJzZXQ9InV0Zi04IiAvPgogICAgPG1ldGEgaHR0cC1lcXVpdj0iQ29udGVudC1UeXBlIiBjb250ZW50PSJ0ZXh0L2h0bWw7IGNoYXJzZXQ9dXRmLTgiIC8+CiAgICA8dGl0bGU+Z24tbWF0aC5naXRodWIuaW8gfCBLaW5kZXJnYXJ0ZW4yPC90aXRsZT4KICAgIDxsaW5rIHJlbD0ic2hvcnRjdXQgaWNvbiIgaHJlZj0iVGVtcGxhdGVEYXRhL2Zhdmljb24uaWNvIiAvPgogICAgPGxpbmsgcmVsPSJzdHlsZXNoZWV0IiBocmVmPSJUZW1wbGF0ZURhdGEvc3R5bGUuY3NzIiAvPgogICAgPHN0eWxlPgogICAgICBodG1sLAogICAgICBib2R5IHsKICAgICAgICBtYXJnaW46IDA7CiAgICAgICAgcGFkZGluZzogMDsKICAgICAgICBvdmVyZmxvdzogaGlkZGVuOwogICAgICAgIGhlaWdodDogMTAwJTsKICAgICAgICB3aWR0aDogMTAwJTsKICAgICAgfQoKICAgICAgI3VuaXR5LWNvbnRhaW5lciB7CiAgICAgICAgd2lkdGg6IDEwMCU7CiAgICAgICAgaGVpZ2h0OiAxMDAlOwogICAgICAgIHBvc2l0aW9uOiBmaXhlZDsKICAgICAgICB0b3A6IDA7CiAgICAgICAgbGVmdDogMDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2hlYWQ+CgogIDxib2R5PgogICAgPGRpdgogICAgICBpZD0ibG9hZGluZy10ZXh0IgogICAgICBzdHlsZT0iCiAgICAgICAgY29sb3I6IGJsYWNrOwogICAgICAgIGZvbnQtZmFtaWx5OiBjdXJzaXZlOwogICAgICAgIGZvbnQtc2l6ZTogNDhweDsKICAgICAgICB0ZXh0LWFsaWduOiBjZW50ZXI7CiAgICAgICAgbWFyZ2luLXRvcDogMjBweDsKICAgICAgIgogICAgPgogICAgICBMT0FESU5HLi4uCiAgICA8L2Rpdj4KICAgIDxkaXYgaWQ9InVuaXR5LWNvbnRhaW5lciIgY2xhc3M9InVuaXR5LWRlc2t0b3AiIGhpZGRlbj4KICAgICAgPGNhbnZhcyBpZD0idW5pdHktY2FudmFzIiB0YWJpbmRleD0iLTEiPjwvY2FudmFzPgogICAgICA8ZGl2IGlkPSJ1bml0eS1sb2FkaW5nLWJhciI+CiAgICAgICAgPGRpdiBpZD0idW5pdHktbG9nbyI+PC9kaXY+CiAgICAgICAgPGRpdiBpZD0idW5pdHktcHJvZ3Jlc3MtYmFyLWVtcHR5Ij4KICAgICAgICAgIDxkaXYgaWQ9InVuaXR5LXByb2dyZXNzLWJhci1mdWxsIj48L2Rpdj4KICAgICAgICA8L2Rpdj4KICAgICAgPC9kaXY+CiAgICAgIDxkaXYgaWQ9InVuaXR5LXdhcm5pbmciPjwvZGl2PgogICAgPC9kaXY+CiAgICA8c2NyaXB0PgogICAgICB2YXIgY29udGFpbmVyID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvcigiI3VuaXR5LWNvbnRhaW5lciIpOwogICAgICB2YXIgY2FudmFzID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvcigiI3VuaXR5LWNhbnZhcyIpOwogICAgICB2YXIgbG9hZGluZ0JhciA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoIiN1bml0eS1sb2FkaW5nLWJhciIpOwogICAgICB2YXIgcHJvZ3Jlc3NCYXJGdWxsID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvcigiI3VuaXR5LXByb2dyZXNzLWJhci1mdWxsIik7CiAgICAgIHZhciBmdWxsc2NyZWVuQnV0dG9uID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvcigiI3VuaXR5LWZ1bGxzY3JlZW4tYnV0dG9uIik7CiAgICAgIHZhciB3YXJuaW5nQmFubmVyID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvcigiI3VuaXR5LXdhcm5pbmciKTsKCiAgICAgIGZ1bmN0aW9uIHVuaXR5U2hvd0Jhbm5lcihtc2csIHR5cGUpIHt9CgogICAgICBmdW5jdGlvbiBtZXJnZUZpbGVzKGZpbGVQYXJ0cykgewogICAgICAgIHJldHVybiBuZXcgUHJvbWlzZSgocmVzb2x2ZSwgcmVqZWN0KSA9PiB7CiAgICAgICAgICBsZXQgYnVmZmVycyA9IFtdOwoKICAgICAgICAgIGZ1bmN0aW9uIGZldGNoUGFydChpbmRleCkgewogICAgICAgICAgICBpZiAoaW5kZXggPj0gZmlsZVBhcnRzLmxlbmd0aCkgewogICAgICAgICAgICAgIGxldCBtZXJnZWRCbG9iID0gbmV3IEJsb2IoYnVmZmVycyk7CiAgICAgICAgICAgICAgbGV0IG1lcmdlZEZpbGVVcmwgPSBVUkwuY3JlYXRlT2JqZWN0VVJMKG1lcmdlZEJsb2IpOwogICAgICAgICAgICAgIHJlc29sdmUobWVyZ2VkRmlsZVVybCk7CiAgICAgICAgICAgICAgcmV0dXJuOwogICAgICAgICAgICB9CiAgICAgICAgICAgIGZldGNoKGZpbGVQYXJ0c1tpbmRleF0pCiAgICAgICAgICAgICAgLnRoZW4oKHJlc3BvbnNlKSA9PiByZXNwb25zZS5hcnJheUJ1ZmZlcigpKQogICAgICAgICAgICAgIC50aGVuKChkYXRhKSA9PiB7CiAgICAgICAgICAgICAgICBidWZmZXJzLnB1c2goZGF0YSk7CiAgICAgICAgICAgICAgICBmZXRjaFBhcnQoaW5kZXggKyAxKTsKICAgICAgICAgICAgICB9KQogICAgICAgICAgICAgIC5jYXRjaChyZWplY3QpOwogICAgICAgICAgfQogICAgICAgICAgZmV0Y2hQYXJ0KDApOwogICAgICAgIH0pOwogICAgICB9CgogICAgICBmdW5jdGlvbiBnZXRQYXJ0cyhmaWxlLCBzdGFydCwgZW5kKSB7CiAgICAgICAgbGV0IHBhcnRzID0gW107CiAgICAgICAgZm9yIChsZXQgaSA9IHN0YXJ0OyBpIDw9IGVuZDsgaSsrKSB7CiAgICAgICAgICBwYXJ0cy5wdXNoKGZpbGUgKyAiLnBhcnQiICsgaSk7CiAgICAgICAgfQogICAgICAgIHJldHVybiBwYXJ0czsKICAgICAgfQogICAgICBQcm9taXNlLmFsbChbCiAgICAgICAgbWVyZ2VGaWxlcyhnZXRQYXJ0cygiQnVpbGQvQnVpbGQuZGF0YSIsIDEsIDIpKSwKICAgICAgICBtZXJnZUZpbGVzKGdldFBhcnRzKCJCdWlsZC9CdWlsZC53YXNtIiwgMSwgMykpLAogICAgICBdKS50aGVuKChbZGF0YVVybCwgd2FzbVVybF0pID0+IHsKICAgICAgICBjb250YWluZXIuaGlkZGVuID0gZmFsc2U7CiAgICAgICAgdmFyIGJ1aWxkVXJsID0gIkJ1aWxkIjsKICAgICAgICB2YXIgbG9hZGVyVXJsID0gYnVpbGRVcmwgKyAiL0J1aWxkLmxvYWRlci5qcyI7CiAgICAgICAgdmFyIGNvbmZpZyA9IHsKICAgICAgICAgIGRhdGFVcmw6IGRhdGFVcmwsCiAgICAgICAgICBmcmFtZXdvcmtVcmw6IGJ1aWxkVXJsICsgIi9CdWlsZC5mcmFtZXdvcmsuanMiLAogICAgICAgICAgY29kZVVybDogd2FzbVVybCwKICAgICAgICAgIHN0cmVhbWluZ0Fzc2V0c1VybDogIlN0cmVhbWluZ0Fzc2V0cyIsCiAgICAgICAgICBjb21wYW55TmFtZTogIlNtYXNoR2FtZXMiLAogICAgICAgICAgcHJvZHVjdE5hbWU6ICJLaW5kZXJnYXJ0ZW4yIiwKICAgICAgICAgIHByb2R1Y3RWZXJzaW9uOiAiMi4wMCIsCiAgICAgICAgICBzaG93QmFubmVyOiB1bml0eVNob3dCYW5uZXIsCiAgICAgICAgfTsKICAgICAgICBpZiAoL2lQaG9uZXxpUGFkfGlQb2R8QW5kcm9pZC9pLnRlc3QobmF2aWdhdG9yLnVzZXJBZ2VudCkpIHsKICAgICAgICAgIHZhciBtZXRhID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgibWV0YSIpOwogICAgICAgICAgbWV0YS5uYW1lID0gInZpZXdwb3J0IjsKICAgICAgICAgIG1ldGEuY29udGVudCA9CiAgICAgICAgICAgICJ3aWR0aD1kZXZpY2Utd2lkdGgsIGhlaWdodD1kZXZpY2UtaGVpZ2h0LCBpbml0aWFsLXNjYWxlPTEuMCwgdXNlci1zY2FsYWJsZT1ubywgc2hyaW5rLXRvLWZpdD15ZXMiOwogICAgICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudHNCeVRhZ05hbWUoImhlYWQiKVswXS5hcHBlbmRDaGlsZChtZXRhKTsKICAgICAgICAgIGNvbnRhaW5lci5jbGFzc05hbWUgPSAidW5pdHktbW9iaWxlIjsKICAgICAgICAgIGNhbnZhcy5jbGFzc05hbWUgPSAidW5pdHktbW9iaWxlIjsKICAgICAgICB9IGVsc2UgewogICAgICAgICAgZnVuY3Rpb24gcmVzaXplQ2FudmFzKCkgewogICAgICAgICAgICBjYW52YXMud2lkdGggPSB3aW5kb3cuaW5uZXJXaWR0aDsKICAgICAgICAgICAgY2FudmFzLmhlaWdodCA9IHdpbmRvdy5pbm5lckhlaWdodDsKICAgICAgICAgICAgY2FudmFzLnN0eWxlLndpZHRoID0gd2luZG93LmlubmVyV2lkdGggKyAicHgiOwogICAgICAgICAgICBjYW52YXMuc3R5bGUuaGVpZ2h0ID0gd2luZG93LmlubmVySGVpZ2h0ICsgInB4IjsKICAgICAgICAgIH0KICAgICAgICAgIHJlc2l6ZUNhbnZhcygpOwogICAgICAgICAgd2luZG93LmFkZEV2ZW50TGlzdGVuZXIoInJlc2l6ZSIsIHJlc2l6ZUNhbnZhcyk7CiAgICAgICAgfQogICAgICAgIGxvYWRpbmdCYXIuc3R5bGUuZGlzcGxheSA9ICJibG9jayI7CiAgICAgICAgdmFyIHNjcmlwdCA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoInNjcmlwdCIpOwogICAgICAgIHNjcmlwdC5zcmMgPSBsb2FkZXJVcmw7CiAgICAgICAgc2NyaXB0Lm9ubG9hZCA9ICgpID0+IHsKICAgICAgICAgIGNyZWF0ZVVuaXR5SW5zdGFuY2UoY2FudmFzLCBjb25maWcsIChwcm9ncmVzcykgPT4gewogICAgICAgICAgICBwcm9ncmVzc0JhckZ1bGwuc3R5bGUud2lkdGggPSAxMDAgKiBwcm9ncmVzcyArICIlIjsKICAgICAgICAgIH0pCiAgICAgICAgICAgIC50aGVuKCh1bml0eUluc3RhbmNlKSA9PiB7CiAgICAgICAgICAgICAgbG9hZGluZ0Jhci5zdHlsZS5kaXNwbGF5ID0gIm5vbmUiOwogICAgICAgICAgICAgIGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoIiNsb2FkaW5nLXRleHQiKS5yZW1vdmUoKTsKICAgICAgICAgICAgfSkKICAgICAgICAgICAgLmNhdGNoKChtZXNzYWdlKSA9PiB7CiAgICAgICAgICAgICAgYWxlcnQobWVzc2FnZSk7CiAgICAgICAgICAgIH0pOwogICAgICAgIH07CiAgICAgICAgZG9jdW1lbnQuYm9keS5hcHBlbmRDaGlsZChzY3JpcHQpOwogICAgICB9KTsKICAgIDwvc2NyaXB0PgogIAo8L2JvZHk+CjwvaHRtbD4K";
 
     const CLOAK_PRESETS = {
       drive: { title: "My Drive - Google Drive", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 87.3 78'%3E%3Cpath fill='%230066da' d='m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z'/%3E%3Cpath fill='%2300ac47' d='M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44A9.06 9.06 0 0 0 0 53h27.5z'/%3E%3Cpath fill='%23ea4335' d='m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z'/%3E%3Cpath fill='%2300832d' d='M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z'/%3E%3Cpath fill='%232684fc' d='M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5L72.35 24.7c-.8-1.4-1.95-2.5-3.3-3.3L55.3 45.2z'/%3E%3Cpath fill='%23ffba00' d='m73.55 76.8-13.75-23.8H27.5l13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h23.3c1.6 0 3.15-.4 4.5-1.2z'/%3E%3C/svg%3E" },
@@ -106,77 +106,177 @@
       setTabCloak(cloakSelect ? cloakSelect.value : 'drive');
     } catch(e) {}
 
+    function makeShim(tb) {
+      return '<script>' +
+        '(function(){' +
+        'var tb=' + JSON.stringify(tb) + ';' +
+        'if(!tb.endsWith("/"))tb+="/";' +
+        'var OrigImage=window.Image;' +
+        'window.Image=function(w,h){var img=new OrigImage(w,h);img.crossOrigin="anonymous";return img;};' +
+        'var origCE=document.createElement.bind(document);' +
+        'document.createElement=function(t,o){var el=origCE(t,o);if(t&&t.toLowerCase()==="img"){try{el.crossOrigin="anonymous";}catch(e){}}return el;};' +
+        'var OrigAudio=window.Audio;' +
+        'if(OrigAudio){window.Audio=function(s){var a=new OrigAudio();try{a.crossOrigin="anonymous";}catch(e){}if(s){if(typeof s==="string"&&!/^(https?:|data:|blob:)/i.test(s)){s=new URL(s,tb).href;}a.src=s;}return a;};}' +
+        'class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0||bStr.indexOf("file:")===0){bStr=tb;}try{super(u,bStr);}catch(e){super(u,tb);}}}' +
+        'window.URL=PatchedURL;' +
+        'var origFetch=window.fetch;' +
+        'if(origFetch){window.fetch=function(inp,init){if(typeof inp==="string"){if(!/^(https?:|data:|blob:)/i.test(inp)){inp=new URL(inp,tb).href;}}else if(inp&&typeof inp==="object"&&inp.url){if(!/^(https?:|data:|blob:)/i.test(inp.url)){inp=new Request(new URL(inp.url,tb).href,inp);}}return origFetch.call(this,inp,init);};}' +
+        'var origXhrOpen=XMLHttpRequest.prototype.open;' +
+        'XMLHttpRequest.prototype.open=function(m,u){var args=Array.prototype.slice.call(arguments);if(typeof u==="string"&&!/^(https?:|data:|blob:)/i.test(u)){args[1]=new URL(u,tb).href;}return origXhrOpen.apply(this,args);};' +
+        'var pageLoaded=(document.readyState==="complete");' +
+        'window.addEventListener("load",function(){pageLoaded=true;},{capture:true});' +
+        'var origWinAEL=window.addEventListener.bind(window);' +
+        'window.addEventListener=function(t,l,o){if(t==="load"&&(pageLoaded||document.readyState==="complete")){setTimeout(function(){try{if(typeof l==="function")l.call(window,new Event("load"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("load"));}catch(e){}},15);}return origWinAEL(t,l,o);};' +
+        'var origOnload=null;' +
+        'Object.defineProperty(window,"onload",{get:function(){return origOnload;},set:function(fn){origOnload=fn;if(pageLoaded||document.readyState==="complete"){setTimeout(function(){try{if(typeof fn==="function")fn.call(window,new Event("load"));}catch(e){}},15);}},configurable:true});' +
+        'var domReady=(document.readyState==="interactive"||document.readyState==="complete");' +
+        'document.addEventListener("DOMContentLoaded",function(){domReady=true;},{capture:true});' +
+        'var origDocAEL=document.addEventListener.bind(document);' +
+        'document.addEventListener=function(t,l,o){if(t==="DOMContentLoaded"&&(domReady||document.readyState!=="loading")){setTimeout(function(){try{if(typeof l==="function")l.call(document,new Event("DOMContentLoaded"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("DOMContentLoaded"));}catch(e){}},15);}return origDocAEL(t,l,o);};' +
+        '})();<' + '/script>';
+    }
+
     async function resolveAndLoadGame() {
-      const base = document.baseURI || window.location.href;
       const enc = encodeURIComponent(GAME_FOLDER);
+      const isFile = window.location.protocol === 'file:' || (document.baseURI && document.baseURI.startsWith('file:'));
 
       if (IS_EMULATOR) {
-        const playerCandidates = [
-          new URL('emulator/player.html', base).href,
-          new URL('../emulator/player.html', base).href,
-          'http://localhost:8080/emulator/player.html',
-          TAILSCALE_ORIGIN + '/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html',
-          'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html'
-        ];
+        const playerCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          playerCandidates.push(new URL('emulator/player.html', base).href);
+          playerCandidates.push(new URL('../emulator/player.html', base).href);
+        }
+        playerCandidates.push('http://localhost:8080/emulator/player.html');
+        playerCandidates.push('http://127.0.0.1:8080/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html');
+        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html');
+        playerCandidates.push(TAILSCALE_ORIGIN + '/emulator/player.html');
+
         for (const p of playerCandidates) {
           try {
-            const r = await fetch(p);
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const r = await fetch(p, { signal: c.signal });
+            clearTimeout(t);
             if (r.ok) {
               const html = await r.text();
-              const baseTag = '<base href="' + new URL('./', p).href + '">';
+              effectiveGameUrl = p;
+              const targetBase = new URL('./', p).href;
+              const baseTag = '<base href="' + targetBase + '">';
+              const shim = makeShim(targetBase);
               const injectScript = '<script>window.__INJECTED_QUERY__ = ' + JSON.stringify(QUERY_STR) + ';<' + '/script>';
-              const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + injectScript) : (baseTag + injectScript + html);
+              const full = html.includes('<head>')
+                ? html.replace('<head>', '<head>' + baseTag + shim + injectScript)
+                : (baseTag + shim + injectScript + html);
               frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
               return;
             }
           } catch(e) {}
         }
-        frame.src = new URL('emulator/player.svg?' + QUERY_STR, base).href;
+        frame.src = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.svg?' + QUERY_STR;
         return;
       }
 
-      if (INLINE_SRC && INLINE_SRC.length > 50) {
-        const targetBase = new URL('games/' + enc + '/', base).href;
-        const baseTag = '<base href="' + targetBase + '">';
-        const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-        const full = INLINE_SRC.includes('<head>') ? INLINE_SRC.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + INLINE_SRC);
+      let inlineHtml = '';
+      if (INLINE_B64) {
+        try { inlineHtml = decodeURIComponent(escape(atob(INLINE_B64))); }
+        catch(e) { try { inlineHtml = atob(INLINE_B64); } catch(e2) {} }
+      }
+
+      // Check if inlineHtml already has a hardcoded http/https <base href="...">
+      let preExistingBase = '';
+      if (inlineHtml) {
+        const baseTagIdx = inlineHtml.toLowerCase().indexOf('<base');
+        if (baseTagIdx !== -1) {
+          const snippet = inlineHtml.slice(baseTagIdx, baseTagIdx + 400);
+          const hrefIdx = snippet.toLowerCase().indexOf('href=');
+          if (hrefIdx !== -1) {
+            const q = snippet[hrefIdx + 5];
+            if (q === '"' || q === "'") {
+              const endQ = snippet.indexOf(q, hrefIdx + 6);
+              if (endQ !== -1) {
+                const val = snippet.slice(hrefIdx + 6, endQ);
+                if (val.startsWith('http://') || val.startsWith('https://')) {
+                  preExistingBase = val;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      let activeBase = '';
+      let fetchedHtml = '';
+
+      if (preExistingBase) {
+        activeBase = preExistingBase;
+      } else {
+        const baseCandidates = [];
+        if (!isFile) {
+          const base = document.baseURI || window.location.href;
+          baseCandidates.push(new URL('games/' + enc + '/', base).href);
+          baseCandidates.push(new URL('../games/' + enc + '/', base).href);
+        }
+        baseCandidates.push('http://localhost:8080/games/' + enc + '/');
+        baseCandidates.push('http://127.0.0.1:8080/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/');
+        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/');
+        baseCandidates.push(TAILSCALE_ORIGIN + '/games/' + enc + '/');
+
+        for (const b of baseCandidates) {
+          try {
+            const probe = b.endsWith('/') ? b + 'index.html' : b + '/index.html';
+            const c = new AbortController();
+            const t = setTimeout(() => c.abort(), 1200);
+            const res = await fetch(probe, { signal: c.signal });
+            clearTimeout(t);
+            if (res.ok) {
+              const txt = await res.text();
+              if (txt.includes('Package size exceeded') || txt.includes('Cannot find "') || txt.trim().startsWith('404')) continue;
+              activeBase = b;
+              fetchedHtml = txt;
+              break;
+            }
+          } catch(e) {}
+        }
+        if (!activeBase) {
+          activeBase = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/';
+        }
+      }
+
+      let rawHtml = (inlineHtml && inlineHtml.length > 50) ? inlineHtml : fetchedHtml;
+
+      if (!rawHtml) {
+        try {
+          const probe = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
+          const c = new AbortController();
+          const t = setTimeout(() => c.abort(), 2500);
+          const res = await fetch(probe, { signal: c.signal });
+          clearTimeout(t);
+          if (res.ok) rawHtml = await res.text();
+        } catch(e) {}
+      }
+
+      if (rawHtml) {
+        effectiveGameUrl = activeBase;
+        const shim = makeShim(activeBase);
+        let full = rawHtml;
+        if (!preExistingBase) {
+          const baseTag = '<base href="' + activeBase + '">';
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + baseTag + shim)
+            : (baseTag + shim + full);
+        } else {
+          full = full.includes('<head>')
+            ? full.replace('<head>', '<head>' + shim)
+            : (shim + full);
+        }
         frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
         return;
       }
 
-      const candidates = [
-        new URL('games/' + enc + '/index.html', base).href,
-        new URL('../games/' + enc + '/index.html', base).href,
-        'http://localhost:8080/games/' + enc + '/index.html',
-        TAILSCALE_ORIGIN + '/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesv7iskewl/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/index.html',
-        'https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/' + enc + '/index.html',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/index.html'
-      ];
-
-      for (const url of candidates) {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 2500);
-          const res = await fetch(url, { signal: timer.signal });
-          clearTimeout(timer);
-          if (res.ok) {
-            let html = await res.text();
-            if (html.includes('Package size exceeded') || html.includes('Cannot find "') || html.trim().startsWith('404')) continue;
-            effectiveGameUrl = url;
-            const targetBase = new URL('./', url).href;
-            const baseTag = '<base href="' + targetBase + '">';
-            const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
-            const full = html.includes('<head>') ? html.replace('<head>', '<head>' + baseTag + shimScript) : (baseTag + shimScript + html);
-            frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
-            return;
-          }
-        } catch(e) {}
-      }
-
-      effectiveGameUrl = TAILSCALE_ORIGIN + '/games/' + enc + '/index.html';
+      effectiveGameUrl = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
       frame.src = effectiveGameUrl;
     }
 
