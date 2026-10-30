@@ -1,0 +1,123 @@
+{
+  "server": {
+    "name": "BokitCord Movies & TV Service",
+    "version": "3.0.0",
+    "localMediaDir": "./movies",
+    "cacheTtlMs": 3600000,
+    "probeTimeoutMs": 3000,
+    "maxCacheEntries": 2000
+  },
+  "credentials": {
+    "tmdbApiKey": "3fd2be6f0c70a2a598f084ddfb75487c",
+    "omdbApiKey": "trilogy"
+  },
+  "features": {
+    "autoFallback": true,
+    "preflightCheck": true,
+    "rememberPreferredProvider": true,
+    "subtitlesEnabled": true
+  },
+  "providers": {
+    "vidrift": {
+      "enabled": true,
+      "priority": 1,
+      "name": "VidRift",
+      "serverLabel": "Server 1 — VidRift HD",
+      "friendlyName": "VidRift HD",
+      "quality": "1080p Adaptive Stream",
+      "badge": "VidRift",
+      "canDownload": false,
+      "streamType": "hls"
+    },
+    "vidlink": {
+      "enabled": true,
+      "priority": 2,
+      "name": "VidLink HD",
+      "serverLabel": "Server 3 — VidLink HD",
+      "friendlyName": "VidLink HD",
+      "quality": "1080p Multi-Server",
+      "badge": "VidLink",
+      "canDownload": false,
+      "streamType": "embed"
+    },
+    "vidsrc": {
+      "enabled": true,
+      "priority": 3,
+      "name": "VidSrc HD",
+      "serverLabel": "Server 4 — VidSrc HD",
+      "friendlyName": "VidSrc HD",
+      "quality": "1080p Fast Stream",
+      "badge": "VidSrc",
+      "canDownload": false,
+      "streamType": "embed"
+    },
+    "autoembed": {
+      "enabled": true,
+      "priority": 4,
+      "name": "AutoEmbed",
+      "serverLabel": "Server 5 — AutoEmbed",
+      "friendlyName": "AutoEmbed",
+      "quality": "1080p Web Player",
+      "badge": "AutoEmbed",
+      "canDownload": false,
+      "streamType": "embed"
+    },
+    "local-stream": {
+      "enabled": true,
+      "priority": 1,
+      "name": "Local Media Server",
+      "serverLabel": "Server 1 — Local Media Server",
+      "friendlyName": "Local Media Server",
+      "quality": "1080p Direct File",
+      "badge": "Local Disk",
+      "canDownload": true,
+      "streamType": "mp4"
+    },
+    "open-archive": {
+      "enabled": true,
+      "priority": 2,
+      "name": "Open Archive HD",
+      "serverLabel": "Server 2 — Open Archive HD",
+      "friendlyName": "Open Archive HD",
+      "quality": "1080p Public Domain",
+      "badge": "Open Archive",
+      "canDownload": true,
+      "streamType": "mp4"
+    },
+    "faststream": {
+      "enabled": true,
+      "priority": 3,
+      "name": "FastStream HLS",
+      "serverLabel": "Server 3 — FastStream HLS",
+      "friendlyName": "FastStream HLS",
+      "quality": "Multi-Bitrate HLS",
+      "badge": "Fast HLS",
+      "canDownload": false,
+      "streamType": "hls"
+    },
+    "cinema-direct": {
+      "enabled": true,
+      "priority": 4,
+      "name": "Cinema Direct",
+      "serverLabel": "Server 4 — Cinema Direct",
+      "friendlyName": "Cinema Direct",
+      "quality": "1080p Ultra HD",
+      "badge": "Direct Stream",
+      "canDownload": true,
+      "streamType": "mp4"
+    },
+    "custom-media": {
+      "enabled": false,
+      "priority": 5,
+      "name": "Custom Media Stream",
+      "serverLabel": "Server 5 — Custom Media Stream",
+      "friendlyName": "Custom Media Stream",
+      "endpoint": "",
+      "apiKey": "",
+      "quality": "Direct Stream",
+      "badge": "Custom Relay",
+      "canDownload": true,
+      "streamType": "mp4"
+    }
+  }
+}

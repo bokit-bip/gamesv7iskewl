@@ -29,6 +29,7 @@
       <ul class="nav-tabs">
         <li><button class="nav-tab-btn active" data-tab="home" onclick="switchTab('home')">HOME</button></li>
         <li><button class="nav-tab-btn" data-tab="games" onclick="switchTab('games')">GAMES</button></li>
+        <li><button class="nav-tab-btn" data-tab="movies" onclick="switchTab('movies')">MOVIES</button></li>
         <li><button class="nav-tab-btn" data-tab="proxy" onclick="switchTab('proxy')">PROXY</button></li>
         <li><button class="nav-tab-btn" data-tab="editor" onclick="switchTab('editor')">CODE EDITOR</button></li>
         <li><button class="nav-tab-btn" data-tab="settings" onclick="switchTab('settings')">SETTINGS</button></li>
@@ -113,6 +114,14 @@
             </div>
           </div>
 
+          <div class="stat-card" onclick="switchTab('movies')">
+            <div class="stat-icon">🎬</div>
+            <div class="stat-info">
+              <span class="stat-num">CINEMA</span>
+              <span class="stat-label">Stream Movies &amp; TV</span>
+            </div>
+          </div>
+
           <div class="stat-card" onclick="switchTab('proxy')">
             <div class="stat-icon">🌐</div>
             <div class="stat-info">
@@ -162,6 +171,337 @@
       <!-- Games Grid -->
       <div class="games-grid" id="games-grid">
         <!-- Injected dynamically via app.js -->
+      </div>
+    </section>
+
+<!-- ================= MOVIES THEATER & LIBRARY VIEW ================= -->
+    <!-- ================= MOVIES THEATER & LIBRARY VIEW ================= -->
+    <section id="movies-view" class="tab-view" aria-label="Movies Theater &amp; Library">
+      <div class="movies-container custom-scrollbar">
+        <!-- Movies Library Browser -->
+        <div id="movies-list-view" class="movies-list-view">
+          <header class="movies-header">
+            <div class="movies-header-top">
+              <div class="movies-header-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span>Skeletal Cinema &bull; Streaming Library</span>
+              </div>
+              <div class="movies-header-actions">
+                <span id="movies-count-badge" class="movies-count-badge">Streaming Catalog</span>
+                <button type="button" id="btn-movie-providers-debug" class="btn-movie-providers-debug" title="View streaming & metadata provider health, latency, and status diagnostics">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <span>Provider Status</span>
+                </button>
+                <button type="button" id="btn-refresh-movies" class="btn-refresh-movies" title="Rescan local movies folder">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  <span>Rescan Local</span>
+                </button>
+              </div>
+            </div>
+            
+            <h1 class="movies-title">Stream Any Movie &amp; Cinema</h1>
+            <p class="movies-subtitle">Browse trending blockbusters, search any film worldwide, or stream your local <code>movies/</code> collection in high definition.</p>
+            
+            <!-- Search & Toolbar -->
+            <div class="movies-toolbar">
+              <div class="movies-search-box">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input
+                  type="text"
+                  id="movies-search-input"
+                  class="movies-search-input"
+                  placeholder="Search any movie or TV series worldwide (e.g. Inception, Breaking Bad, Scary Movie)..."
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <button type="button" id="btn-clear-movies-search" class="btn-clear-search hidden" title="Clear search">&times;</button>
+              </div>
+              <div class="movies-filter-select-wrap">
+                <select id="movies-type-filter" class="movies-select-filter" title="Filter by Type">
+                  <option value="all">All Content</option>
+                  <option value="movie">Movies Only</option>
+                  <option value="series">TV Series</option>
+                </select>
+                <select id="movies-year-filter" class="movies-select-filter" title="Filter by Year">
+                  <option value="all">All Years</option>
+                  <option value="2026">2026</option>
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                  <option value="2023">2023</option>
+                  <option value="2022">2022</option>
+                  <option value="2020s">2020s</option>
+                  <option value="2010s">2010s</option>
+                  <option value="2000s">2000s</option>
+                  <option value="classics">Classics</option>
+                </select>
+              </div>
+              <button type="button" id="btn-movies-search-submit" class="btn-movies-search-action">Search</button>
+            </div>
+
+            <!-- Genre / Category Filters -->
+            <div class="movies-genre-pills" id="movies-genre-pills">
+              <!-- Rendered dynamically (All, Trending, Movies, TV, Local, Watchlist, Genres) -->
+            </div>
+          </header>
+
+          <!-- Hero Spotlight Banner -->
+          <div id="movies-hero-banner" class="movies-hero-banner">
+            <div class="movies-hero-backdrop" id="movies-hero-backdrop"></div>
+            <div class="movies-hero-overlay"></div>
+            <div class="movies-hero-container">
+              <div class="movies-hero-poster-wrap">
+                <img id="movies-hero-poster-img" src="" alt="Poster" class="movies-hero-poster" />
+              </div>
+              <div class="movies-hero-content">
+                <div class="movies-hero-tag">
+                  <span class="movies-hero-fire">🔥</span>
+                  <span id="movies-hero-tag-text">FEATURED SPOTLIGHT</span>
+                </div>
+                <h2 id="movies-hero-title" class="movies-hero-title">Inception</h2>
+                <div class="movies-hero-meta">
+                  <span id="movies-hero-year">2010</span>
+                  <span>&bull;</span>
+                  <span id="movies-hero-rating" class="hero-rating-badge">⭐ 8.8</span>
+                  <span>&bull;</span>
+                  <span id="movies-hero-runtime">148 min</span>
+                  <span>&bull;</span>
+                  <span id="movies-hero-badge" class="hero-hd-badge">4K ULTRA</span>
+                  <span>&bull;</span>
+                  <span id="movies-hero-genre">Action, Sci-Fi</span>
+                </div>
+                <p id="movies-hero-desc" class="movies-hero-desc">
+                  A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.
+                </p>
+                <div class="movies-hero-actions">
+                  <button type="button" id="btn-hero-watch" class="btn-hero-primary" title="Play Movie">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    <span>PLAY</span>
+                  </button>
+                  <button type="button" id="btn-hero-details" class="btn-hero-secondary" title="View Details">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <span>MORE INFO</span>
+                  </button>
+                  <button type="button" id="btn-hero-watchlist" class="btn-hero-secondary" title="Add to My List">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span id="hero-watchlist-text">+ MY LIST</span>
+                  </button>
+                  <button type="button" id="btn-hero-trailer" class="btn-hero-secondary" title="Watch Trailer">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    <span>Trailer</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- Hero Carousel Controls -->
+            <button type="button" id="btn-hero-prev" class="hero-carousel-nav prev" title="Previous Featured Title">&lsaquo;</button>
+            <button type="button" id="btn-hero-next" class="hero-carousel-nav next" title="Next Featured Title">&rsaquo;</button>
+            <div id="movies-hero-dots" class="hero-carousel-dots"></div>
+          </div>
+
+          <!-- AllFlix Streaming Homepage: Horizontal Movie & TV Rows -->
+          <div id="movies-home-rows" class="movies-home-rows">
+            <!-- Dynamically injected horizontal scrolling rows:
+                 - Continue Watching (if items exist)
+                 - My List / Watchlist (if items exist)
+                 - Trending Movies
+                 - Popular Movies
+                 - Top Rated Movies
+                 - Now Playing
+                 - Upcoming Releases
+                 - Recently Added & Local Media
+                 - Genres (Action, Adventure, Animation, Comedy, Crime, Drama, Horror, Sci-Fi, Thriller, Fantasy)
+                 - TV Sections (Trending TV, Popular TV, Top Rated Series, Recently Added TV)
+            -->
+          </div>
+
+          <!-- Grid / Search / "View All" View (Hidden on homepage, shown when searching or viewing all) -->
+          <div id="movies-grid-section" class="movies-grid-section hidden">
+            <div class="movies-grid-header">
+              <div class="movies-grid-title-wrap">
+                <button type="button" id="btn-back-to-rows" class="btn-back-to-rows" title="Back to All Rows">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                  <span>Back to Browsing</span>
+                </button>
+                <h3 class="movies-section-title" id="movies-catalog-title">Catalog Titles</h3>
+                <span id="movies-catalog-count" class="movies-section-badge">0 Titles</span>
+              </div>
+            </div>
+
+            <!-- Movies Cards Grid -->
+            <div id="movies-grid" class="movies-grid">
+              <!-- Movie cards injected dynamically via app.js -->
+            </div>
+
+            <!-- Infinite Scroll & Load More Controls -->
+            <div id="movies-pagination-wrap" class="movies-pagination-wrap">
+              <button type="button" id="btn-movies-load-more" class="btn-movies-load-more hidden">
+                <span>Load More Titles</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <div id="movies-infinite-anchor" class="movies-infinite-anchor"></div>
+              <div id="movies-catalog-end-hint" class="movies-end-hint hidden">You've reached the end of the catalog</div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="movies-empty-state" class="movies-empty-state hidden">
+            <div class="movies-empty-icon">🎬</div>
+            <h3 id="movies-empty-title">No movies found</h3>
+            <p id="movies-empty-desc">Try searching for another movie title, actor, or genre, or add movies into the <strong><code>movies/</code></strong> directory.</p>
+            <button type="button" id="btn-rescan-empty" class="btn-movies-action">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              <span>Scan Local movies Folder</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Single Movie Fullscreen Theater Player -->
+        <div id="movie-player-view" class="movie-player-view hidden">
+          <div class="movie-player-topbar" id="movie-player-topbar">
+            <div class="movie-player-left">
+              <button type="button" id="btn-movie-back" class="btn-movie-tool" title="Back to Movie Library">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <line x1="19" y1="12" x2="5" y2="12"></line>
+                  <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>Back</span>
+              </button>
+              <div class="movie-player-meta">
+                <h2 id="movie-player-title" class="movie-player-title">Movie Title</h2>
+                <div class="movie-player-submeta">
+                  <span id="movie-player-year" class="movie-player-year"></span>
+                  <span id="movie-player-badge" class="movie-player-badge">HD</span>
+                  <span id="movie-player-size" class="movie-player-size"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Server selector, Quality, Speed, TV controls in player header -->
+            <div class="movie-player-center">
+              <div class="player-server-pill" id="player-server-pill">
+                <span class="server-status-dot healthy" id="movie-player-server-dot" title="Server status: Online"></span>
+                <label for="movie-player-server-select">Server:</label>
+                <select id="movie-player-server-select" class="movie-server-dropdown" title="Change streaming server"></select>
+              </div>
+              <div class="player-server-pill" id="player-quality-pill" title="Select Video Quality">
+                <span class="quality-badge-icon">HD</span>
+                <label for="movie-player-quality-select">Quality:</label>
+                <select id="movie-player-quality-select" class="movie-server-dropdown" title="Select Video Quality">
+                  <option value="auto">Auto HD</option>
+                  <option value="1080p">1080p</option>
+                  <option value="720p">720p</option>
+                  <option value="480p">480p</option>
+                  <option value="360p">360p</option>
+                </select>
+              </div>
+              <div class="player-server-pill" id="player-speed-pill" title="Playback Speed">
+                <label for="movie-player-speed-select">Speed:</label>
+                <select id="movie-player-speed-select" class="movie-server-dropdown" title="Playback Speed">
+                  <option value="0.5">0.5x</option>
+                  <option value="0.75">0.75x</option>
+                  <option value="1" selected>1.0x</option>
+                  <option value="1.25">1.25x</option>
+                  <option value="1.5">1.5x</option>
+                  <option value="2">2.0x</option>
+                </select>
+              </div>
+              <div class="player-server-pill hidden" id="player-subtitle-pill" title="Select Subtitle Track">
+                <span class="subtitle-badge-icon">CC</span>
+                <label for="movie-player-subtitle-select">Subtitles:</label>
+                <select id="movie-player-subtitle-select" class="movie-server-dropdown" title="Select Subtitle Track">
+                  <option value="off">Off</option>
+                </select>
+              </div>
+              <div id="movie-player-tv-controls" class="movie-player-tv-controls hidden">
+                <button type="button" id="btn-player-prev-ep" class="btn-movie-nav" title="Previous Episode">&laquo; Prev</button>
+                <select id="movie-player-ep-select" class="movie-server-dropdown" title="Select Episode"></select>
+                <button type="button" id="btn-player-next-ep" class="btn-movie-nav" title="Next Episode">Next &raquo;</button>
+              </div>
+            </div>
+
+            <div class="movie-player-right">
+              <!-- Conditional Download Button: only visible when current source permits downloading -->
+              <a
+                id="btn-player-download"
+                class="btn-movie-download hidden"
+                href="#"
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Download Movie"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Download</span>
+              </a>
+
+              <button type="button" id="btn-movie-player-diagnostics" class="btn-movie-tool" title="Provider Health &amp; Diagnostics">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+              </button>
+
+              <button type="button" id="btn-movie-pip" class="btn-movie-tool" title="Picture-in-Picture">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                  <rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor"></rect>
+                </svg>
+              </button>
+              <button type="button" id="btn-movie-fullscreen" class="btn-movie-tool" title="Fullscreen">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Video Player Stage with BokitCord Embedded Player -->
+          <div class="movie-player-stage" id="movie-player-stage">
+            <div class="movie-player">
+              <iframe
+                id="movie-player-frame"
+                allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                allowfullscreen
+                scrolling="no"
+                referrerpolicy="origin"
+              ></iframe>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -437,6 +777,153 @@
       </div>
     </div>
   </div>
+
+<!-- ================= MOVIE DETAILS MODAL ================= -->
+    <div id="movie-details-modal" class="modal-overlay hidden" aria-label="Movie Details">
+      <div class="movie-modal-card">
+        <div class="movie-modal-hero" id="movie-modal-hero">
+          <div class="movie-modal-backdrop-img" id="movie-modal-backdrop-img"></div>
+          <div class="movie-modal-hero-gradient"></div>
+          <button type="button" id="btn-close-movie-modal" class="movie-modal-close" title="Close">&times;</button>
+        </div>
+
+        <div class="movie-modal-body custom-scrollbar">
+          <div class="movie-modal-main">
+            <div class="movie-modal-poster-wrap">
+              <img id="movie-modal-poster-img" src="" alt="Poster" class="movie-modal-poster" />
+              <div class="movie-modal-badges">
+                <span id="movie-modal-rating-badge" class="modal-badge-rating">⭐ 8.8</span>
+                <span id="movie-modal-hd-badge" class="modal-badge-hd">HD</span>
+              </div>
+            </div>
+
+            <div class="movie-modal-info">
+              <h2 id="movie-modal-title" class="movie-modal-title">Movie Title</h2>
+              
+              <div class="movie-modal-meta-row">
+                <span id="movie-modal-year" class="modal-meta-pill">2024</span>
+                <span id="movie-modal-rated" class="modal-meta-pill">PG-13</span>
+                <span id="movie-modal-runtime" class="modal-meta-pill">148 min</span>
+                <span id="movie-modal-genres" class="modal-genres-text">Action, Sci-Fi</span>
+              </div>
+
+              <div class="movie-modal-synopsis-wrap">
+                <h4 class="modal-section-heading">Overview</h4>
+                <p id="movie-modal-plot" class="movie-modal-plot">Movie overview and synopsis will appear here.</p>
+              </div>
+
+              <div class="movie-modal-people-grid">
+                <div class="people-item">
+                  <span class="people-label">Director</span>
+                  <span id="movie-modal-director" class="people-value">Christopher Nolan</span>
+                </div>
+                <div class="people-item">
+                  <span class="people-label">Cast</span>
+                  <span id="movie-modal-actors" class="people-value">Actors list</span>
+                </div>
+              </div>
+
+              <!-- TV Series Seasons & Episodes Explorer (visible for TV shows) -->
+              <div id="movie-modal-tv-section" class="movie-modal-tv-section hidden">
+                <div class="tv-season-header">
+                  <h4 class="modal-section-heading">Episodes &amp; Seasons</h4>
+                  <div class="tv-season-select-wrap">
+                    <label for="movie-modal-season-select">Season:</label>
+                    <select id="movie-modal-season-select" class="movie-season-dropdown"></select>
+                  </div>
+                </div>
+                <div id="movie-modal-episodes-list" class="movie-episodes-list custom-scrollbar">
+                  <!-- Episodes injected dynamically -->
+                </div>
+              </div>
+
+              <!-- Upstream Playback Servers -->
+              <div class="movie-modal-servers-section">
+                <h4 class="modal-section-heading">Select Playback Server / Source</h4>
+                <div id="movie-modal-servers-list" class="movie-server-pills-list">
+                  <!-- Injected dynamically -->
+                </div>
+              </div>
+
+              <!-- Action buttons & Conditional Download Button -->
+              <div class="movie-modal-actions-row">
+                <button type="button" id="btn-modal-watch-now" class="btn-modal-play">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <span id="modal-watch-label">Stream Movie</span>
+                </button>
+
+                <button type="button" id="btn-modal-trailer" class="btn-modal-secondary" title="Watch Official Trailer">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <span>Trailer</span>
+                </button>
+
+                <button type="button" id="btn-modal-watchlist" class="btn-modal-secondary" title="Save to Watchlist">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span id="modal-watchlist-text">Watchlist</span>
+                </button>
+
+                <!-- Conditional Download Button: only enabled/clickable when selected source permits downloading -->
+                <a
+                  id="btn-modal-download"
+                  class="btn-modal-download hidden"
+                  href="#"
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  <span id="modal-download-label">Download Movie</span>
+                </a>
+
+                <!-- Notice when download is not permitted for the selected server -->
+                <div id="modal-download-notice" class="modal-download-notice">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
+                  <span>Streaming Only &bull; Direct download is not permitted by this provider.</span>
+                </div>
+
+                <!-- Similar Movies & Recommendations Row -->
+                <div id="movie-modal-similar-section" class="movie-modal-similar-section hidden">
+                  <h4 class="modal-section-heading">Similar Movies &amp; Recommendations</h4>
+                  <div id="movie-modal-similar-list" class="movie-modal-similar-list custom-scrollbar">
+                    <!-- Cards injected dynamically -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= MOVIE TRAILER MODAL ================= -->
+    <div id="movie-trailer-modal" class="modal-overlay hidden" aria-label="Official Trailer">
+      <div class="movie-trailer-card">
+        <div class="movie-trailer-header">
+          <div class="movie-trailer-title-wrap">
+            <span class="movie-trailer-icon">🎬</span>
+            <h3 id="movie-trailer-title" class="movie-trailer-title">Movie Trailer</h3>
+          </div>
+          <button type="button" id="btn-close-trailer-modal" class="movie-modal-close" title="Close Trailer">&times;</button>
+        </div>
+        <div class="movie-trailer-frame-wrap">
+          <iframe id="movie-trailer-frame" class="movie-trailer-frame" allow="fullscreen; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
 
   <div id="toast-container" class="toast-container"></div>
   <script src="app.js?v=7.4"></script>
