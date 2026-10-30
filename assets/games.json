@@ -372,6 +372,20 @@
     "url": "games/fnaf-into-the-pit/index.html"
   },
   {
+    "id": "fnaf-ucn",
+    "title": "Five Nights at Freddy's: Ultimate Custom Night",
+    "category": "Horror",
+    "folder": "fnaf-ucn",
+    "system": "WebGL",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/fnaf-ucn.jpg",
+    "coverFile": "fnaf-ucn.jpg",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/fnaf-ucn.jpg",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/fnaf-ucn.jpg",
+    "url": "games/fnaf-ucn/index.html"
+  },
+  {
     "id": "fivenightsatfrickbears",
     "title": "Five Nights at Frickbear's",
     "category": "Horror",
@@ -420,6 +434,20 @@
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/gta3.jpg",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/gta3.jpg",
     "url": "games/gta3/index.html"
+  },
+  {
+    "id": "people-playground",
+    "title": "People Playground",
+    "category": "Action",
+    "folder": "people-playground",
+    "system": "WebGL",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/people-playground.jpg",
+    "coverFile": "people-playground.jpg",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/people-playground.jpg",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/people-playground.jpg",
+    "url": "games/people-playground/index.html"
   },
   {
     "id": "ragdollhit",
