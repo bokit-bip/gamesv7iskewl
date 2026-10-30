@@ -464,6 +464,20 @@
     "url": "games/ragdollhit/index.html"
   },
   {
+    "id": "sonic-cd",
+    "title": "Sonic CD",
+    "category": "Action",
+    "folder": "sonic-cd",
+    "system": "WebGL",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/sonic-cd.png",
+    "coverFile": "sonic-cd.png",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/sonic-cd.png",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/covers/sonic-cd.png",
+    "url": "games/sonic-cd/index.html"
+  },
+  {
     "id": "vicecity",
     "title": "Grand Theft Auto: Vice City",
     "category": "Action",
