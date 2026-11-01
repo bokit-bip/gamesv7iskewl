@@ -5315,6 +5315,121 @@
     });
   }
 
+  // ============================================================================
+  // VIP AD-FREE CODE REDEMPTION & AD SUPPRESSION CONTROLLER
+  // ============================================================================
+  window.openAdfreeModal = function() {
+    const modal = document.getElementById('modal-gamesv7-adfree');
+    if (modal) modal.classList.remove('hidden');
+    const statusBox = document.getElementById('gamesv7-redeem-status');
+    if (statusBox) statusBox.classList.add('hidden');
+    const input = document.getElementById('input-gamesv7-code');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+  };
+
+  window.closeAdfreeModal = function() {
+    const modal = document.getElementById('modal-gamesv7-adfree');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  window.handleGamesV7Redeem = async function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const input = document.getElementById('input-gamesv7-code');
+    const code = (input && input.value ? input.value : '').trim();
+    const statusBox = document.getElementById('gamesv7-redeem-status');
+    if (!code) return;
+
+    if (statusBox) {
+      statusBox.className = 'gamesv7-status-box info';
+      statusBox.textContent = 'Verifying VIP key...';
+      statusBox.classList.remove('hidden');
+    }
+
+    try {
+      let res;
+      try {
+        res = await fetch('/api/codes/redeem', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, username: 'gamesv7_user' })
+        });
+      } catch (errLocal) {
+        res = await fetch('http://localhost:3000/api/codes/redeem', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, username: 'gamesv7_user' })
+        });
+      }
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (statusBox) {
+          statusBox.className = 'gamesv7-status-box success';
+          statusBox.innerHTML = `<strong>✓ UNLOCKED!</strong> ${data.message}<br><small>All ads permanently hidden.</small>`;
+        }
+        localStorage.setItem('gamesv7_adfree', JSON.stringify({
+          active: true,
+          duration: data.duration,
+          expiresAt: data.expiresAt
+        }));
+        applyAdFreeState({ active: true, duration: data.duration, expiresAt: data.expiresAt });
+        setTimeout(window.closeAdfreeModal, 1800);
+      } else {
+        if (statusBox) {
+          statusBox.className = 'gamesv7-status-box error';
+          statusBox.textContent = `❌ ${data.error || 'Failed to redeem key.'}`;
+        }
+      }
+    } catch (err) {
+      console.error('Games V7 redeem error:', err);
+      if (statusBox) {
+        statusBox.className = 'gamesv7-status-box error';
+        statusBox.textContent = '❌ Could not connect to redemption server.';
+      }
+    }
+  };
+
+  function applyAdFreeState(adFreeData) {
+    const banner = document.getElementById('gamesv7-ad-banner');
+    const label = document.getElementById('label-gamesv7-vip');
+    const btn = document.getElementById('btn-gamesv7-adfree');
+
+    if (adFreeData && adFreeData.active) {
+      if (banner) banner.classList.add('hidden');
+      if (label) {
+        label.textContent = adFreeData.duration === 'lifetime' ? '👑 AD-FREE (LIFETIME)' : '👑 AD-FREE (30D)';
+      }
+      if (btn) btn.classList.add('active-vip');
+    } else {
+      if (banner) banner.classList.remove('hidden');
+      if (label) label.textContent = '👑 ENTER CODE';
+      if (btn) btn.classList.remove('active-vip');
+    }
+  }
+
+  function checkGamesV7AdFree() {
+    try {
+      const saved = localStorage.getItem('gamesv7_adfree');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.active) {
+          if (!parsed.expiresAt || Date.now() < parsed.expiresAt) {
+            applyAdFreeState(parsed);
+            return;
+          } else {
+            localStorage.removeItem('gamesv7_adfree');
+          }
+        }
+      }
+    } catch (e) {}
+    applyAdFreeState({ active: false });
+  }
+
+  checkGamesV7AdFree();
+
   window.addEventListener('hashchange', checkHashRouting);
 
 })();

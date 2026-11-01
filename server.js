@@ -50,7 +50,7 @@ const MIME_TYPES = {
 const server = http.createServer((req, res) => {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', '*');
 
   if (req.method === 'OPTIONS') {
@@ -64,6 +64,30 @@ const server = http.createServer((req, res) => {
     reqPath = reqPath.slice('/games-v7'.length) || '/';
   }
   if (reqPath === '/' || reqPath === '') reqPath = '/index.html';
+
+  // API endpoint for VIP / Ad-Free code redemption
+  if (reqPath === '/api/codes/redeem') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const code = (payload.code || '').trim();
+        const codesManager = require(path.join(SHARED_DIR, 'server', 'codes.js'));
+        const result = codesManager.redeemCode(code, payload.username || 'gamesv7_user', req.socket.remoteAddress || '');
+        res.writeHead(result.success ? 200 : 400, {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': '*'
+        });
+        res.end(JSON.stringify(result));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
 
   // API endpoint for games
   if (reqPath === '/api/games') {

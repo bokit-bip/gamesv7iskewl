@@ -37,6 +37,9 @@
     </nav>
 
     <div class="nav-right">
+      <button class="nav-pill-btn nav-pill-vip" id="btn-gamesv7-adfree" onclick="openAdfreeModal()" title="Enter VIP / Ad-Free Code">
+        <span id="label-gamesv7-vip">👑 ENTER CODE</span>
+      </button>
       <button class="nav-pill-btn nav-pill-panic" onclick="triggerPanic()" title="Panic Button (Hotkey: ~)">
         <span>🚨 PANIC (~)</span>
       </button>
@@ -45,6 +48,19 @@
       </button>
     </div>
   </header>
+
+  <!-- RETRO SPONSOR / AD BANNER (Removed when Ad-Free Code is Active) -->
+  <div id="gamesv7-ad-banner" class="gamesv7-ad-banner">
+    <div class="ad-banner-inner">
+      <div class="ad-badge-label">ADVERTISEMENT</div>
+      <div class="ad-content-wrap">
+        <span class="ad-sparkle">✨</span>
+        <span class="ad-headline"><strong>BokitCord VIP Gaming:</strong> Play hundreds of arcade titles with zero interruptions &amp; ultrafast proxy!</span>
+        <button class="btn-ad-upgrade" onclick="openAdfreeModal()">Go Ad-Free with Code 👑</button>
+      </div>
+      <button class="ad-close-hint" onclick="openAdfreeModal()" title="Remove ads with code">&times;</button>
+    </div>
+  </div>
 
   <main>
     <!-- ====================================================================
@@ -927,5 +943,31 @@
 
   <div id="toast-container" class="toast-container"></div>
   <script src="app.js?v=7.4"></script>
+  <!-- GAMES V7 VIP / AD-FREE REDEMPTION MODAL -->
+  <div id="modal-gamesv7-adfree" class="retro-modal-backdrop hidden" onclick="if(event.target===this)closeAdfreeModal()">
+    <div class="retro-modal-box">
+      <div class="retro-modal-header">
+        <span class="retro-modal-title">👑 VIP AD-FREE KEY REDEMPTION</span>
+        <button class="retro-modal-close" onclick="closeAdfreeModal()">&times;</button>
+      </div>
+      <div class="retro-modal-body">
+        <p class="retro-modal-lead">Enter your 30-day or lifetime redemption key to permanently remove all banners and ads across Games V7 and BokitCord.</p>
+        <div id="gamesv7-redeem-status" class="gamesv7-status-box hidden"></div>
+        <form id="form-gamesv7-redeem" onsubmit="handleGamesV7Redeem(event)">
+          <div class="retro-form-group">
+            <label for="input-gamesv7-code">ENTER REDEMPTION CODE:</label>
+            <input type="text" id="input-gamesv7-code" class="retro-input" placeholder="e.g. BOKIT-VIP-XXXX-XXXX" required autocomplete="off" />
+          </div>
+          <div class="retro-modal-actions">
+            <button type="button" class="retro-btn secondary" onclick="closeAdfreeModal()">CANCEL</button>
+            <button type="submit" class="retro-btn primary" id="btn-submit-gamesv7-code">UNLOCK AD-FREE</button>
+          </div>
+        </form>
+        <div class="retro-modal-footer">
+          <span>💡 Generated via the Discord bot <code>/gencode</code> slash command.</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

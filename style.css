@@ -4266,3 +4266,263 @@ input:checked + .slider:before {
   }
 }
 
+
+/* ============================================================================
+   VIP / AD-FREE BANNER & MODAL STYLES (GAMES V7)
+   ============================================================================ */
+.nav-pill-vip {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 77, 77, 0.25) 100%) !important;
+  border: 1px solid #FFD700 !important;
+  color: #FFD700 !important;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-pill-vip:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.35) 0%, rgba(255, 77, 77, 0.45) 100%) !important;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.nav-pill-vip.active-vip {
+  border-color: #00FF66 !important;
+  color: #00FF66 !important;
+  background: rgba(0, 255, 102, 0.15) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+}
+
+.gamesv7-ad-banner {
+  background: linear-gradient(90deg, #110e1b 0%, #1c142b 50%, #110e1b 100%);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.25);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 15px rgba(0, 0, 0, 0.5);
+  padding: 8px 16px;
+  position: relative;
+  z-index: 90;
+  animation: fadeIn 0.3s ease;
+}
+
+.gamesv7-ad-banner.hidden {
+  display: none !important;
+}
+
+.ad-banner-inner {
+  max-width: 1300px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ad-badge-label {
+  background: rgba(255, 215, 0, 0.15);
+  color: #FFD700;
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.ad-content-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  color: #e2e8f0;
+}
+
+.ad-headline strong {
+  color: #FFD700;
+}
+
+.btn-ad-upgrade {
+  background: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%);
+  color: #000;
+  border: none;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-ad-upgrade:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+}
+
+.ad-close-hint {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.ad-close-hint:hover {
+  color: #cbd5e1;
+}
+
+/* Modal */
+.retro-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.retro-modal-backdrop.hidden {
+  display: none !important;
+}
+
+.retro-modal-box {
+  background: #0d0b14;
+  border: 1px solid #FFD700;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.25);
+  border-radius: 8px;
+  max-width: 480px;
+  width: 100%;
+  padding: 24px;
+  color: #e2e8f0;
+}
+
+.retro-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.retro-modal-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 14px;
+  color: #FFD700;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.retro-modal-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.retro-modal-lead {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #94a3b8;
+  margin-bottom: 16px;
+}
+
+.retro-form-group {
+  margin-bottom: 16px;
+}
+
+.retro-form-group label {
+  display: block;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  color: #FFD700;
+  margin-bottom: 6px;
+}
+
+.retro-input {
+  width: 100%;
+  background: #181524;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  padding: 10px 14px;
+  border-radius: 4px;
+  color: #fff;
+  font-family: monospace;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.retro-input:focus {
+  outline: none;
+  border-color: #FFD700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.retro-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.retro-btn {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+}
+
+.retro-btn.primary {
+  background: linear-gradient(135deg, #FFD700 0%, #FF8C00 100%);
+  color: #000;
+}
+
+.retro-btn.secondary {
+  background: #1e1b2e;
+  color: #94a3b8;
+  border: 1px solid #332d4a;
+}
+
+.gamesv7-status-box {
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin-bottom: 14px;
+  font-size: 12px;
+}
+
+.gamesv7-status-box.info {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid #3b82f6;
+  color: #93c5fd;
+}
+
+.gamesv7-status-box.success {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid #10b981;
+  color: #34d399;
+}
+
+.gamesv7-status-box.error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  color: #f87171;
+}
+
+.retro-modal-footer {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  color: #64748b;
+}
