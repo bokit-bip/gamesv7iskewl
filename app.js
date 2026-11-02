@@ -169,7 +169,17 @@
   window.triggerPanic = function () {
     playRetroBeep(880, 'sawtooth', 0.1);
     const target = state.panicUrl || 'https://classroom.google.com';
-    window.location.replace(target);
+    try {
+      if (window.top && window.top !== window) {
+        window.top.location.replace(target);
+        return;
+      }
+    } catch (e) {}
+    try {
+      window.location.replace(target);
+    } catch (e) {
+      window.open(target, '_self');
+    }
   };
 
   window.openAboutBlankCloak = function () {
@@ -1352,8 +1362,25 @@
     }
     if (frame) {
       frame.style.display = 'block';
+      const gatewaySelect = document.getElementById('proxy-gateway-select');
+      const chosenGateway = gatewaySelect ? gatewaySelect.value : 'tomp';
       const serverOrigin = getProxyServerOrigin();
-      frame.src = `${serverOrigin}/browser/gateway?url=${encodeURIComponent(target)}`;
+
+      let proxyLaunchUrl = '';
+      if (chosenGateway === 'bokit') {
+        proxyLaunchUrl = `${serverOrigin}/browser/gateway?url=${encodeURIComponent(target)}`;
+      } else if (chosenGateway === 'ruby') {
+        proxyLaunchUrl = `https://ruby.rubynetwork.co/service/${encodeURIComponent(target)}`;
+      } else if (chosenGateway === 'mercury') {
+        proxyLaunchUrl = `https://scramjet.mercurywork.shop/gateway?url=${encodeURIComponent(target)}`;
+      } else if (chosenGateway === 'direct') {
+        proxyLaunchUrl = target;
+      } else {
+        // Default to Tomp Cloud Public Unblocker (does not rely on BokitCord)
+        proxyLaunchUrl = `https://tomp.app/service/${encodeURIComponent(target)}`;
+      }
+
+      frame.src = proxyLaunchUrl;
     }
   };
 
@@ -2169,6 +2196,8 @@
     get btnModalTrailer() { return document.getElementById('btn-modal-trailer'); },
     get btnModalWatchNow() { return document.getElementById('btn-modal-watch-now'); },
     get btnModalWatchlist() { return document.getElementById('btn-modal-watchlist'); },
+    get btnModalEmbedCode() { return document.getElementById('btn-modal-embed-code'); },
+    get btnPlayerEmbedCode() { return document.getElementById('btn-player-embed-code'); },
     get btnMovieBack() { return document.getElementById('btn-movie-back'); },
     get btnMovieErrorDownload() { return document.getElementById('btn-movie-error-download'); },
     get btnMovieErrorSwitch() { return document.getElementById('btn-movie-error-switch'); },
@@ -3028,7 +3057,21 @@
 
     if (!data) {
       try {
-        const res = await fetch('https://cdn.jsdelivr.net/gh/bokit-bip/bokitcord@main/movies_homepage.json');
+        const res = await fetch('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/movies_homepage.json');
+        if (res.ok) data = await res.json();
+      } catch (e) {}
+    }
+
+    if (!data) {
+      try {
+        const res = await fetch('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/movies_homepage.json');
+        if (res.ok) data = await res.json();
+      } catch (e) {}
+    }
+
+    if (!data) {
+      try {
+        const res = await fetch('https://pop-leave.tailcb4af7.ts.net/api/movies/homepage');
         if (res.ok) data = await res.json();
       } catch (e) {}
     }
@@ -3643,9 +3686,88 @@
         updateModalDownloadButton();
       }
     } catch (err) {
-      console.error('[Movies] Detail fetch error:', err);
+      console.warn('[Movies] Detail fetch fallback to standalone mode:', err);
+    }
+
+    // Standalone fallback: ensure modal has streaming sources & server pills
+    if (!currentDetailSources || currentDetailSources.length === 0) {
+      const tmdbId = activeDetailMovie.tmdbId || activeDetailMovie.id;
+      const isTv = (activeDetailMovie.type === 'series' || activeDetailMovie.category === 'series');
+      currentDetailSources = [
+        {
+          name: 'VidLink HD',
+          serverLabel: 'VidLink HD',
+          badge: 'Fast',
+          url: isTv ? `https://vidlink.pro/tv/${tmdbId}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}` : `https://vidlink.pro/movie/${tmdbId}`
+        },
+        {
+          name: 'VidSrc HD',
+          serverLabel: 'VidSrc HD',
+          badge: '1080p',
+          url: isTv ? `https://vidsrc.me/embed/tv?id=${tmdbId}&s=${activeDetailSeason || 1}&e=${activeDetailEpisode || 1}` : `https://vidsrc.me/embed/movie?id=${tmdbId}`
+        },
+        {
+          name: 'AutoEmbed 4K',
+          serverLabel: 'AutoEmbed 4K',
+          badge: '4K',
+          url: isTv ? `https://autoembed.co/tv/tmdb/${tmdbId}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}` : `https://autoembed.co/movie/tmdb/${tmdbId}`
+        },
+        {
+          name: 'Videasy Pro',
+          serverLabel: 'Videasy Pro',
+          badge: 'Multi-Sub',
+          url: isTv ? `https://player.videasy.net/tv/${tmdbId}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}` : `https://player.videasy.net/movie/${tmdbId}`
+        },
+        {
+          name: 'SmashyStream',
+          serverLabel: 'SmashyStream',
+          badge: 'HLS',
+          url: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${activeDetailSeason || 1}&episode=${activeDetailEpisode || 1}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`
+        },
+        {
+          name: '2Embed',
+          serverLabel: '2Embed',
+          badge: 'Mirror',
+          url: isTv ? `https://www.2embed.cc/embedtv/${tmdbId}&s=${activeDetailSeason || 1}&e=${activeDetailEpisode || 1}` : `https://www.2embed.cc/embed/${tmdbId}`
+        }
+      ];
+      renderModalServerPills(currentDetailSources);
+      updateModalDownloadButton();
     }
   }
+
+  function copyMovieEmbedCode(movie = null, customUrl = null) {
+    const targetMovie = movie || activeDetailMovie || currentPlaybackMovie;
+    if (!targetMovie) return;
+    const tmdbId = targetMovie.tmdbId || targetMovie.id;
+    const isTv = (targetMovie.type === 'series' || targetMovie.category === 'series');
+    const s = activeDetailSeason || currentPlaybackSeason || 1;
+    const e = activeDetailEpisode || currentPlaybackEpisode || 1;
+
+    let targetUrl = customUrl;
+    if (!targetUrl) {
+      if (currentPlaybackMovie && el.playerIframe && el.playerIframe.src && el.playerIframe.src !== 'about:blank') {
+        targetUrl = el.playerIframe.src;
+      } else if (currentDetailSources && currentDetailSources[selectedDetailSourceIndex]?.url) {
+        targetUrl = currentDetailSources[selectedDetailSourceIndex].url;
+      } else {
+        targetUrl = isTv ? `https://vidlink.pro/tv/${tmdbId}/${s}/${e}` : `https://vidlink.pro/movie/${tmdbId}`;
+      }
+    }
+
+    const embedHtml = `<iframe src="${targetUrl}" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe>`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(embedHtml).then(() => {
+        showRetroToast('📋 Embed / Iframe code copied to clipboard!');
+      }).catch(() => {
+        prompt('Copy movie embed code:', embedHtml);
+      });
+    } else {
+      prompt('Copy movie embed code:', embedHtml);
+    }
+  }
+  window.copyMovieEmbedCode = copyMovieEmbedCode;
 
   function renderModalServerPills(sources) {
     if (!el.movieModalServersList) return;
@@ -4975,6 +5097,18 @@
         if (activeDetailMovie) {
           toggleMovieWatchlist(activeDetailMovie);
         }
+      });
+    }
+
+    if (el.btnModalEmbedCode) {
+      el.btnModalEmbedCode.addEventListener('click', () => {
+        copyMovieEmbedCode(activeDetailMovie);
+      });
+    }
+
+    if (el.btnPlayerEmbedCode) {
+      el.btnPlayerEmbedCode.addEventListener('click', () => {
+        copyMovieEmbedCode(currentPlaybackMovie);
       });
     }
 

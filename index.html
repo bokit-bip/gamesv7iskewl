@@ -485,6 +485,14 @@
                 <span>Download</span>
               </a>
 
+              <button type="button" id="btn-player-embed-code" class="btn-movie-tool" title="Copy Embed / Iframe Code">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 18 22 12 16 6"></polyline>
+                  <polyline points="8 6 2 12 8 18"></polyline>
+                </svg>
+                <span>Embed</span>
+              </button>
+
               <button type="button" id="btn-movie-player-diagnostics" class="btn-movie-tool" title="Provider Health &amp; Diagnostics">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
@@ -528,6 +536,13 @@
       <div class="proxy-omnibar-box">
         <span style="color:#10b981;font-size:16px;">🔒</span>
         <input type="text" id="proxy-url-input" class="proxy-input" placeholder="Enter URL or search term (e.g. google.com, youtube.com)..." />
+        <select id="proxy-gateway-select" class="proxy-gateway-dropdown" title="Select unblocker gateway">
+          <option value="tomp" selected>🌐 Tomp Cloud (Public)</option>
+          <option value="bokit">⚡ Bokit Relay (Tailscale)</option>
+          <option value="ruby">💎 Ruby Edge Proxy</option>
+          <option value="mercury">🪐 Mercury Workshop</option>
+          <option value="direct">↗️ Direct Web Embed</option>
+        </select>
         <button class="btn-proxy-go" onclick="launchProxyUrl()">ENTER ▶</button>
         <button type="button" class="btn-proxy-ctrl" id="btn-ping-wisp" onclick="openWispPingModal()" title="Ping Wisp Servers (Latency Test)">⚡ PING WISP</button>
         <button type="button" class="btn-proxy-ctrl" id="btn-proxy-fullscreen" onclick="toggleProxyFullscreen()" title="Toggle Fullscreen (F)">⛶ FULLSCREEN</button>
@@ -884,6 +899,14 @@
                   <span id="modal-watchlist-text">Watchlist</span>
                 </button>
 
+                <button type="button" id="btn-modal-embed-code" class="btn-modal-secondary" title="Copy Embed / Iframe Code">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="16 18 22 12 16 6"></polyline>
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                  </svg>
+                  <span>Embed Code</span>
+                </button>
+
                 <!-- Conditional Download Button: only enabled/clickable when selected source permits downloading -->
                 <a
                   id="btn-modal-download"
@@ -969,5 +992,52 @@
       </div>
     </div>
   </div>
+  <!-- Monetag & Vignette Ads Integration (Suppressed for VIP / Ad-Free users) -->
+  <script>
+    (function() {
+      function isAdFree() {
+        try {
+          var k1 = localStorage.getItem('gamesv7_adfree') || localStorage.getItem('bokit_adfree');
+          if (k1) {
+            var p = JSON.parse(k1);
+            if (p && (p.active || p.success)) {
+              if (!p.expiresAt || Date.now() < p.expiresAt) return true;
+            }
+          }
+          var k2 = localStorage.getItem('bokit_user');
+          if (k2) {
+            var u = JSON.parse(k2);
+            if (u && (u.adFree || u.role === 'admin')) return true;
+          }
+        } catch (e) {}
+        return false;
+      }
+
+      window.__IS_GAMESV7_AD_FREE__ = isAdFree;
+      window.__REMOVE_GAMESV7_ADS__ = function() {
+        var existing = document.querySelectorAll('script[data-zone="11930369"], script[src*="vignette"], script[src*="n6wxm"], div[class*="vignette"], iframe[src*="n6wxm"]');
+        existing.forEach(function(el) { try { el.remove(); } catch(e){} });
+      };
+
+      if (isAdFree()) {
+        console.log('[GamesV7 AdEngine] VIP / Ad-Free active — Suppressing advertisements.');
+        return;
+      }
+
+      try {
+        var savedCloak = localStorage.getItem('games_v7_cloak');
+        if (savedCloak && savedCloak !== 'none' && savedCloak !== 'default') return;
+
+        var s = document.createElement('script');
+        s.dataset.zone = '11930369';
+        s.src = 'https://n6wxm.com/vignette.min.js';
+        s.async = true;
+        s.onerror = function() {
+          if (s.parentNode) s.parentNode.removeChild(s);
+        };
+        (document.body || document.documentElement).appendChild(s);
+      } catch (e) {}
+    })();
+  </script>
 </body>
 </html>

@@ -578,26 +578,13 @@
         });
       }
 
-      // Prepare Server Base & ROM URL
+      // Prepare Server Base & ROM URLs with multi-tier CDN fallbacks
       const TAILSCALE_ORIGIN = 'https://pop-leave.tailcb4af7.ts.net';
       const curOrigin = (window.location.origin && window.location.origin.startsWith('http')) ? window.location.origin : '';
       const isLocalDev = curOrigin.includes(':8080') || curOrigin.includes(':3000');
       const baseApiUrl = isLocalDev ? '' : TAILSCALE_ORIGIN;
 
-      let finalGameUrl = rawGameUrl;
-      if (finalGameUrl.startsWith('/roms/')) {
-        finalGameUrl = baseApiUrl + finalGameUrl;
-      } else if (rawGameUrl.startsWith('http://') || rawGameUrl.startsWith('https://')) {
-        if (isLocalDev) {
-          if (!rawGameUrl.startsWith(curOrigin)) {
-            finalGameUrl = `/api/emulator/rom-proxy?url=${encodeURIComponent(rawGameUrl)}`;
-          }
-        } else {
-          finalGameUrl = `${TAILSCALE_ORIGIN}/api/emulator/rom-proxy?url=${encodeURIComponent(rawGameUrl)}`;
-        }
-      }
-
-      if (!finalGameUrl) {
+      if (!rawGameUrl) {
         const errBox = document.getElementById('error-box');
         if (spinner) spinner.style.display = 'none';
         if (errBox) {
@@ -614,43 +601,137 @@
       if (rawCore === 'gameboy') ejsCore = 'gb';
       if (rawCore === 'atari') ejsCore = 'atari2600';
 
-      // Configure EmulatorJS
-      window.EJS_player = '#game';
-      window.EJS_core = ejsCore;
-      window.EJS_gameName = rawGameTitle;
-      window.EJS_color = themeColor;
-      window.EJS_startOnLoaded = true;
-      window.EJS_pathtodata = `${baseApiUrl}/api/emulatorjs/data/`;
-      window.EJS_gameUrl = finalGameUrl;
-      window.EJS_threads = false;
+      // Candidate ROM URLs to probe
+      async function resolveWorkingRomUrl(rawUrl) {
+        if (!rawUrl) return '';
+        if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:')) return rawUrl;
 
-      window.EJS_onGameStart = function() {
-        const overlay = document.getElementById('loading-overlay');
-        if (overlay) overlay.classList.add('hidden');
-      };
-
-      // Load loader.js from server cache proxy (bypasses school Wi-Fi blocks), with official CDN fallback
-      const script = document.createElement('script');
-      script.src = `${baseApiUrl}/api/emulatorjs/data/loader.js`;
-      script.async = true;
-      script.onerror = function() {
-        console.warn('Primary loader failed, falling back to official cdn.emulatorjs.org');
-        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-        const fbScript = document.createElement('script');
-        fbScript.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
-        fbScript.async = true;
-        fbScript.onerror = function() {
-          const overlay = document.getElementById('loading-overlay');
-          const errBox = document.getElementById('error-box');
-          if (spinner) spinner.style.display = 'none';
-          if (errBox) {
-            errBox.style.display = 'block';
-            errBox.textContent = 'Failed to load emulator core engine. Please check your connection to BokitCord.';
+        let candidates = [];
+        if (rawUrl.startsWith('/roms/')) {
+          if (baseApiUrl) candidates.push(baseApiUrl + rawUrl);
+          else candidates.push(rawUrl);
+          // jsDelivr GitHub mirrors (unblocked on school Chromebooks)
+          candidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main' + rawUrl);
+          candidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main' + rawUrl);
+          if (baseApiUrl) candidates.push(rawUrl);
+        } else if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+          candidates.push(rawUrl);
+          if (!isLocalDev && !rawUrl.startsWith(TAILSCALE_ORIGIN)) {
+            candidates.push(`${TAILSCALE_ORIGIN}/api/emulator/rom-proxy?url=${encodeURIComponent(rawUrl)}`);
           }
+        } else {
+          candidates.push(rawUrl);
+        }
+
+        // Fast probe to select the quickest responding candidate
+        for (const candidate of candidates) {
+          try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 1800);
+            const res = await fetch(candidate, { method: 'HEAD', signal: ctrl.signal });
+            clearTimeout(timer);
+            if (res.ok || res.status === 405 || (res.status >= 200 && res.status < 400)) {
+              console.log('[ROM Resolver] Using verified ROM source:', candidate);
+              return candidate;
+            }
+          } catch (e) {}
+        }
+        return candidates[0];
+      }
+
+      // Candidate paths for EmulatorJS engine files (cores, emulator.min.js, loader.js)
+      const dataCandidates = [];
+      if (isLocalDev) {
+        dataCandidates.push('/api/emulatorjs/data/');
+      }
+      // Official stable CDN with all wasm cores (ultra-fast Cloudflare edge)
+      dataCandidates.push('https://cdn.emulatorjs.org/stable/data/');
+      // jsDelivr mirror of gamesv7iskewl repository (unblocked on school Chromebooks)
+      dataCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/data/');
+      // BokitCord Tailscale relay
+      dataCandidates.push(`${TAILSCALE_ORIGIN}/api/emulatorjs/data/`);
+      if (!isLocalDev) {
+        dataCandidates.push('/api/emulatorjs/data/');
+      }
+
+      async function startEmulator() {
+        const finalGameUrl = await resolveWorkingRomUrl(rawGameUrl);
+        console.log('[EmulatorJS] Final Game URL resolved to:', finalGameUrl);
+
+        // Configure EmulatorJS
+        window.EJS_player = '#game';
+        window.EJS_core = ejsCore;
+        window.EJS_gameName = rawGameTitle;
+        window.EJS_color = themeColor;
+        window.EJS_startOnLoaded = true;
+        window.EJS_gameUrl = finalGameUrl;
+        window.EJS_threads = false;
+
+        window.EJS_ready = function() {
+          const loadingText = document.getElementById('loading-text');
+          if (loadingText) loadingText.textContent = `Starting ${systemName}...`;
         };
-        document.body.appendChild(fbScript);
-      };
-      document.body.appendChild(script);
+
+        window.EJS_onGameStart = function() {
+          const overlay = document.getElementById('loading-overlay');
+          if (overlay) overlay.classList.add('hidden');
+        };
+
+        function tryLoadCandidate(idx) {
+          if (idx >= dataCandidates.length) {
+            const overlay = document.getElementById('loading-overlay');
+            const errBox = document.getElementById('error-box');
+            if (spinner) spinner.style.display = 'none';
+            if (errBox) {
+              errBox.style.display = 'block';
+              errBox.textContent = 'Failed to load emulator core engine. Please check your network connection or try refreshing.';
+            }
+            return;
+          }
+
+          const candidate = dataCandidates[idx];
+          const pathWithSlash = candidate.endsWith('/') ? candidate : candidate + '/';
+          window.EJS_pathtodata = pathWithSlash;
+
+          console.log(`[EmulatorJS] Attempting core engine candidate [${idx + 1}/${dataCandidates.length}]:`, pathWithSlash);
+
+          const script = document.createElement('script');
+          script.src = pathWithSlash + 'loader.js';
+          script.async = true;
+
+          let candidateFailed = false;
+          const advanceNext = () => {
+            if (candidateFailed) return;
+            candidateFailed = true;
+            try { script.remove(); } catch (e) {}
+            tryLoadCandidate(idx + 1);
+          };
+
+          const timeoutTimer = setTimeout(() => {
+            if (!window.EJS_emulator && !window.EmulatorJS) {
+              console.warn('[EmulatorJS] Candidate timed out:', candidate);
+              advanceNext();
+            }
+          }, 6000);
+
+          script.onload = function() {
+            clearTimeout(timeoutTimer);
+            console.log('[EmulatorJS] Successfully loaded core loader from:', candidate);
+          };
+
+          script.onerror = function() {
+            clearTimeout(timeoutTimer);
+            console.warn('[EmulatorJS] Candidate failed to load:', candidate);
+            advanceNext();
+          };
+
+          document.body.appendChild(script);
+        }
+
+        tryLoadCandidate(0);
+      }
+
+      startEmulator();
     })();
   </script>
 </body>
