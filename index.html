@@ -1015,12 +1015,22 @@
 
       window.__IS_GAMESV7_AD_FREE__ = isAdFree;
       window.__REMOVE_GAMESV7_ADS__ = function() {
-        var existing = document.querySelectorAll('script[data-zone="11930369"], script[src*="vignette"], script[src*="n6wxm"], div[class*="vignette"], iframe[src*="n6wxm"]');
-        existing.forEach(function(el) { try { el.remove(); } catch(e){} });
+        var adSelectors = 'script[data-zone="11930369"], script[src*="vignette"], script[src*="n6wxm"], div[class*="vignette"], iframe[src*="n6wxm"], [id*="monetag"], [class*="monetag"]';
+        document.querySelectorAll(adSelectors).forEach(function(el) { try { el.remove(); } catch(e){} });
+        document.querySelectorAll('div[style*="fixed"][style*="z-index"]').forEach(function(el) {
+          try {
+            var txt = (el.textContent || '').toLowerCase();
+            if (txt.includes('garvee') || txt.includes('shop tools') || txt.includes('monetag')) {
+              el.remove();
+            }
+          } catch(e){}
+        });
       };
 
       if (isAdFree()) {
         console.log('[GamesV7 AdEngine] VIP / Ad-Free active — Suppressing advertisements.');
+        window.__REMOVE_GAMESV7_ADS__();
+        setInterval(window.__REMOVE_GAMESV7_ADS__, 2500);
         return;
       }
 
