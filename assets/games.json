@@ -503,13 +503,14 @@
   {
     "id": "helltaker",
     "title": "Helltaker",
-    "category": "Action",
+    "category": "Puzzle, Action",
     "isFlash": false,
     "isPapas": false,
     "cover": "covers/helltaker.jpg",
     "coverFile": "helltaker.jpg",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/helltaker.jpg",
-    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/helltaker.jpg"
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/helltaker.jpg",
+    "url": "games/helltaker/index.html"
   },
   {
     "id": "hobo1",
@@ -4629,5 +4630,17 @@
     "coverFile": "kindergarten3.jpg",
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/kindergarten3.jpg",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/kindergarten3.jpg"
+  },
+  {
+    "id": "Slendytubbies 1",
+    "title": "Slendytubbies 1",
+    "category": "Horror",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/slendytubbies.jpg",
+    "coverFile": "slendytubbies.jpg",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/slendytubbies.jpg",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/slendytubbies.jpg",
+    "url": "games/Slendytubbies 1/index.html"
   }
 ]
