@@ -24,6 +24,10 @@ curl -s "https://purge.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/site.svg" > 
 curl -s "https://purge.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/index.html" > /dev/null || true
 curl -s "https://purge.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/app.js" > /dev/null || true
 curl -s "https://purge.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/style.css" > /dev/null || true
+curl -s "https://purge.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/style-v8.css" > /dev/null || true
+curl -s "https://purge.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/assets/movies_data.js" > /dev/null || true
+curl -s "https://purge.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/assets/music_data.js" > /dev/null || true
+curl -s "https://purge.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/assets/recommended_music.json" > /dev/null || true
 
 echo "✅ Done! Your link is updated:"
 echo "https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/index.svg"

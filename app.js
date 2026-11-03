@@ -102,7 +102,9 @@
     if (targetBtn) targetBtn.classList.add('active');
 
     try {
-      history.replaceState(null, '', `#${tabName}`);
+      if (!window.location.hash || !window.location.hash.startsWith(`#${tabName}`)) {
+        history.replaceState(null, '', `#${tabName}`);
+      }
     } catch (e) {}
 
     // Initializations when entering tabs
@@ -113,6 +115,10 @@
     } else if (tabName === 'movies') {
       if (typeof loadMoviesList === 'function') {
         loadMoviesList();
+      }
+    } else if (tabName === 'music') {
+      if (typeof initGamesV7Music === 'function') {
+        initGamesV7Music();
       }
     }
   };
@@ -126,7 +132,11 @@
       setTimeout(() => playGame(targetGid), 250);
       return;
     }
-    if (raw.startsWith('movies') || ['home', 'games', 'proxy', 'editor', 'settings', 'movies'].includes(hash)) {
+    if (raw.startsWith('music')) {
+      switchTab('music');
+      return;
+    }
+    if (raw.startsWith('movies') || ['home', 'games', 'proxy', 'editor', 'settings', 'movies', 'music'].includes(hash)) {
       if (raw.startsWith('movies')) {
         switchTab('movies');
         if (typeof handleMovieHashRoute === 'function') {
@@ -3042,42 +3052,44 @@
     let data = window.__EMBEDDED_MOVIES__ || null;
 
     if (!data) {
-      try {
-        const res = await fetch('/api/movies/homepage');
-        if (res.ok) data = await res.json();
-      } catch (e) {}
-    }
-
-    if (!data) {
-      try {
-        const res = await fetch('./movies_homepage.json');
-        if (res.ok) data = await res.json();
-      } catch (e) {}
-    }
-
-    if (!data) {
-      try {
-        const res = await fetch('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/movies_homepage.json');
-        if (res.ok) data = await res.json();
-      } catch (e) {}
-    }
-
-    if (!data) {
-      try {
-        const res = await fetch('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/movies_homepage.json');
-        if (res.ok) data = await res.json();
-      } catch (e) {}
-    }
-
-    if (!data) {
-      try {
-        const res = await fetch('https://pop-leave.tailcb4af7.ts.net/api/movies/homepage');
-        if (res.ok) data = await res.json();
-      } catch (e) {}
+      const candidates = [
+        'assets/movies_homepage.json',
+        './assets/movies_homepage.json',
+        'movies_homepage.json',
+        './movies_homepage.json',
+        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/assets/movies_homepage.json',
+        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/movies_homepage.json',
+        '/api/movies/homepage',
+        'https://pop-leave.tailcb4af7.ts.net/api/movies/homepage'
+      ];
+      for (const p of candidates) {
+        try {
+          const res = await fetch(p);
+          if (res.ok) {
+            data = await res.json();
+            if (data && data.rows && data.rows.length > 0) break;
+          }
+        } catch (e) {}
+      }
     }
 
     if (data) {
       homepageDataCache = data;
+
+      // Populate allCatalogMovies from all rows and hero
+      const movieMap = new Map();
+      if (data.hero) movieMap.set(String(data.hero.id), data.hero);
+      if (Array.isArray(data.featuredRotation)) {
+        data.featuredRotation.forEach(m => movieMap.set(String(m.id), m));
+      }
+      if (Array.isArray(data.rows)) {
+        data.rows.forEach(r => {
+          if (Array.isArray(r.items)) {
+            r.items.forEach(m => movieMap.set(String(m.id), m));
+          }
+        });
+      }
+      allCatalogMovies = Array.from(movieMap.values());
 
       // Extract rotation list and active hero movie
       heroFeaturedRotation = (data.featuredRotation && data.featuredRotation.length > 0)
@@ -4184,7 +4196,7 @@
   window.openMovieDetailsModal = openMovieDetailsModal;
   window.openMovieWatchView = (movie, s = null, e = null) => launchMovie(movie, 0, s, e);
   window.switchAppTab = switchAppTab;
-  window.showDiscordView = showDiscordView;
+  if (typeof showDiscordView !== 'undefined') window.showDiscordView = showDiscordView;
 
   let currentHlsInstance = null;
   let playerControlsHideTimer = null;
@@ -5004,7 +5016,7 @@
         let e = match[3] ? parseInt(match[3], 10) : null;
         if (!currentPlaybackMovie || currentPlaybackMovie.id !== id) {
           const isExplicitLocal = String(id).startsWith('local-');
-          let found = allCatalogMovies.find(m => String(m.id) === String(id)) ||
+          let found = allCatalogMovies.find(m => String(m.id) === String(id) || String(m.tmdbId) === String(id)) ||
                       allLocalMovies.find(m => String(m.id) === String(id));
           if (!found) {
             if (isExplicitLocal) {
@@ -5034,7 +5046,7 @@
       }
     } else if (hash.startsWith('#movies/detail/')) {
       const id = hash.replace('#movies/detail/', '').trim();
-      let found = allCatalogMovies.find(m => String(m.id) === String(id)) ||
+      let found = allCatalogMovies.find(m => String(m.id) === String(id) || String(m.tmdbId) === String(id)) ||
                   allLocalMovies.find(m => String(m.id) === String(id));
       if (!found) {
         try {
@@ -5102,13 +5114,20 @@
 
     if (el.btnModalEmbedCode) {
       el.btnModalEmbedCode.addEventListener('click', () => {
-        copyMovieEmbedCode(activeDetailMovie);
+        openMovieEmbedModal(activeDetailMovie);
       });
     }
 
     if (el.btnPlayerEmbedCode) {
       el.btnPlayerEmbedCode.addEventListener('click', () => {
-        copyMovieEmbedCode(currentPlaybackMovie);
+        openMovieEmbedModal(currentPlaybackMovie);
+      });
+    }
+
+    if (el.btnHeroWatch) {
+      el.btnHeroWatch.addEventListener('click', () => {
+        const movie = activeFeaturedMovie || (window.__EMBEDDED_MOVIES__ && window.__EMBEDDED_MOVIES__.hero) || (homepageDataCache && homepageDataCache.hero);
+        if (movie) launchMovie(movie);
       });
     }
 
@@ -5563,6 +5582,975 @@
   }
 
   checkGamesV7AdFree();
+
+  // ============================================================================
+  // MOVIE EMBED & IFRAME CODE MODAL
+  // ============================================================================
+  function openMovieEmbedModal(movie) {
+    const target = movie || activeFeaturedMovie || currentPlaybackMovie || (window.__EMBEDDED_MOVIES__ && window.__EMBEDDED_MOVIES__.hero) || (homepageDataCache && homepageDataCache.hero);
+    const modal = document.getElementById('modal-movie-embed');
+    const input = document.getElementById('input-movie-embed-code');
+    if (!modal || !input) return;
+
+    let targetUrl = '';
+    if (el.playerIframe && el.playerIframe.src && el.playerIframe.src !== 'about:blank') {
+      targetUrl = el.playerIframe.src;
+    } else if (target) {
+      const tmdbId = target.tmdbId || target.id;
+      const isTv = (target.type === 'series' || target.category === 'series');
+      const s = currentPlaybackSeason || 1;
+      const e = currentPlaybackEpisode || 1;
+      targetUrl = isTv ? `https://vidlink.pro/tv/${tmdbId}/${s}/${e}` : `https://vidlink.pro/movie/${tmdbId}`;
+    }
+
+    if (!targetUrl) targetUrl = 'https://vidlink.pro/movie/27205';
+
+    const embedHtml = `<iframe src="${targetUrl}" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe>`;
+    input.value = embedHtml;
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+      input.focus();
+      input.select();
+    }, 50);
+  }
+  window.openMovieEmbedModal = openMovieEmbedModal;
+
+  function closeMovieEmbedModal() {
+    const modal = document.getElementById('modal-movie-embed');
+    if (modal) modal.classList.add('hidden');
+  }
+  window.closeMovieEmbedModal = closeMovieEmbedModal;
+
+  function copyMovieEmbedCode() {
+    const input = document.getElementById('input-movie-embed-code');
+    const code = input ? input.value : '';
+    if (!code) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(() => {
+        showToastNotification('📋 Movie Embed / Iframe code copied to clipboard!');
+      }).catch(() => {
+        if (input) { input.focus(); input.select(); }
+        showToastNotification('Press Ctrl+C to copy embed code');
+      });
+    } else {
+      if (input) { input.focus(); input.select(); }
+      showToastNotification('Press Ctrl+C to copy embed code');
+    }
+  }
+  window.copyMovieEmbedCode = copyMovieEmbedCode;
+
+  // ============================================================================
+  // FULL-LENGTH MUSIC STREAMER (GN-MATH STYLE ENGINE FOR GAMES V7)
+  // ============================================================================
+  var gv7MusicInitialized = false;
+
+  var gv7MusicState = {
+    currentTrack: null,
+    currentTrackList: [],
+    recommendedTracks: [],
+    currentIndex: -1,
+    isPlaying: false,
+    shuffle: false,
+    loopMode: 0, // 0: off, 1: repeat-all, 2: repeat-one
+    volume: 0.8,
+    previousVolume: 0.8,
+    isMuted: false,
+    activeView: 'home', // 'home' | 'liked' | 'playlist'
+    activePlaylistId: null,
+    likedSongs: [],
+    playlists: [],
+    searchQuery: '',
+    isSeeking: false,
+    pendingTrackToAdd: null
+  };
+
+  function formatMusicDuration(sec) {
+    if (!sec || isNaN(sec) || !isFinite(sec)) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60).toString().padStart(2, '0');
+    return m + ':' + s;
+  }
+
+  function isMusicLiked(trackId) {
+    return gv7MusicState.likedSongs.some(t => t.id === trackId);
+  }
+
+  function updateMusicLikedBadge() {
+    const badge = document.getElementById('music-liked-count-badge');
+    if (badge) badge.textContent = gv7MusicState.likedSongs.length;
+  }
+
+  function updateMusicPlayPauseUI(isPlaying) {
+    const playIcon = document.getElementById('music-icon-play');
+    const pauseIcon = document.getElementById('music-icon-pause');
+    if (playIcon && pauseIcon) {
+      playIcon.classList.toggle('hidden', isPlaying);
+      pauseIcon.classList.toggle('hidden', !isPlaying);
+    }
+  }
+
+  function updateMusicLoopUI() {
+    const loopBtn = document.getElementById('music-ctrl-loop');
+    if (!loopBtn) return;
+    loopBtn.classList.toggle('active', gv7MusicState.loopMode > 0);
+    loopBtn.title = gv7MusicState.loopMode === 0 ? 'Repeat: Off' : gv7MusicState.loopMode === 1 ? 'Repeat: All' : 'Repeat: One';
+  }
+
+  function highlightMusicPlayingRow() {
+    document.querySelectorAll('.music-track-row').forEach(row => {
+      const rowId = row.getAttribute('data-track-id');
+      row.classList.toggle('playing', !!(gv7MusicState.currentTrack && rowId === gv7MusicState.currentTrack.id));
+    });
+  }
+
+  function setGamesV7Volume(val) {
+    gv7MusicState.volume = Math.max(0, Math.min(1, val));
+    const audio = document.getElementById('gamesv7-music-audio');
+    if (audio) {
+      audio.volume = gv7MusicState.volume;
+      audio.muted = (gv7MusicState.volume === 0);
+    }
+    const slider = document.getElementById('music-volume-slider');
+    if (slider) slider.value = gv7MusicState.volume;
+
+    const highIcon = document.getElementById('music-icon-volume-high');
+    const muteIcon = document.getElementById('music-icon-volume-muted');
+    if (highIcon && muteIcon) {
+      highIcon.classList.toggle('hidden', gv7MusicState.volume === 0);
+      muteIcon.classList.toggle('hidden', gv7MusicState.volume > 0);
+    }
+    try { localStorage.setItem('gamesv7_music_volume', gv7MusicState.volume.toString()); } catch (e) {}
+  }
+
+  function toggleGamesV7Mute() {
+    if (gv7MusicState.isMuted) {
+      gv7MusicState.isMuted = false;
+      setGamesV7Volume(gv7MusicState.previousVolume || 0.8);
+    } else {
+      gv7MusicState.previousVolume = gv7MusicState.volume;
+      gv7MusicState.isMuted = true;
+      setGamesV7Volume(0);
+    }
+  }
+
+  function renderMusicSidebarPlaylists() {
+    const listEl = document.getElementById('music-playlists-container');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    if (gv7MusicState.playlists.length === 0) {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.style.cssText = 'color: #555866; font-size: 12.5px; padding: 6px 10px; font-family: sans-serif;';
+      emptyDiv.textContent = 'No playlists yet';
+      listEl.appendChild(emptyDiv);
+      return;
+    }
+
+    gv7MusicState.playlists.forEach(pl => {
+      const item = document.createElement('div');
+      item.className = 'music-playlist-item' + (gv7MusicState.activePlaylistId === pl.id ? ' active' : '');
+      item.innerHTML = `
+        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(pl.name)}</span>
+        <button type="button" class="music-playlist-del" title="Delete Playlist">&times;</button>
+      `;
+
+      item.addEventListener('click', (e) => {
+        if (e.target.classList.contains('music-playlist-del')) return;
+        openMusicPlaylist(pl.id);
+      });
+
+      const delBtn = item.querySelector('.music-playlist-del');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteMusicPlaylist(pl.id);
+        });
+      }
+
+      listEl.appendChild(item);
+    });
+  }
+
+  function openMusicPlaylist(playlistId) {
+    const pl = gv7MusicState.playlists.find(p => p.id === playlistId);
+    if (!pl) return;
+    gv7MusicState.activeView = 'playlist';
+    gv7MusicState.activePlaylistId = playlistId;
+
+    const navHome = document.getElementById('music-nav-home');
+    const navLiked = document.getElementById('music-nav-liked');
+    if (navHome) navHome.classList.remove('active');
+    if (navLiked) navLiked.classList.remove('active');
+    document.querySelectorAll('.music-playlist-item').forEach(p => p.classList.remove('active'));
+    renderMusicSidebarPlaylists();
+
+    renderGamesV7MusicTracks(pl.tracks || [], pl.name, (pl.tracks ? pl.tracks.length : 0) + ' songs');
+  }
+
+  function deleteMusicPlaylist(playlistId) {
+    gv7MusicState.playlists = gv7MusicState.playlists.filter(p => p.id !== playlistId);
+    try { localStorage.setItem('gamesv7_music_playlists', JSON.stringify(gv7MusicState.playlists)); } catch(e) {}
+    renderMusicSidebarPlaylists();
+    if (gv7MusicState.activePlaylistId === playlistId) {
+      const navHome = document.getElementById('music-nav-home');
+      if (navHome) navHome.click();
+    }
+    showToastNotification('Playlist deleted');
+  }
+
+  async function loadGamesV7RecommendedMusic() {
+    const spinner = document.getElementById('music-loading-spinner');
+    const empty = document.getElementById('music-empty-state');
+    const container = document.getElementById('music-tracks-container');
+    const banner = document.getElementById('music-status-banner');
+
+    if (spinner) spinner.classList.remove('hidden');
+    if (empty) empty.classList.add('hidden');
+    if (container) container.innerHTML = '';
+    if (banner) banner.classList.add('hidden');
+
+    // 1. Check preloaded global
+    if (window.__RECOMMENDED_MUSIC__ && Array.isArray(window.__RECOMMENDED_MUSIC__) && window.__RECOMMENDED_MUSIC__.length > 0) {
+      gv7MusicState.recommendedTracks = window.__RECOMMENDED_MUSIC__;
+      if (gv7MusicState.activeView === 'home') {
+        renderGamesV7MusicTracks(gv7MusicState.recommendedTracks, 'Recommended songs', gv7MusicState.recommendedTracks.length + ' songs');
+      }
+      return;
+    }
+
+    // 2. Fetch from local assets or remote mirrors
+    const candidates = [
+      'assets/recommended_music.json',
+      './assets/recommended_music.json',
+      'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/assets/recommended_music.json',
+      '/api/music/recommended',
+      'https://pop-leave.tailcb4af7.ts.net/api/music/recommended'
+    ];
+
+    for (const p of candidates) {
+      try {
+        const res = await fetch(p);
+        if (res.ok) {
+          const tracks = await res.json();
+          if (Array.isArray(tracks) && tracks.length > 0) {
+            gv7MusicState.recommendedTracks = tracks;
+            if (gv7MusicState.activeView === 'home') {
+              renderGamesV7MusicTracks(tracks, 'Recommended songs', tracks.length + ' songs');
+            }
+            return;
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (spinner) spinner.classList.add('hidden');
+    if (banner) {
+      banner.className = 'music-status-banner error';
+      banner.textContent = 'Uh oh! Music stream catalog is loading... Please refresh.';
+      banner.classList.remove('hidden');
+    }
+  }
+
+  async function searchGamesV7Music(query) {
+    gv7MusicState.searchQuery = query;
+    const spinner = document.getElementById('music-loading-spinner');
+    const empty = document.getElementById('music-empty-state');
+    const container = document.getElementById('music-tracks-container');
+    const banner = document.getElementById('music-status-banner');
+
+    if (spinner) spinner.classList.remove('hidden');
+    if (empty) empty.classList.add('hidden');
+    if (container) container.innerHTML = '';
+    if (banner) banner.classList.add('hidden');
+
+    const qLower = query.toLowerCase();
+
+    // First try live Tailscale Funnel / backend search
+    let networkTracks = null;
+    const searchEndpoints = [
+      '/api/music/search?q=' + encodeURIComponent(query),
+      'https://pop-leave.tailcb4af7.ts.net/api/music/search?q=' + encodeURIComponent(query)
+    ];
+
+    for (const url of searchEndpoints) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          networkTracks = await res.json();
+          if (Array.isArray(networkTracks) && networkTracks.length > 0) break;
+        }
+      } catch (e) {}
+    }
+
+    if (networkTracks && networkTracks.length > 0) {
+      gv7MusicState.currentTrackList = networkTracks;
+      renderGamesV7MusicTracks(networkTracks, `Search results for "${query}"`, `${networkTracks.length} songs`);
+      return;
+    }
+
+    // Local / In-memory catalog fuzzy match
+    const baseList = (gv7MusicState.recommendedTracks.length > 0) ? gv7MusicState.recommendedTracks : (window.__RECOMMENDED_MUSIC__ || []);
+    const filtered = baseList.filter(t => {
+      const matchTitle = (t.title || '').toLowerCase().includes(qLower);
+      const matchArtist = (t.artist || '').toLowerCase().includes(qLower);
+      return matchTitle || matchArtist;
+    });
+
+    gv7MusicState.currentTrackList = filtered;
+    renderGamesV7MusicTracks(filtered, `Search results for "${query}"`, `${filtered.length} songs`);
+  }
+
+  function renderGamesV7MusicTracks(tracks, sectionTitle, countText) {
+    const spinner = document.getElementById('music-loading-spinner');
+    const titleEl = document.getElementById('music-section-title');
+    const countEl = document.getElementById('music-section-count');
+    const empty = document.getElementById('music-empty-state');
+    const container = document.getElementById('music-tracks-container');
+
+    if (spinner) spinner.classList.add('hidden');
+    if (titleEl && sectionTitle) titleEl.textContent = sectionTitle;
+    if (countEl && countText) countEl.textContent = countText;
+
+    if (!tracks || tracks.length === 0) {
+      if (empty) empty.classList.remove('hidden');
+      if (container) container.innerHTML = '';
+      return;
+    }
+
+    if (empty) empty.classList.add('hidden');
+    if (!container) return;
+    container.innerHTML = '';
+
+    tracks.forEach((track, idx) => {
+      const row = document.createElement('div');
+      row.className = 'music-track-row' + (gv7MusicState.currentTrack && gv7MusicState.currentTrack.id === track.id ? ' playing' : '');
+      row.setAttribute('data-track-id', track.id);
+
+      const liked = isMusicLiked(track.id);
+      row.innerHTML = `
+        <div class="music-track-index">${idx + 1}</div>
+        <div class="music-track-play-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        </div>
+        <img class="music-track-thumb" src="${escapeHtml(track.coverUrl || '')}" alt="" loading="lazy" />
+        <div class="music-track-info">
+          <div class="music-track-title">${escapeHtml(track.title || 'Untitled')}</div>
+          <div class="music-track-artist">${escapeHtml(track.artist || 'Unknown Artist')}</div>
+        </div>
+        <div class="music-track-dur">${escapeHtml(track.duration || '3:30')}</div>
+        <button type="button" class="music-row-btn heart ${liked ? 'liked' : ''}" title="Like Track">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="${liked ? '#f43f5e' : 'none'}" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </button>
+        <button type="button" class="music-row-btn add-playlist" title="Add to Playlist">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+      `;
+
+      const img = row.querySelector('.music-track-thumb');
+      if (img) {
+        img.onerror = () => {
+          img.src = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'><circle cx='12' cy='12' r='10'/></svg>";
+        };
+      }
+
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('.music-row-btn')) return;
+        playGamesV7Track(track, tracks, idx);
+      });
+
+      const heartBtn = row.querySelector('.music-row-btn.heart');
+      if (heartBtn) {
+        heartBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          toggleGamesV7LikeTrack(track);
+        });
+      }
+
+      const addBtn = row.querySelector('.music-row-btn.add-playlist');
+      if (addBtn) {
+        addBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openGamesV7PlaylistModal('select', track);
+        });
+      }
+
+      container.appendChild(row);
+    });
+  }
+
+  function resolveMusicStreamUrl(rawUrl, trackId) {
+    if (!rawUrl && !trackId) return '';
+    if (rawUrl && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))) {
+      return rawUrl;
+    }
+    const cleanId = trackId || (rawUrl ? rawUrl.replace(/.*[?&]id=([^&]+).*/, '$1') : '');
+    const funnelBase = 'https://pop-leave.tailcb4af7.ts.net';
+    if (rawUrl && rawUrl.startsWith('/')) {
+      return `${funnelBase}${rawUrl}`;
+    }
+    return `${funnelBase}/api/music/stream?id=${encodeURIComponent(cleanId)}`;
+  }
+
+  function playGamesV7Track(track, list, index) {
+    if (!track) return;
+    gv7MusicState.currentTrack = track;
+    if (list) gv7MusicState.currentTrackList = list;
+    if (typeof index === 'number') {
+      gv7MusicState.currentIndex = index;
+    } else if (gv7MusicState.currentTrackList.length > 0) {
+      gv7MusicState.currentIndex = gv7MusicState.currentTrackList.findIndex(t => t.id === track.id);
+    }
+
+    const thumb = document.getElementById('music-player-thumb');
+    const titleEl = document.getElementById('music-player-title');
+    const artistEl = document.getElementById('music-player-artist');
+    const totalTimeEl = document.getElementById('music-total-time');
+    const currTimeEl = document.getElementById('music-curr-time');
+    const seekSlider = document.getElementById('music-seek-slider');
+    const likeBtn = document.getElementById('music-player-like-btn');
+    const audio = document.getElementById('gamesv7-music-audio');
+
+    if (thumb) thumb.src = track.coverUrl || '';
+    if (titleEl) titleEl.textContent = track.title || 'Untitled';
+    if (artistEl) artistEl.textContent = track.artist || 'gn_music';
+    if (totalTimeEl) totalTimeEl.textContent = track.duration || '0:00';
+    if (currTimeEl) currTimeEl.textContent = '0:00';
+    if (seekSlider) seekSlider.value = 0;
+
+    if (likeBtn) {
+      const liked = isMusicLiked(track.id);
+      likeBtn.classList.toggle('liked', liked);
+      const svg = likeBtn.querySelector('svg');
+      if (svg) svg.setAttribute('fill', liked ? '#f43f5e' : 'none');
+    }
+
+    highlightMusicPlayingRow();
+
+    const streamUrl = resolveMusicStreamUrl(track.streamUrl, track.id);
+    if (audio && streamUrl) {
+      audio.src = streamUrl;
+      audio.load();
+      const p = audio.play();
+      if (p !== undefined) {
+        p.catch(err => {
+          console.warn('Funnel stream failed, trying Invidious audio fallback:', err);
+          const fallback = `https://invidious.nerdvpn.de/latest_version?id=${encodeURIComponent(track.id)}&itag=140`;
+          audio.src = fallback;
+          audio.play().catch(e => console.warn('Fallback audio playback error:', e));
+        });
+      }
+    }
+
+    if ('mediaSession' in navigator) {
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: track.title,
+          artist: track.artist,
+          album: 'Games V7 Arcade Music',
+          artwork: [{ src: track.coverUrl, sizes: '512x512', type: 'image/jpeg' }]
+        });
+        navigator.mediaSession.setActionHandler('play', () => audio && audio.play());
+        navigator.mediaSession.setActionHandler('pause', () => audio && audio.pause());
+        navigator.mediaSession.setActionHandler('previoustrack', prevGamesV7Track);
+        navigator.mediaSession.setActionHandler('nexttrack', nextGamesV7Track);
+      } catch (e) {}
+    }
+  }
+
+  function toggleGamesV7PlayPause() {
+    const audio = document.getElementById('gamesv7-music-audio');
+    if (!audio) return;
+    if (!gv7MusicState.currentTrack) {
+      const defaultList = gv7MusicState.currentTrackList.length > 0 ? gv7MusicState.currentTrackList : gv7MusicState.recommendedTracks;
+      if (defaultList.length > 0) {
+        playGamesV7Track(defaultList[0], defaultList, 0);
+        return;
+      }
+    }
+    if (audio.paused) {
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  }
+
+  function nextGamesV7Track() {
+    const list = gv7MusicState.currentTrackList.length > 0 ? gv7MusicState.currentTrackList : gv7MusicState.recommendedTracks;
+    if (!list || list.length === 0) return;
+
+    let nextIdx = gv7MusicState.currentIndex + 1;
+    if (gv7MusicState.shuffle) {
+      nextIdx = Math.floor(Math.random() * list.length);
+    } else if (nextIdx >= list.length) {
+      if (gv7MusicState.loopMode === 1) {
+        nextIdx = 0;
+      } else {
+        return;
+      }
+    }
+    playGamesV7Track(list[nextIdx], list, nextIdx);
+  }
+
+  function prevGamesV7Track() {
+    const audio = document.getElementById('gamesv7-music-audio');
+    if (audio && audio.currentTime > 3) {
+      audio.currentTime = 0;
+      return;
+    }
+    const list = gv7MusicState.currentTrackList.length > 0 ? gv7MusicState.currentTrackList : gv7MusicState.recommendedTracks;
+    if (!list || list.length === 0) return;
+
+    let prevIdx = gv7MusicState.currentIndex - 1;
+    if (prevIdx < 0) {
+      prevIdx = list.length - 1;
+    }
+    playGamesV7Track(list[prevIdx], list, prevIdx);
+  }
+
+  function toggleGamesV7Shuffle() {
+    gv7MusicState.shuffle = !gv7MusicState.shuffle;
+    const btn = document.getElementById('music-ctrl-shuffle');
+    if (btn) btn.classList.toggle('active', gv7MusicState.shuffle);
+    try { localStorage.setItem('gamesv7_music_shuffle', gv7MusicState.shuffle.toString()); } catch(e) {}
+    showToastNotification(gv7MusicState.shuffle ? 'Shuffle: ON' : 'Shuffle: OFF');
+  }
+
+  function toggleGamesV7Loop() {
+    gv7MusicState.loopMode = (gv7MusicState.loopMode + 1) % 3;
+    updateMusicLoopUI();
+    try { localStorage.setItem('gamesv7_music_loop', gv7MusicState.loopMode.toString()); } catch(e) {}
+    showToastNotification(gv7MusicState.loopMode === 0 ? 'Repeat: OFF' : gv7MusicState.loopMode === 1 ? 'Repeat: ALL' : 'Repeat: ONE');
+  }
+
+  function toggleGamesV7LikeTrack(track) {
+    if (!track) return;
+    const idx = gv7MusicState.likedSongs.findIndex(t => t.id === track.id);
+    if (idx >= 0) {
+      gv7MusicState.likedSongs.splice(idx, 1);
+      showToastNotification('Removed from Liked Songs');
+    } else {
+      gv7MusicState.likedSongs.unshift(track);
+      showToastNotification('Added to Liked Songs ❤️');
+    }
+
+    try { localStorage.setItem('gamesv7_music_liked', JSON.stringify(gv7MusicState.likedSongs)); } catch(e) {}
+    updateMusicLikedBadge();
+
+    if (gv7MusicState.currentTrack && gv7MusicState.currentTrack.id === track.id) {
+      const likeBtn = document.getElementById('music-player-like-btn');
+      const liked = isMusicLiked(track.id);
+      if (likeBtn) {
+        likeBtn.classList.toggle('liked', liked);
+        const svg = likeBtn.querySelector('svg');
+        if (svg) svg.setAttribute('fill', liked ? '#f43f5e' : 'none');
+      }
+    }
+
+    document.querySelectorAll('.music-track-row').forEach(row => {
+      if (row.getAttribute('data-track-id') === track.id) {
+        const heartBtn = row.querySelector('.music-row-btn.heart');
+        const liked = isMusicLiked(track.id);
+        if (heartBtn) {
+          heartBtn.classList.toggle('liked', liked);
+          const svg = heartBtn.querySelector('svg');
+          if (svg) svg.setAttribute('fill', liked ? '#f43f5e' : 'none');
+        }
+      }
+    });
+
+    if (gv7MusicState.activeView === 'liked') {
+      renderGamesV7MusicTracks(gv7MusicState.likedSongs, 'Liked Songs', gv7MusicState.likedSongs.length + ' songs');
+    }
+  }
+
+  function openGamesV7PlaylistModal(mode, track) {
+    const modal = document.getElementById('music-playlist-modal');
+    if (!modal) return;
+    gv7MusicState.pendingTrackToAdd = track || null;
+    modal.classList.remove('hidden');
+
+    const titleEl = document.getElementById('music-modal-title');
+    const inputWrap = document.getElementById('music-modal-input-wrap');
+    const selectWrap = document.getElementById('music-modal-select-wrap');
+    const confirmBtn = document.getElementById('btn-confirm-music-modal');
+    const input = document.getElementById('music-playlist-input');
+
+    if (mode === 'create') {
+      if (titleEl) titleEl.textContent = 'Create New Playlist';
+      if (inputWrap) inputWrap.classList.remove('hidden');
+      if (selectWrap) selectWrap.classList.add('hidden');
+      if (confirmBtn) confirmBtn.textContent = 'Create';
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+    } else {
+      if (titleEl) titleEl.textContent = 'Add to Playlist';
+      if (inputWrap) inputWrap.classList.add('hidden');
+      if (selectWrap) selectWrap.classList.remove('hidden');
+      if (confirmBtn) confirmBtn.textContent = '+ Create New Instead';
+      renderGamesV7ModalPlaylistsList();
+    }
+  }
+
+  function closeGamesV7PlaylistModal() {
+    const modal = document.getElementById('music-playlist-modal');
+    if (modal) modal.classList.add('hidden');
+    gv7MusicState.pendingTrackToAdd = null;
+  }
+
+  function renderGamesV7ModalPlaylistsList() {
+    const container = document.getElementById('music-modal-playlists-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (gv7MusicState.playlists.length === 0) {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.style.cssText = 'color: #777; font-size: 13px; padding: 10px;';
+      emptyDiv.textContent = 'No existing playlists. Click below to create one.';
+      container.appendChild(emptyDiv);
+      return;
+    }
+
+    gv7MusicState.playlists.forEach(pl => {
+      const item = document.createElement('div');
+      item.className = 'music-modal-list-item';
+      item.innerHTML = `<span>${escapeHtml(pl.name)}</span><span style="font-size: 12px; color: #888;">${pl.tracks ? pl.tracks.length : 0} songs</span>`;
+      item.addEventListener('click', () => {
+        if (gv7MusicState.pendingTrackToAdd) {
+          addTrackToGamesV7Playlist(pl.id, gv7MusicState.pendingTrackToAdd);
+          closeGamesV7PlaylistModal();
+        }
+      });
+      container.appendChild(item);
+    });
+  }
+
+  function handleConfirmGamesV7PlaylistModal() {
+    const inputWrap = document.getElementById('music-modal-input-wrap');
+    const input = document.getElementById('music-playlist-input');
+
+    if (inputWrap && !inputWrap.classList.contains('hidden')) {
+      const name = (input?.value || '').trim();
+      if (!name) return;
+      const newPl = {
+        id: 'pl-' + Date.now(),
+        name: name,
+        tracks: gv7MusicState.pendingTrackToAdd ? [gv7MusicState.pendingTrackToAdd] : []
+      };
+      gv7MusicState.playlists.push(newPl);
+      try { localStorage.setItem('gamesv7_music_playlists', JSON.stringify(gv7MusicState.playlists)); } catch(e) {}
+      renderMusicSidebarPlaylists();
+      closeGamesV7PlaylistModal();
+      showToastNotification(`Playlist "${name}" created!`);
+    } else {
+      openGamesV7PlaylistModal('create', gv7MusicState.pendingTrackToAdd);
+    }
+  }
+
+  function addTrackToGamesV7Playlist(playlistId, track) {
+    const pl = gv7MusicState.playlists.find(p => p.id === playlistId);
+    if (!pl) return;
+    if (!pl.tracks) pl.tracks = [];
+    if (!pl.tracks.some(t => t.id === track.id)) {
+      pl.tracks.push(track);
+      try { localStorage.setItem('gamesv7_music_playlists', JSON.stringify(gv7MusicState.playlists)); } catch(e) {}
+      renderMusicSidebarPlaylists();
+      showToastNotification(`Added to "${pl.name}"`);
+      if (gv7MusicState.activePlaylistId === playlistId) {
+        openMusicPlaylist(playlistId);
+      }
+    } else {
+      showToastNotification(`Already in "${pl.name}"`);
+    }
+  }
+
+  function exportGamesV7MusicData() {
+    const data = {
+      app: 'gamesv7_music',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      likedSongs: gv7MusicState.likedSongs,
+      playlists: gv7MusicState.playlists
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'gamesv7_music_backup.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToastNotification('Music backup exported!');
+  }
+
+  function handleImportGamesV7MusicFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (parsed.likedSongs && Array.isArray(parsed.likedSongs)) {
+          gv7MusicState.likedSongs = parsed.likedSongs;
+          localStorage.setItem('gamesv7_music_liked', JSON.stringify(gv7MusicState.likedSongs));
+        }
+        if (parsed.playlists && Array.isArray(parsed.playlists)) {
+          gv7MusicState.playlists = parsed.playlists;
+          localStorage.setItem('gamesv7_music_playlists', JSON.stringify(gv7MusicState.playlists));
+        }
+        updateMusicLikedBadge();
+        renderMusicSidebarPlaylists();
+        showToastNotification('Music backup restored successfully!');
+      } catch (err) {
+        showToastNotification('Failed to import: invalid JSON backup');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  function initGamesV7Music() {
+    if (gv7MusicInitialized) {
+      if (gv7MusicState.recommendedTracks.length === 0) {
+        loadGamesV7RecommendedMusic();
+      }
+      return;
+    }
+    gv7MusicInitialized = true;
+
+    // Load persisted state
+    try {
+      const savedLiked = localStorage.getItem('gamesv7_music_liked');
+      if (savedLiked) gv7MusicState.likedSongs = JSON.parse(savedLiked) || [];
+      const savedPlaylists = localStorage.getItem('gamesv7_music_playlists');
+      if (savedPlaylists) gv7MusicState.playlists = JSON.parse(savedPlaylists) || [];
+      const savedVol = localStorage.getItem('gamesv7_music_volume');
+      if (savedVol !== null) gv7MusicState.volume = parseFloat(savedVol) || 0.8;
+      const savedShuffle = localStorage.getItem('gamesv7_music_shuffle');
+      if (savedShuffle !== null) gv7MusicState.shuffle = (savedShuffle === 'true');
+      const savedLoop = localStorage.getItem('gamesv7_music_loop');
+      if (savedLoop !== null) gv7MusicState.loopMode = parseInt(savedLoop, 10) || 0;
+    } catch (e) {}
+
+    const volSlider = document.getElementById('music-volume-slider');
+    const audio = document.getElementById('gamesv7-music-audio');
+    if (volSlider) volSlider.value = gv7MusicState.volume;
+    if (audio) audio.volume = gv7MusicState.volume;
+
+    const shuffleBtn = document.getElementById('music-ctrl-shuffle');
+    if (shuffleBtn) shuffleBtn.classList.toggle('active', gv7MusicState.shuffle);
+    updateMusicLoopUI();
+    updateMusicLikedBadge();
+    renderMusicSidebarPlaylists();
+
+    // Nav buttons
+    const navHome = document.getElementById('music-nav-home');
+    if (navHome) {
+      navHome.addEventListener('click', () => {
+        gv7MusicState.activeView = 'home';
+        gv7MusicState.activePlaylistId = null;
+        navHome.classList.add('active');
+        const navLiked = document.getElementById('music-nav-liked');
+        if (navLiked) navLiked.classList.remove('active');
+        document.querySelectorAll('.music-playlist-item').forEach(p => p.classList.remove('active'));
+        if (gv7MusicState.searchQuery && gv7MusicState.currentTrackList.length > 0) {
+          renderGamesV7MusicTracks(gv7MusicState.currentTrackList, `Search results for "${gv7MusicState.searchQuery}"`, `${gv7MusicState.currentTrackList.length} songs`);
+        } else {
+          loadGamesV7RecommendedMusic();
+        }
+      });
+    }
+
+    const navLiked = document.getElementById('music-nav-liked');
+    if (navLiked) {
+      navLiked.addEventListener('click', () => {
+        gv7MusicState.activeView = 'liked';
+        gv7MusicState.activePlaylistId = null;
+        navLiked.classList.add('active');
+        const nHome = document.getElementById('music-nav-home');
+        if (nHome) nHome.classList.remove('active');
+        document.querySelectorAll('.music-playlist-item').forEach(p => p.classList.remove('active'));
+        renderGamesV7MusicTracks(gv7MusicState.likedSongs, 'Liked Songs', `${gv7MusicState.likedSongs.length} songs`);
+      });
+    }
+
+    // Search Form
+    const searchForm = document.getElementById('form-music-search');
+    if (searchForm) {
+      searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('music-search-input');
+        const q = (input?.value || '').trim();
+        if (q) searchGamesV7Music(q);
+        else loadGamesV7RecommendedMusic();
+      });
+    }
+
+    // Playlist Creation & Modal
+    const btnNewPl = document.getElementById('btn-create-playlist');
+    if (btnNewPl) {
+      btnNewPl.addEventListener('click', () => openGamesV7PlaylistModal('create'));
+    }
+
+    const btnCloseModal = document.getElementById('btn-close-music-modal');
+    if (btnCloseModal) btnCloseModal.addEventListener('click', closeGamesV7PlaylistModal);
+
+    const btnCancelModal = document.getElementById('btn-cancel-music-modal');
+    if (btnCancelModal) btnCancelModal.addEventListener('click', closeGamesV7PlaylistModal);
+
+    const btnConfirmModal = document.getElementById('btn-confirm-music-modal');
+    if (btnConfirmModal) btnConfirmModal.addEventListener('click', handleConfirmGamesV7PlaylistModal);
+
+    const plInput = document.getElementById('music-playlist-input');
+    if (plInput) {
+      plInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleConfirmGamesV7PlaylistModal();
+      });
+    }
+
+    // Import / Export
+    const btnExp = document.getElementById('btn-music-export');
+    if (btnExp) btnExp.addEventListener('click', exportGamesV7MusicData);
+
+    const btnImp = document.getElementById('btn-music-import');
+    const impFile = document.getElementById('music-import-file');
+    if (btnImp && impFile) {
+      btnImp.addEventListener('click', () => impFile.click());
+      impFile.addEventListener('change', handleImportGamesV7MusicFile);
+    }
+
+    // Player Bar Controls
+    const ctrlPlay = document.getElementById('music-ctrl-play');
+    if (ctrlPlay) ctrlPlay.addEventListener('click', toggleGamesV7PlayPause);
+
+    const ctrlPrev = document.getElementById('music-ctrl-prev');
+    if (ctrlPrev) ctrlPrev.addEventListener('click', prevGamesV7Track);
+
+    const ctrlNext = document.getElementById('music-ctrl-next');
+    if (ctrlNext) ctrlNext.addEventListener('click', nextGamesV7Track);
+
+    const ctrlShuffle = document.getElementById('music-ctrl-shuffle');
+    if (ctrlShuffle) ctrlShuffle.addEventListener('click', toggleGamesV7Shuffle);
+
+    const ctrlLoop = document.getElementById('music-ctrl-loop');
+    if (ctrlLoop) ctrlLoop.addEventListener('click', toggleGamesV7Loop);
+
+    const playerLike = document.getElementById('music-player-like-btn');
+    if (playerLike) {
+      playerLike.addEventListener('click', () => {
+        if (gv7MusicState.currentTrack) toggleGamesV7LikeTrack(gv7MusicState.currentTrack);
+      });
+    }
+
+    // Scrubber
+    const seekSlider = document.getElementById('music-seek-slider');
+    const currTime = document.getElementById('music-curr-time');
+    if (seekSlider) {
+      seekSlider.addEventListener('mousedown', () => { gv7MusicState.isSeeking = true; });
+      seekSlider.addEventListener('touchstart', () => { gv7MusicState.isSeeking = true; });
+      seekSlider.addEventListener('input', () => {
+        const totalDuration = (audio && isFinite(audio.duration) && audio.duration > 0)
+          ? audio.duration
+          : (gv7MusicState.currentTrack && gv7MusicState.currentTrack.durationSec ? gv7MusicState.currentTrack.durationSec : 0);
+        if (totalDuration > 0) {
+          const seekTime = (parseFloat(seekSlider.value) / 100) * totalDuration;
+          if (currTime) currTime.textContent = formatMusicDuration(seekTime);
+        }
+      });
+      seekSlider.addEventListener('change', () => {
+        const totalDuration = (audio && isFinite(audio.duration) && audio.duration > 0)
+          ? audio.duration
+          : (gv7MusicState.currentTrack && gv7MusicState.currentTrack.durationSec ? gv7MusicState.currentTrack.durationSec : 0);
+        if (audio && totalDuration > 0) {
+          audio.currentTime = (parseFloat(seekSlider.value) / 100) * totalDuration;
+        }
+        gv7MusicState.isSeeking = false;
+      });
+    }
+
+    // Volume & Mute
+    if (volSlider) {
+      volSlider.addEventListener('input', () => {
+        setGamesV7Volume(parseFloat(volSlider.value));
+      });
+    }
+    const muteBtn = document.getElementById('music-mute-btn');
+    if (muteBtn) muteBtn.addEventListener('click', toggleGamesV7Mute);
+
+    // Audio element events
+    if (audio) {
+      audio.addEventListener('timeupdate', () => {
+        if (!gv7MusicState.isSeeking) {
+          const current = audio.currentTime;
+          const total = (isFinite(audio.duration) && audio.duration > 0)
+            ? audio.duration
+            : (gv7MusicState.currentTrack && gv7MusicState.currentTrack.durationSec ? gv7MusicState.currentTrack.durationSec : 0);
+          if (total > 0 && seekSlider) {
+            seekSlider.value = (current / total) * 100;
+          }
+          if (currTime) currTime.textContent = formatMusicDuration(current);
+        }
+      });
+
+      audio.addEventListener('loadedmetadata', () => {
+        const totalTime = document.getElementById('music-total-time');
+        if (totalTime) {
+          if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+            totalTime.textContent = formatMusicDuration(audio.duration);
+          } else if (gv7MusicState.currentTrack && gv7MusicState.currentTrack.duration) {
+            totalTime.textContent = gv7MusicState.currentTrack.duration;
+          }
+        }
+      });
+
+      audio.addEventListener('play', () => {
+        gv7MusicState.isPlaying = true;
+        updateMusicPlayPauseUI(true);
+        highlightMusicPlayingRow();
+      });
+
+      audio.addEventListener('pause', () => {
+        gv7MusicState.isPlaying = false;
+        updateMusicPlayPauseUI(false);
+      });
+
+      audio.addEventListener('ended', () => {
+        if (gv7MusicState.loopMode === 2) {
+          audio.currentTime = 0;
+          audio.play().catch(() => {});
+        } else {
+          nextGamesV7Track();
+        }
+      });
+
+      audio.addEventListener('error', (err) => {
+        console.warn('Audio stream error, attempting Invidious audio fallback...', err);
+        if (gv7MusicState.currentTrack && gv7MusicState.currentTrack.id) {
+          const fallback = `https://invidious.nerdvpn.de/latest_version?id=${encodeURIComponent(gv7MusicState.currentTrack.id)}&itag=140`;
+          if (audio.src !== fallback) {
+            audio.src = fallback;
+            audio.play().catch(e => console.warn('Fallback stream error:', e));
+          }
+        }
+      });
+    }
+
+    loadGamesV7RecommendedMusic();
+  }
+  window.initGamesV7Music = initGamesV7Music;
+
+  // Initialize music engine listeners
+  initGamesV7Music();
 
   window.addEventListener('hashchange', checkHashRouting);
 

@@ -9,7 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=7.2" />
+  <link rel="stylesheet" href="style-v8.css?v=8.0" />
+  <script src="assets/movies_data.js?v=8.0"></script>
+  <script src="assets/music_data.js?v=8.0"></script>
 </head>
 <body>
   <!-- CRT Scanlines Overlay -->
@@ -30,6 +32,7 @@
         <li><button class="nav-tab-btn active" data-tab="home" onclick="switchTab('home')">HOME</button></li>
         <li><button class="nav-tab-btn" data-tab="games" onclick="switchTab('games')">GAMES</button></li>
         <li><button class="nav-tab-btn" data-tab="movies" onclick="switchTab('movies')">MOVIES</button></li>
+        <li><button class="nav-tab-btn" data-tab="music" onclick="switchTab('music')">MUSIC</button></li>
         <li><button class="nav-tab-btn" data-tab="proxy" onclick="switchTab('proxy')">PROXY</button></li>
         <li><button class="nav-tab-btn" data-tab="editor" onclick="switchTab('editor')">CODE EDITOR</button></li>
         <li><button class="nav-tab-btn" data-tab="settings" onclick="switchTab('settings')">SETTINGS</button></li>
@@ -530,6 +533,217 @@
     </section>
 
     <!-- ====================================================================
+         MUSIC TAB — FULL-LENGTH AUDIO STREAMER (GN-MATH STYLE)
+         ==================================================================== -->
+    <section id="music-view" class="tab-view" aria-label="Music Streamer">
+      <div class="music-app-container">
+        <!-- Left Sidebar Navigation -->
+        <aside class="music-sidebar">
+          <div class="music-sidebar-brand">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18V5l12-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="18" cy="16" r="3"></circle>
+            </svg>
+            <span class="music-brand-text">gn_music</span>
+          </div>
+
+          <nav class="music-sidebar-nav">
+            <button type="button" id="music-nav-home" class="music-nav-btn active">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              <span>Home</span>
+            </button>
+            <button type="button" id="music-nav-liked" class="music-nav-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+              <span>Liked Songs</span>
+              <span id="music-liked-count-badge" class="music-nav-badge">0</span>
+            </button>
+          </nav>
+
+          <div class="music-sidebar-section">
+            <div class="music-sidebar-section-title">
+              <span>Playlists</span>
+              <button type="button" id="btn-create-playlist" class="btn-music-icon-add" title="Create Playlist">+</button>
+            </div>
+            <div id="music-playlists-container" class="music-playlists-list custom-scrollbar">
+              <!-- Dynamically populated playlists -->
+            </div>
+          </div>
+
+          <div class="music-sidebar-footer">
+            <div class="music-data-btns">
+              <button type="button" id="btn-music-import" class="btn-music-data" title="Import JSON backup">Import data</button>
+              <button type="button" id="btn-music-export" class="btn-music-data" title="Export JSON backup">Export data</button>
+              <input type="file" id="music-import-file" accept=".json" style="display:none;" />
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Music Content -->
+        <main class="music-main-content custom-scrollbar">
+          <!-- Search Header Section -->
+          <header class="music-search-section">
+            <h1 class="music-page-title">Search for a song</h1>
+            <form id="form-music-search" class="music-search-form" onsubmit="return false;">
+              <input type="text" id="music-search-input" class="music-search-input" placeholder="Song or artist" autocomplete="off" />
+              <button type="submit" id="btn-music-search-submit" class="btn-music-search">Search</button>
+            </form>
+            <div id="music-status-banner" class="music-status-banner hidden"></div>
+          </header>
+
+          <!-- Tracks List Section -->
+          <section class="music-content-section">
+            <div class="music-section-header">
+              <h2 id="music-section-title" class="music-section-title">Recommended songs</h2>
+              <span id="music-section-count" class="music-section-count">20 songs</span>
+            </div>
+
+            <!-- Loading State Spinner -->
+            <div id="music-loading-spinner" class="music-loading-box hidden">
+              <div class="music-spinner-ring"></div>
+              <span>Loading recommended songs...</span>
+            </div>
+
+            <!-- Empty State -->
+            <div id="music-empty-state" class="music-empty-box hidden">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <p id="music-empty-text">No songs found. Try searching for a title or artist.</p>
+            </div>
+
+            <!-- Track List Table Container -->
+            <div id="music-tracks-container" class="music-tracks-table">
+              <!-- Dynamically rendered song rows -->
+            </div>
+          </section>
+        </main>
+
+        <!-- Persistent Bottom Player Bar -->
+        <footer id="music-player-bar" class="music-player-bar">
+          <!-- Left: Current Track Details -->
+          <div class="music-player-left">
+            <div class="music-player-thumb-wrap">
+              <img id="music-player-thumb" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'><path d='M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z'/></svg>" alt="" />
+            </div>
+            <div class="music-player-meta">
+              <div id="music-player-title" class="music-player-title">Nothing playing</div>
+              <div id="music-player-artist" class="music-player-artist">gn_music</div>
+            </div>
+            <button type="button" id="music-player-like-btn" class="music-player-icon-btn heart" title="Like Song">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Center: Player Controls & Scrubber -->
+          <div class="music-player-center">
+            <div class="music-player-controls">
+              <button type="button" id="music-ctrl-shuffle" class="music-ctrl-btn" title="Shuffle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 3 21 3 21 8"></polyline>
+                  <line x1="4" y1="20" x2="21" y2="3"></line>
+                  <polyline points="21 16 21 21 16 21"></polyline>
+                  <line x1="15" y1="15" x2="21" y2="21"></line>
+                  <line x1="4" y1="4" x2="9" y2="9"></line>
+                </svg>
+              </button>
+              <button type="button" id="music-ctrl-prev" class="music-ctrl-btn" title="Previous">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                  <line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"></line>
+                </svg>
+              </button>
+              <button type="button" id="music-ctrl-play" class="music-play-circle-btn" title="Play / Pause">
+                <svg id="music-icon-play" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <svg id="music-icon-pause" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16"></rect>
+                  <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+              </button>
+              <button type="button" id="music-ctrl-next" class="music-ctrl-btn" title="Next">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                  <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"></line>
+                </svg>
+              </button>
+              <button type="button" id="music-ctrl-loop" class="music-ctrl-btn" title="Repeat">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="17 1 21 5 17 9"></polyline>
+                  <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                  <polyline points="7 23 3 19 7 15"></polyline>
+                  <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="music-player-scrubber">
+              <span id="music-curr-time" class="music-time">0:00</span>
+              <div class="music-progress-wrapper">
+                <input type="range" id="music-seek-slider" class="music-seek-bar" min="0" max="100" value="0" step="0.1" />
+              </div>
+              <span id="music-total-time" class="music-time">0:00</span>
+            </div>
+          </div>
+
+          <!-- Right: Volume Controls -->
+          <div class="music-player-right">
+            <button type="button" id="music-mute-btn" class="music-player-icon-btn" title="Mute/Unmute">
+              <svg id="music-icon-volume-high" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              </svg>
+              <svg id="music-icon-volume-muted" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <line x1="23" y1="9" x2="17" y2="15"></line>
+                <line x1="17" y1="9" x2="23" y2="15"></line>
+              </svg>
+            </button>
+            <div class="music-volume-wrapper">
+              <input type="range" id="music-volume-slider" class="music-volume-bar" min="0" max="1" step="0.01" value="0.8" />
+            </div>
+          </div>
+        </footer>
+      </div>
+
+      <!-- Music Playlist Creation / Add Dialog Modal -->
+      <div id="music-playlist-modal" class="modal-overlay hidden" aria-label="Playlist Management">
+        <div class="music-modal-card">
+          <div class="music-modal-header">
+            <h3 id="music-modal-title">Create New Playlist</h3>
+            <button type="button" id="btn-close-music-modal" class="modal-close-btn">&times;</button>
+          </div>
+          <div class="music-modal-body">
+            <div id="music-modal-input-wrap">
+              <input type="text" id="music-playlist-input" class="music-modal-input" placeholder="Playlist name (e.g. Beats, Chill, Gaming)" />
+            </div>
+            <div id="music-modal-select-wrap" class="hidden">
+              <label class="music-modal-label">Choose an existing playlist or create a new one:</label>
+              <div id="music-modal-playlists-list" class="music-modal-list"></div>
+            </div>
+          </div>
+          <div class="music-modal-footer">
+            <button type="button" id="btn-cancel-music-modal" class="btn-cancel">Cancel</button>
+            <button type="button" id="btn-confirm-music-modal" class="btn-music-search">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden HTML5 Audio Element for streaming -->
+      <audio id="gamesv7-music-audio" preload="auto" crossorigin="anonymous"></audio>
+    </section>
+
+    <!-- ====================================================================
          3. PROXY TAB — STEALTH WEB BROWSER
          ==================================================================== -->
     <section id="proxy-view" class="tab-view">
@@ -965,7 +1179,29 @@
     </div>
 
   <div id="toast-container" class="toast-container"></div>
-  <script src="app.js?v=7.4"></script>
+
+  <!-- MOVIE EMBED / IFRAME CODE MODAL -->
+  <div id="modal-movie-embed" class="retro-modal-backdrop hidden" onclick="if(event.target===this)closeMovieEmbedModal()">
+    <div class="retro-modal-box" style="max-width: 600px;">
+      <div class="retro-modal-header">
+        <span class="retro-modal-title">🎬 MOVIE EMBED / IFRAME CODE</span>
+        <button class="retro-modal-close" onclick="closeMovieEmbedModal()">&times;</button>
+      </div>
+      <div class="retro-modal-body">
+        <p class="retro-modal-lead">Copy this responsive HTML embed code to place this movie player into any website, blog, or BokitCord:</p>
+        <div class="retro-form-group">
+          <label for="input-movie-embed-code">EMBED HTML CODE:</label>
+          <textarea id="input-movie-embed-code" class="retro-input" rows="4" style="font-family: monospace; font-size: 12px; resize: vertical; width: 100%; box-sizing: border-box;" readonly></textarea>
+        </div>
+        <div class="retro-modal-actions">
+          <button type="button" class="retro-btn secondary" onclick="closeMovieEmbedModal()">CLOSE</button>
+          <button type="button" class="retro-btn primary" id="btn-copy-movie-embed" onclick="copyMovieEmbedCode()">📋 COPY CODE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=8.0"></script>
   <!-- GAMES V7 VIP / AD-FREE REDEMPTION MODAL -->
   <div id="modal-gamesv7-adfree" class="retro-modal-backdrop hidden" onclick="if(event.target===this)closeAdfreeModal()">
     <div class="retro-modal-box">
