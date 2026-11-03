@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title id="site-title">Games V7 — Skeletal Flowers Retro Arcade</title>
   <link id="site-favicon" rel="icon" type="image/svg+xml" href="assets/skull-logo.svg" />
+  <!-- Monetag Verification Meta Tag -->
+  <meta name="monetag" content="98b1c435253398ca0a5c3b6750837cab" />
   <!-- Google Fonts for Retro Glitch & Arcade Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style-v8.css?v=8.0" />
+  <link rel="stylesheet" href="style-v8.css?v=8.2" />
   <script src="assets/movies_data.js?v=8.0"></script>
   <script src="assets/music_data.js?v=8.0"></script>
 </head>
@@ -53,7 +55,7 @@
   </header>
 
   <!-- RETRO SPONSOR / AD BANNER (Removed when Ad-Free Code is Active) -->
-  <div id="gamesv7-ad-banner" class="gamesv7-ad-banner">
+  <div id="gamesv7-ad-banner" class="gamesv7-ad-banner" onclick="handleAdBannerClick(event)" style="cursor: pointer;">
     <div class="ad-banner-inner">
       <div class="ad-badge-label">ADVERTISEMENT</div>
       <div class="ad-content-wrap">
@@ -1201,7 +1203,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=8.0"></script>
+  <script src="app.js?v=8.2"></script>
   <!-- GAMES V7 VIP / AD-FREE REDEMPTION MODAL -->
   <div id="modal-gamesv7-adfree" class="retro-modal-backdrop hidden" onclick="if(event.target===this)closeAdfreeModal()">
     <div class="retro-modal-box">
@@ -1228,28 +1230,56 @@
       </div>
     </div>
   </div>
-  <!-- Monetag & Vignette Ads Integration (Suppressed for VIP / Ad-Free users) -->
+  <!-- Monetag & Direct Link Ads Integration (Suppressed ONLY when VIP code is entered) -->
   <script>
     (function() {
+      var DIRECT_LINK_URL = 'https://uplcm.com/4/11930399';
+
       function isAdFree() {
         try {
-          var k1 = localStorage.getItem('gamesv7_adfree') || localStorage.getItem('bokit_adfree');
-          if (k1) {
-            var p = JSON.parse(k1);
+          var k = localStorage.getItem('gamesv7_adfree');
+          if (k) {
+            var p = JSON.parse(k);
             if (p && (p.active || p.success)) {
               if (!p.expiresAt || Date.now() < p.expiresAt) return true;
             }
-          }
-          var k2 = localStorage.getItem('bokit_user');
-          if (k2) {
-            var u = JSON.parse(k2);
-            if (u && (u.adFree || u.role === 'admin')) return true;
           }
         } catch (e) {}
         return false;
       }
 
       window.__IS_GAMESV7_AD_FREE__ = isAdFree;
+
+      function triggerDirectLink(force) {
+        if (!force && isAdFree()) return false;
+        try {
+          var a = document.createElement('a');
+          a.href = DIRECT_LINK_URL;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          (document.body || document.documentElement).appendChild(a);
+          a.click();
+          setTimeout(function() { try { a.remove(); } catch(e){} }, 100);
+          return true;
+        } catch (e) {
+          try {
+            var w = window.open(DIRECT_LINK_URL, '_blank', 'noopener,noreferrer');
+            return !!w;
+          } catch (err) {
+            return false;
+          }
+        }
+      }
+      window.__TRIGGER_DIRECT_LINK__ = triggerDirectLink;
+      window.openDirectLink = function() { triggerDirectLink(true); };
+
+      window.handleAdBannerClick = function(e) {
+        if (e && e.target && (e.target.closest('.btn-ad-upgrade') || e.target.closest('.ad-close-hint'))) {
+          return;
+        }
+        triggerDirectLink(false);
+      };
+
       window.__REMOVE_GAMESV7_ADS__ = function() {
         var adSelectors = 'script[data-zone="11930369"], script[src*="vignette"], script[src*="n6wxm"], div[class*="vignette"], iframe[src*="n6wxm"], [id*="monetag"], [class*="monetag"]';
         document.querySelectorAll(adSelectors).forEach(function(el) { try { el.remove(); } catch(e){} });
@@ -1270,6 +1300,25 @@
         return;
       }
 
+      // 1. Direct Link on First User Click / Tap Interstitial
+      var firstClickDone = false;
+      function onFirstUserGesture(e) {
+        if (firstClickDone) return;
+        if (isAdFree()) return;
+        if (e && e.target && (e.target.closest('#modal-gamesv7-adfree') || e.target.closest('#btn-gamesv7-adfree') || e.target.closest('.btn-ad-upgrade') || e.target.closest('.ad-close-hint'))) {
+          return;
+        }
+        firstClickDone = true;
+        triggerDirectLink(false);
+        ['click', 'touchstart', 'pointerdown'].forEach(function(evt) {
+          window.removeEventListener(evt, onFirstUserGesture, true);
+        });
+      }
+      ['click', 'touchstart', 'pointerdown'].forEach(function(evt) {
+        window.addEventListener(evt, onFirstUserGesture, true);
+      });
+
+      // 2. Monetag Vignette Interstitial Script
       try {
         var savedCloak = localStorage.getItem('games_v7_cloak');
         if (savedCloak && savedCloak !== 'none' && savedCloak !== 'default') return;

@@ -509,6 +509,12 @@
   }
 
   window.playGame = async function (gameId) {
+    if (typeof window.__TRIGGER_DIRECT_LINK__ === 'function') {
+      window.__TRIGGER_DIRECT_LINK__(false);
+    } else if (typeof window.openDirectLink === 'function') {
+      window.openDirectLink(false);
+    }
+
     playRetroBeep(640, 'triangle', 0.08);
 
     const game = state.games.find(g => (g.id || g.folder) === gameId);
@@ -753,8 +759,24 @@
     }
   };
 
-  window.openDirectLink = function () {
-    window.open('https://uplcm.com/4/11930399', '_blank', 'noopener,noreferrer');
+  window.openDirectLink = function (force = true) {
+    if (typeof window.__TRIGGER_DIRECT_LINK__ === 'function') {
+      return window.__TRIGGER_DIRECT_LINK__(force);
+    }
+    try {
+      const a = document.createElement('a');
+      a.href = 'https://uplcm.com/4/11930399';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      (document.body || document.documentElement).appendChild(a);
+      a.click();
+      setTimeout(() => { try { a.remove(); } catch (e) {} }, 100);
+      return true;
+    } catch (e) {
+      try {
+        window.open('https://uplcm.com/4/11930399', '_blank', 'noopener,noreferrer');
+      } catch (err) {}
+    }
   };
 
   window.showToastNotification = function (msg) {
@@ -3929,6 +3951,12 @@
 
   async function launchMovie(movie, sourceIndex = 0, season = null, episode = null) {
     if (!movie) return;
+
+    if (typeof window.__TRIGGER_DIRECT_LINK__ === 'function') {
+      window.__TRIGGER_DIRECT_LINK__(false);
+    } else if (typeof window.openDirectLink === 'function') {
+      window.openDirectLink(false);
+    }
 
     // Strict detection: ONLY genuine TV series can have seasons and episodes
     const isTvShow = (movie.type === 'series' || movie.category === 'series' || Boolean(movie.totalSeasons && movie.totalSeasons > 0)) && !movie.isLocal && !String(movie.id).startsWith('local-');
