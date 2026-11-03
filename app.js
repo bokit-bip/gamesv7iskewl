@@ -6020,7 +6020,7 @@
 
     if (thumb) thumb.src = track.coverUrl || '';
     if (titleEl) titleEl.textContent = track.title || 'Untitled';
-    if (artistEl) artistEl.textContent = track.artist || 'gn_music';
+    if (artistEl) artistEl.textContent = track.artist || 'games v7 music';
     if (totalTimeEl) totalTimeEl.textContent = track.duration || '0:00';
     if (currTimeEl) currTimeEl.textContent = '0:00';
     if (seekSlider) seekSlider.value = 0;
