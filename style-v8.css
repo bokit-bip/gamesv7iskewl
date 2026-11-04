@@ -4744,13 +4744,22 @@ input:checked + .slider:before {
   gap: 8px;
   padding: 14px;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.22s ease;
   z-index: 5;
   box-sizing: border-box;
 }
 
-.movie-card:hover .movie-card-hover-overlay {
+.movie-card:hover .movie-card-hover-overlay,
+.movie-card:focus-within .movie-card-hover-overlay {
   opacity: 1;
+  pointer-events: auto;
+}
+
+.btn-card-hover-play *,
+.btn-card-hover-info *,
+.btn-card-hover-list * {
+  pointer-events: none;
 }
 
 .btn-card-hover-play {

@@ -2910,8 +2910,10 @@
     if (playBtn) {
       playBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const startPos = (movie.progress && movie.progress.currentTime) ? movie.progress.currentTime : 0;
-        launchMovie(movie, 0, movie.season || 1, movie.episode || 1, startPos);
+        const isTv = (movie.type === 'series' || movie.category === 'series' || Boolean(movie.totalSeasons && movie.totalSeasons > 0)) && !movie.isLocal;
+        const s = isTv ? (movie.season || 1) : null;
+        const ep = isTv ? (movie.episode || 1) : null;
+        launchMovie(movie, 0, s, ep);
       });
     }
 
@@ -3642,8 +3644,14 @@
     el.movieDetailsModal.classList.remove('hidden');
 
     // Update URL hash for clean navigation
-    if (window.location.hash !== `#movies/detail/${movie.id}`) {
-      history.pushState({ view: 'movie-detail', id: movie.id }, '', `#movies/detail/${movie.id}`);
+    try {
+      if (window.location.hash !== `#movies/detail/${movie.id}`) {
+        history.pushState({ view: 'movie-detail', id: movie.id }, '', `#movies/detail/${movie.id}`);
+      }
+    } catch (e) {
+      try {
+        window.location.hash = `#movies/detail/${movie.id}`;
+      } catch (e2) {}
     }
 
     // Fetch full details and sources
@@ -3873,8 +3881,14 @@
     }
     activeDetailMovie = null;
 
-    if (window.location.hash.startsWith('#movies/detail')) {
-      history.pushState({ view: 'movies-library' }, '', '#movies');
+    try {
+      if (window.location.hash.startsWith('#movies/detail')) {
+        history.pushState({ view: 'movies-library' }, '', '#movies');
+      }
+    } catch (e) {
+      try {
+        window.location.hash = '#movies';
+      } catch (e2) {}
     }
   }
 
@@ -3953,9 +3967,13 @@
     if (!movie) return;
 
     if (typeof window.__TRIGGER_DIRECT_LINK__ === 'function') {
-      window.__TRIGGER_DIRECT_LINK__(false);
+      try {
+        window.__TRIGGER_DIRECT_LINK__(false);
+      } catch (e) {}
     } else if (typeof window.openDirectLink === 'function') {
-      window.openDirectLink(false);
+      try {
+        window.openDirectLink(false);
+      } catch (e) {}
     }
 
     // Strict detection: ONLY genuine TV series can have seasons and episodes
@@ -3973,7 +3991,9 @@
     currentPlaybackEpisode = episode;
 
     // Save to Continue Watching history
-    saveMovieHistoryItem(movie, season, episode, 15);
+    try {
+      saveMovieHistoryItem(movie, season, episode, 15);
+    } catch (e) {}
 
     // Update Player View Header
     if (el.moviePlayerTitle) {
@@ -3991,21 +4011,47 @@
       el.moviePlayerSize.textContent = movie.size || (movie.isLocal ? 'Local Stream' : 'BokitCord Stream');
     }
 
-    // Update URL hash cleanly (strip any ?s=...&e=... for movies)
-    const watchHash = (season && isTvShow) ? `#movies/watch/${movie.id}?s=${season}&e=${episode || 1}` : `#movies/watch/${movie.id}`;
-    if (window.location.hash !== watchHash) {
-      history.replaceState({ view: 'movie-player', id: movie.id, s: season, e: episode }, '', watchHash);
-    }
-
     // Close details modal if open
-    closeMovieDetailsModal();
+    try {
+      closeMovieDetailsModal();
+    } catch (e) {}
 
-    // Switch views
+    // Ensure the movies tab is active
+    try {
+      const moviesView = document.getElementById('movies-view');
+      if (moviesView && !moviesView.classList.contains('active') && typeof switchTab === 'function') {
+        switchTab('movies');
+      }
+    } catch (e) {}
+
+    // Switch views FIRST before any navigation/history attempts
     if (el.moviesListView) el.moviesListView.classList.add('hidden');
     if (el.moviePlayerView) el.moviePlayerView.classList.remove('hidden');
 
     const topbar = document.getElementById('movie-player-topbar');
     if (topbar) topbar.classList.remove('hidden');
+
+    // Scroll to top so player is immediately front and center
+    try {
+      window.scrollTo(0, 0);
+      const moviesView = document.getElementById('movies-view');
+      if (moviesView) moviesView.scrollTop = 0;
+      const moviesContainer = document.querySelector('.movies-container');
+      if (moviesContainer) moviesContainer.scrollTop = 0;
+      if (el.moviePlayerView) el.moviePlayerView.scrollTop = 0;
+    } catch (e) {}
+
+    // Update URL hash cleanly and safely inside try/catch
+    const watchHash = (season && isTvShow) ? `#movies/watch/${movie.id}?s=${season}&e=${episode || 1}` : `#movies/watch/${movie.id}`;
+    try {
+      if (window.location.hash !== watchHash) {
+        history.replaceState({ view: 'movie-player', id: movie.id, s: season, e: episode }, '', watchHash);
+      }
+    } catch (e) {
+      try {
+        window.location.hash = watchHash;
+      } catch (e2) {}
+    }
 
     const serverOrigin = getServerOrigin();
     const tmdbId = movie.tmdbId || movie.id;
@@ -4765,8 +4811,14 @@
     if (el.moviesListView) el.moviesListView.classList.remove('hidden');
     updateSubtitleDropdown([]);
 
-    if (window.location.hash.startsWith('#movies/watch')) {
-      history.pushState({ view: 'movies-library' }, '', '#movies');
+    try {
+      if (window.location.hash.startsWith('#movies/watch')) {
+        history.pushState({ view: 'movies-library' }, '', '#movies');
+      }
+    } catch (e) {
+      try {
+        window.location.hash = '#movies';
+      } catch (e2) {}
     }
   }
 
@@ -4789,8 +4841,14 @@
       const id = (currentPlaybackMovie && currentPlaybackMovie.id) || event.data.id;
       if (id) {
         const watchHash = `#movies/watch/${id}?s=${s}&e=${e}`;
-        if (window.location.hash !== watchHash) {
-          history.replaceState({ view: 'movie-player', id, s, e }, '', watchHash);
+        try {
+          if (window.location.hash !== watchHash) {
+            history.replaceState({ view: 'movie-player', id, s, e }, '', watchHash);
+          }
+        } catch (err) {
+          try {
+            window.location.hash = watchHash;
+          } catch (e2) {}
         }
       }
       if (currentPlaybackMovie) {
