@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style-v8.css?v=8.3" />
-  <script src="assets/movies_data.js?v=8.3"></script>
-  <script src="assets/music_data.js?v=8.3"></script>
+  <link rel="stylesheet" href="style-v8.css?v=8.4" />
+  <script src="assets/movies_data.js?v=8.4"></script>
+  <script src="assets/music_data.js?v=8.4"></script>
 </head>
 <body>
   <!-- CRT Scanlines Overlay -->
@@ -201,82 +201,74 @@
       <div class="movies-container custom-scrollbar">
         <!-- Movies Library Browser -->
         <div id="movies-list-view" class="movies-list-view">
-          <header class="movies-header">
-            <div class="movies-header-top">
-              <div class="movies-header-badge">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-                <span>Skeletal Cinema &bull; Streaming Library</span>
-              </div>
-              <div class="movies-header-actions">
-                <span id="movies-count-badge" class="movies-count-badge">Streaming Catalog</span>
-                <button type="button" id="btn-movie-providers-debug" class="btn-movie-providers-debug" title="View streaming & metadata provider health, latency, and status diagnostics">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                  </svg>
-                  <span>Provider Status</span>
-                </button>
-                <button type="button" id="btn-refresh-movies" class="btn-refresh-movies" title="Rescan local movies folder">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <polyline points="1 20 1 14 7 14"></polyline>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                  </svg>
-                  <span>Rescan Local</span>
-                </button>
-              </div>
-            </div>
-            
-            <h1 class="movies-title">Stream Any Movie &amp; Cinema</h1>
-            <p class="movies-subtitle">Browse trending blockbusters, search any film worldwide, or stream your local <code>movies/</code> collection in high definition.</p>
-            
-            <!-- Search & Toolbar -->
-            <div class="movies-toolbar">
-              <div class="movies-search-box">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <input
-                  type="text"
-                  id="movies-search-input"
-                  class="movies-search-input"
-                  placeholder="Search any movie or TV series worldwide (e.g. Inception, Breaking Bad, Scary Movie)..."
-                  autocomplete="off"
-                  spellcheck="false"
-                />
-                <button type="button" id="btn-clear-movies-search" class="btn-clear-search hidden" title="Clear search">&times;</button>
-              </div>
-              <div class="movies-filter-select-wrap">
-                <select id="movies-type-filter" class="movies-select-filter" title="Filter by Type">
-                  <option value="all">All Content</option>
-                  <option value="movie">Movies Only</option>
-                  <option value="series">TV Series</option>
-                </select>
-                <select id="movies-year-filter" class="movies-select-filter" title="Filter by Year">
-                  <option value="all">All Years</option>
-                  <option value="2026">2026</option>
-                  <option value="2025">2025</option>
-                  <option value="2024">2024</option>
-                  <option value="2023">2023</option>
-                  <option value="2022">2022</option>
-                  <option value="2020s">2020s</option>
-                  <option value="2010s">2010s</option>
-                  <option value="2000s">2000s</option>
-                  <option value="classics">Classics</option>
-                </select>
-              </div>
-              <button type="button" id="btn-movies-search-submit" class="btn-movies-search-action">Search</button>
+          <!-- Movy-Style Sleek Floating Header Bar -->
+          <header class="movy-top-navbar" id="movy-top-navbar">
+            <div class="movy-brand" id="movy-brand" onclick="window.switchMovyCategory && window.switchMovyCategory('all')">
+              <svg class="movy-logo-icon" width="32" height="32" viewBox="0 0 36 36" fill="none">
+                <defs>
+                  <linearGradient id="movy-red-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#ff2a4b" />
+                    <stop offset="100%" stop-color="#dc2626" />
+                  </linearGradient>
+                </defs>
+                <path d="M7 4h12c5 0 9 3.5 9 8.5 0 3.2-1.8 6-4.5 7.3C27 21 29 24.2 29 28c0 5-4.2 8-9.5 8H7V4z" fill="url(#movy-red-grad)"/>
+                <path d="M13 10v6h5c2 0 3.5-1.2 3.5-3s-1.5-3-3.5-3h-5zm0 12v8h5.5c2.5 0 4-1.5 4-4s-1.5-4-4-4H13z" fill="#0e0f12"/>
+              </svg>
+              <span class="movy-brand-title">Games V7 Cinema</span>
             </div>
 
-            <!-- Genre / Category Filters -->
-            <div class="movies-genre-pills" id="movies-genre-pills">
-              <!-- Rendered dynamically (All, Trending, Movies, TV, Local, Watchlist, Genres) -->
-            </div>
+            <!-- Floating Translucent Glass Capsule Menu -->
+            <nav class="movy-glass-nav" aria-label="Movy Navigation">
+              <button type="button" class="movy-nav-pill active" data-category="all" id="movy-nav-home">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Home</span>
+              </button>
+              <button type="button" class="movy-nav-pill" data-category="movie" id="movy-nav-movies">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+                <span>Movies</span>
+              </button>
+              <button type="button" class="movy-nav-pill" data-category="series" id="movy-nav-shows">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+                <span>Shows</span>
+              </button>
+              <button type="button" class="movy-nav-pill" data-category="anime" id="movy-nav-anime">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span>Anime</span>
+              </button>
+              <button type="button" class="movy-nav-pill icon-only" id="btn-toggle-movy-search" title="Search catalog">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </button>
+              <button type="button" class="movy-nav-pill icon-only" id="btn-movie-providers-debug" title="Streaming Providers &amp; Diagnostics">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </button>
+            </nav>
           </header>
+
+          <!-- Expandable Movy Glass Search Overlay -->
+          <div id="movy-search-bar" class="movy-search-bar hidden">
+            <div class="movy-search-inner">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input
+                type="text"
+                id="movies-search-input"
+                class="movy-search-input"
+                placeholder="Search movies, TV shows, actors, genres..."
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <button type="button" id="btn-movies-search-submit" class="movy-search-btn">Search</button>
+              <button type="button" id="btn-clear-movies-search" class="movy-search-close" title="Close Search">&times;</button>
+            </div>
+          </div>
+
+          <!-- Hidden elements for backward compatibility -->
+          <div style="display:none;">
+            <span id="movies-count-badge"></span>
+            <button type="button" id="btn-refresh-movies"></button>
+            <select id="movies-type-filter"><option value="all">All Content</option></select>
+            <select id="movies-year-filter"><option value="all">All Years</option></select>
+            <div class="movies-genre-pills" id="movies-genre-pills"></div>
+          </div>
 
           <!-- Hero Spotlight Banner -->
           <div id="movies-hero-banner" class="movies-hero-banner">
@@ -1025,140 +1017,139 @@
     </div>
   </div>
 
-<!-- ================= MOVIE DETAILS MODAL ================= -->
-    <div id="movie-details-modal" class="modal-overlay hidden" aria-label="Movie Details">
-      <div class="movie-modal-card">
-        <div class="movie-modal-hero" id="movie-modal-hero">
-          <div class="movie-modal-backdrop-img" id="movie-modal-backdrop-img"></div>
-          <div class="movie-modal-hero-gradient"></div>
-          <button type="button" id="btn-close-movie-modal" class="movie-modal-close" title="Close">&times;</button>
+<!-- ================= FULL-SCREEN CINEMATIC MOVIE DETAILS VIEW (GN-MATH / MOVY STYLE) ================= -->
+    <div id="movie-details-modal" class="movy-details-view hidden" role="dialog" aria-modal="true" aria-label="Movie Details">
+      <!-- Top Navigation Bar: Back & Home Capsule -->
+      <div class="movy-details-top-bar">
+        <div class="movy-details-nav-capsule">
+          <button type="button" id="btn-details-back" class="movy-nav-capsule-btn" title="Back to Browsing">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <span class="movy-nav-capsule-sep"></span>
+          <button type="button" id="btn-details-home" class="movy-nav-capsule-btn" title="Home Catalog">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          </button>
+        </div>
+        <button type="button" id="btn-close-movie-modal" class="movy-details-close-btn" title="Close Details">&times;</button>
+      </div>
+
+      <!-- Scrollable Main Container -->
+      <div class="movy-details-scroll custom-scrollbar">
+        <!-- Cinematic Hero Header -->
+        <div class="movy-details-hero" id="movie-modal-hero">
+          <div class="movy-details-backdrop" id="movie-modal-backdrop-img"></div>
+          <div class="movy-details-gradient-left"></div>
+          <div class="movy-details-gradient-bottom"></div>
+
+          <!-- Hero Content Overlay -->
+          <div class="movy-details-hero-content">
+            <!-- Stylized Spaced Title -->
+            <h1 id="movie-modal-title" class="movy-details-title">Movie Title</h1>
+
+            <!-- Meta Badges & Runtime Line -->
+            <div class="movy-details-meta">
+              <span class="movy-meta-star">★</span>
+              <span id="movie-modal-rating-badge" class="movy-meta-rating">8.5</span>
+              <span id="movie-modal-diamond-wrap" class="movy-meta-diamond-wrap">
+                <span class="movy-meta-diamond">⬦</span>
+                <span id="movie-modal-diamond">10</span>
+              </span>
+              <span class="movy-meta-dot">•</span>
+              <span id="movie-modal-year" class="movy-meta-year">2026</span>
+              <span class="movy-meta-dot">•</span>
+              <span id="movie-modal-runtime" class="movy-meta-runtime">148 min</span>
+              <span id="movie-modal-4k-badge" class="movy-meta-badge-box">4K</span>
+              <span id="movie-modal-rated" class="movy-meta-badge-box">PG-13</span>
+            </div>
+
+            <!-- Genres Line -->
+            <div id="movie-modal-genres" class="movy-details-genres">Action • Thriller • Crime</div>
+
+            <!-- Overview Synopsis -->
+            <p id="movie-modal-plot" class="movy-details-plot">
+              Movie overview and synopsis will appear here.
+            </p>
+
+            <!-- Actions Row -->
+            <div class="movy-details-actions">
+              <button type="button" id="btn-modal-watch-now" class="movy-details-btn-play">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
+                <span id="modal-watch-label">Play</span>
+              </button>
+
+              <button type="button" id="btn-modal-watchlist" class="movy-details-btn-glass" title="Add to My List">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"></path></svg>
+                <span id="modal-watchlist-text">Add to List</span>
+              </button>
+
+              <a id="btn-modal-download" class="movy-details-btn-glass hidden" href="#" download target="_blank" rel="noopener noreferrer" title="Download Movie">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span id="modal-download-label">Download</span>
+              </a>
+
+              <button type="button" id="btn-modal-trailer" class="movy-details-btn-glass" title="Watch Trailer">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                <span>Trailer</span>
+              </button>
+
+              <button type="button" id="btn-modal-embed-code" class="movy-details-btn-glass" title="Embed Player">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                <span>Embed</span>
+              </button>
+            </div>
+            <div id="modal-download-notice" class="modal-download-notice hidden"></div>
+          </div>
         </div>
 
-        <div class="movie-modal-body custom-scrollbar">
-          <div class="movie-modal-main">
-            <div class="movie-modal-poster-wrap">
-              <img id="movie-modal-poster-img" src="" alt="Poster" class="movie-modal-poster" />
-              <div class="movie-modal-badges">
-                <span id="movie-modal-rating-badge" class="modal-badge-rating">⭐ 8.8</span>
-                <span id="movie-modal-hd-badge" class="modal-badge-hd">HD</span>
+        <!-- Details Lower Body -->
+        <div class="movy-details-body">
+          <!-- Cast Section with Circular Avatars -->
+          <section id="movie-modal-cast-section" class="movy-section">
+            <h3 class="movy-section-title">Cast</h3>
+            <div id="movie-modal-cast-track" class="movy-cast-track custom-scrollbar">
+              <!-- Dynamically injected actor cards -->
+            </div>
+          </section>
+
+          <!-- Streaming Servers & Multi-Source Providers -->
+          <section id="movie-modal-servers-section" class="movy-section">
+            <div class="movy-section-header">
+              <h3 class="movy-section-title">Streaming Servers &amp; Providers</h3>
+              <span class="movy-section-subtitle">Select any upstream provider to stream with subtitles, 4K HDR, or low-latency CDN</span>
+            </div>
+            <div id="movie-modal-servers-list" class="movy-servers-grid">
+              <!-- Dynamically injected server cards -->
+            </div>
+          </section>
+
+          <!-- TV Series Seasons & Episodes Explorer (visible for TV shows) -->
+          <section id="movie-modal-tv-section" class="movy-section hidden">
+            <div class="movy-tv-header">
+              <h3 class="movy-section-title">Seasons &amp; Episodes</h3>
+              <div class="movy-season-select-wrap">
+                <label for="movie-modal-season-select">Season:</label>
+                <select id="movie-modal-season-select" class="movy-season-select"></select>
               </div>
             </div>
-
-            <div class="movie-modal-info">
-              <h2 id="movie-modal-title" class="movie-modal-title">Movie Title</h2>
-              
-              <div class="movie-modal-meta-row">
-                <span id="movie-modal-year" class="modal-meta-pill">2024</span>
-                <span id="movie-modal-rated" class="modal-meta-pill">PG-13</span>
-                <span id="movie-modal-runtime" class="modal-meta-pill">148 min</span>
-                <span id="movie-modal-genres" class="modal-genres-text">Action, Sci-Fi</span>
-              </div>
-
-              <div class="movie-modal-synopsis-wrap">
-                <h4 class="modal-section-heading">Overview</h4>
-                <p id="movie-modal-plot" class="movie-modal-plot">Movie overview and synopsis will appear here.</p>
-              </div>
-
-              <div class="movie-modal-people-grid">
-                <div class="people-item">
-                  <span class="people-label">Director</span>
-                  <span id="movie-modal-director" class="people-value">Christopher Nolan</span>
-                </div>
-                <div class="people-item">
-                  <span class="people-label">Cast</span>
-                  <span id="movie-modal-actors" class="people-value">Actors list</span>
-                </div>
-              </div>
-
-              <!-- TV Series Seasons & Episodes Explorer (visible for TV shows) -->
-              <div id="movie-modal-tv-section" class="movie-modal-tv-section hidden">
-                <div class="tv-season-header">
-                  <h4 class="modal-section-heading">Episodes &amp; Seasons</h4>
-                  <div class="tv-season-select-wrap">
-                    <label for="movie-modal-season-select">Season:</label>
-                    <select id="movie-modal-season-select" class="movie-season-dropdown"></select>
-                  </div>
-                </div>
-                <div id="movie-modal-episodes-list" class="movie-episodes-list custom-scrollbar">
-                  <!-- Episodes injected dynamically -->
-                </div>
-              </div>
-
-              <!-- Upstream Playback Servers -->
-              <div class="movie-modal-servers-section">
-                <h4 class="modal-section-heading">Select Playback Server / Source</h4>
-                <div id="movie-modal-servers-list" class="movie-server-pills-list">
-                  <!-- Injected dynamically -->
-                </div>
-              </div>
-
-              <!-- Action buttons & Conditional Download Button -->
-              <div class="movie-modal-actions-row">
-                <button type="button" id="btn-modal-watch-now" class="btn-modal-play">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                  </svg>
-                  <span id="modal-watch-label">Stream Movie</span>
-                </button>
-
-                <button type="button" id="btn-modal-trailer" class="btn-modal-secondary" title="Watch Official Trailer">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                  </svg>
-                  <span>Trailer</span>
-                </button>
-
-                <button type="button" id="btn-modal-watchlist" class="btn-modal-secondary" title="Save to Watchlist">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                  <span id="modal-watchlist-text">Watchlist</span>
-                </button>
-
-                <button type="button" id="btn-modal-embed-code" class="btn-modal-secondary" title="Copy Embed / Iframe Code">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="16 18 22 12 16 6"></polyline>
-                    <polyline points="8 6 2 12 8 18"></polyline>
-                  </svg>
-                  <span>Embed Code</span>
-                </button>
-
-                <!-- Conditional Download Button: only enabled/clickable when selected source permits downloading -->
-                <a
-                  id="btn-modal-download"
-                  class="btn-modal-download hidden"
-                  href="#"
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                  <span id="modal-download-label">Download Movie</span>
-                </a>
-
-                <!-- Notice when download is not permitted for the selected server -->
-                <div id="modal-download-notice" class="modal-download-notice">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                  </svg>
-                  <span>Streaming Only &bull; Direct download is not permitted by this provider.</span>
-                </div>
-
-                <!-- Similar Movies & Recommendations Row -->
-                <div id="movie-modal-similar-section" class="movie-modal-similar-section hidden">
-                  <h4 class="modal-section-heading">Similar Movies &amp; Recommendations</h4>
-                  <div id="movie-modal-similar-list" class="movie-modal-similar-list custom-scrollbar">
-                    <!-- Cards injected dynamically -->
-                  </div>
-                </div>
-              </div>
+            <div id="movie-modal-episodes-list" class="movy-episodes-grid custom-scrollbar">
+              <!-- Episodes injected dynamically -->
             </div>
+          </section>
+
+          <!-- More Like This / Recommended Movies -->
+          <section id="movie-modal-similar-section" class="movy-section">
+            <h3 class="movy-section-title">More Like This</h3>
+            <div id="movie-modal-similar-list" class="movy-similar-track custom-scrollbar">
+              <!-- Injected dynamically -->
+            </div>
+          </section>
+
+          <!-- Hidden elements for backward compatibility -->
+          <div style="display:none;">
+            <img id="movie-modal-poster-img" src="" alt="" />
+            <span id="movie-modal-hd-badge"></span>
+            <span id="movie-modal-director"></span>
+            <span id="movie-modal-actors"></span>
           </div>
         </div>
       </div>
@@ -1203,7 +1194,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=8.3"></script>
+  <script src="app.js?v=8.4"></script>
   <!-- GAMES V7 VIP / AD-FREE REDEMPTION MODAL -->
   <div id="modal-gamesv7-adfree" class="retro-modal-backdrop hidden" onclick="if(event.target===this)closeAdfreeModal()">
     <div class="retro-modal-box">

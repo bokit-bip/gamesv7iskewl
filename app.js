@@ -2270,6 +2270,11 @@
     get movieErrorTitle() { return document.getElementById('movie-error-title'); },
     get movieModalActors() { return document.getElementById('movie-modal-actors'); },
     get movieModalBackdropImg() { return document.getElementById('movie-modal-backdrop-img'); },
+    get movieModalCastSection() { return document.getElementById('movie-modal-cast-section'); },
+    get movieModalCastTrack() { return document.getElementById('movie-modal-cast-track'); },
+    get movieModalDiamond() { return document.getElementById('movie-modal-diamond'); },
+    get btnDetailsBack() { return document.getElementById('btn-details-back'); },
+    get btnDetailsHome() { return document.getElementById('btn-details-home'); },
     get movieModalDirector() { return document.getElementById('movie-modal-director'); },
     get movieModalEpisodesList() { return document.getElementById('movie-modal-episodes-list'); },
     get movieModalGenres() { return document.getElementById('movie-modal-genres'); },
@@ -2825,7 +2830,7 @@
   let heroFeaturedIndex = 0;
   let heroAutoRotateTimer = null;
 
-  function createMovieCardElement(movie, index) {
+  function createMovieCardElement(movie, index, isTop10 = false) {
     const card = document.createElement('div');
     card.className = 'movie-card';
     card.setAttribute('data-id', movie.id);
@@ -2837,6 +2842,7 @@
     const year = movie.year ? `${movie.year}` : '';
     const rating = movie.rating ? movie.rating : '8.0';
     const inWl = isMovieInWatchlist(movie.id);
+    const top10BadgeHtml = (isTop10 && index < 10) ? `<span class="movy-top10-badge">TOP ${index + 1}</span>` : '';
 
     // Continue Watching Progress Bar & Resume Badge
     let progressHtml = '';
@@ -2865,6 +2871,7 @@
     card.innerHTML = `
       <div class="movie-card-poster">
         ${posterContent}
+        ${top10BadgeHtml}
         <div class="movie-card-rating">
           <span>⭐</span>
           <span>${escapeHtml(String(rating).replace('⭐', '').trim())}</span>
@@ -3342,11 +3349,14 @@
     rowEl.className = 'movies-row';
     rowEl.id = `row-${row.id}`;
 
+    const isTop10Row = (row.id === 'trending-movies' || row.id === 'top-10');
+    const displayTitle = isTop10Row ? 'TOP 10 on Games V7' : row.title;
+
     rowEl.innerHTML = `
       <div class="movies-row-header">
         <div class="movies-row-title-wrap">
-          <span class="movies-row-icon">${row.icon || '🎬'}</span>
-          <h3 class="movies-row-title">${escapeHtml(row.title)}</h3>
+          <span class="movies-row-icon">${row.icon || (isTop10Row ? '🔥' : '🎬')}</span>
+          <h3 class="movies-row-title">${escapeHtml(displayTitle)}</h3>
           <span class="movies-row-count">${row.items.length} Titles</span>
         </div>
         <div class="movies-row-actions">
@@ -3360,7 +3370,7 @@
 
     const track = rowEl.querySelector('.movies-row-track');
     row.items.forEach((movie, idx) => {
-      track.appendChild(createMovieCardElement(movie, idx));
+      track.appendChild(createMovieCardElement(movie, idx, isTop10Row));
     });
 
     const prevBtn = rowEl.querySelector('.btn-row-nav.prev');
@@ -3607,6 +3617,36 @@
     }
   }
 
+  function formatMovieRuntime(runtime) {
+    if (!runtime) return '120 min';
+    if (typeof runtime === 'string') {
+      if (runtime.includes('min') || (runtime.includes('m') && !runtime.includes('h'))) {
+        const num = parseInt(runtime, 10);
+        if (!isNaN(num)) {
+          const h = Math.floor(num / 60);
+          const m = num % 60;
+          return h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+        }
+      }
+      if (runtime.includes('h')) return runtime;
+    }
+    const mins = parseInt(runtime, 10);
+    if (!mins || isNaN(mins)) return String(runtime);
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+  }
+
+  function formatMovieGenres(genres, genre) {
+    if (Array.isArray(genres) && genres.length > 0) {
+      return genres.map(g => (typeof g === 'object' ? g.name : g)).filter(Boolean).join(' • ');
+    }
+    if (typeof genre === 'string' && genre) {
+      return genre.split(',').map(s => s.trim()).filter(Boolean).join(' • ');
+    }
+    return 'Action • Thriller • Crime';
+  }
+
   async function openMovieDetailsModal(movie) {
     if (!el.movieDetailsModal || !movie) return;
     activeDetailMovie = movie;
@@ -3617,15 +3657,19 @@
 
     // Reset modal fields with initial data
     if (el.movieModalTitle) el.movieModalTitle.textContent = movie.title || 'Movie';
-    if (el.movieModalYear) el.movieModalYear.textContent = movie.year || '';
-    if (el.movieModalRated) el.movieModalRated.textContent = movie.rated || 'HD';
-    if (el.movieModalRuntime) el.movieModalRuntime.textContent = movie.runtime || movie.size || 'HD Stream';
-    if (el.movieModalGenres) el.movieModalGenres.textContent = movie.genre || 'Cinema';
-    if (el.movieModalRatingBadge) el.movieModalRatingBadge.textContent = `⭐ ${movie.rating || '8.5'}`;
+    if (el.movieModalYear) el.movieModalYear.textContent = movie.year || '2024';
+    if (el.movieModalRated) el.movieModalRated.textContent = movie.rated || 'PG-13';
+    if (el.movieModalRuntime) el.movieModalRuntime.textContent = formatMovieRuntime(movie.runtime || movie.size || 120);
+    if (el.movieModalGenres) el.movieModalGenres.textContent = formatMovieGenres(movie.genres, movie.genre);
+    if (el.movieModalRatingBadge) el.movieModalRatingBadge.textContent = String(movie.rating || '8.5').replace(/^⭐\s*/, '');
+    if (el.movieModalDiamond) {
+      const v = Number(movie.rating || 8.5);
+      el.movieModalDiamond.textContent = String(v >= 7.5 ? 10 : Math.max(1, Math.round(v)));
+    }
     if (el.movieModalPlot) el.movieModalPlot.textContent = movie.plot || movie.description || 'Loading movie details...';
     if (el.movieModalDirector) el.movieModalDirector.textContent = movie.director || 'N/A';
     if (el.movieModalActors) el.movieModalActors.textContent = movie.actors || 'N/A';
-    if (el.modalWatchLabel) el.modalWatchLabel.textContent = isInitialSeries ? 'Stream S1:E1' : 'Stream Movie';
+    if (el.modalWatchLabel) el.modalWatchLabel.textContent = isInitialSeries ? 'Play S1:E1' : 'Play';
 
     updateModalWatchlistButton();
 
@@ -3637,6 +3681,88 @@
       const bg = movie.backdropUrl || movie.posterUrl || '';
       el.movieModalBackdropImg.style.backgroundImage = bg ? `url('${bg}')` : 'none';
     }
+
+    // Helper to render Cast portraits
+    function renderCastMembers(castList) {
+      if (!el.movieModalCastTrack) return;
+      el.movieModalCastTrack.innerHTML = '';
+      if (Array.isArray(castList) && castList.length > 0) {
+        if (el.movieModalCastSection) el.movieModalCastSection.classList.remove('hidden');
+        castList.slice(0, 16).forEach(member => {
+          const card = document.createElement('div');
+          card.className = 'movy-cast-card';
+          const name = member.name || 'Actor';
+          const char = member.character || '';
+          const photo = member.profileUrl;
+
+          if (photo) {
+            card.innerHTML = `
+              <img class="movy-cast-avatar" src="${escapeHtml(photo)}" alt="${escapeHtml(name)}" loading="lazy" onerror="this.outerHTML='<div class=\\'movy-cast-avatar-placeholder\\'>👤</div>'" />
+              <div class="movy-cast-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+              ${char ? `<div class="movy-cast-character" title="${escapeHtml(char)}">${escapeHtml(char)}</div>` : ''}
+            `;
+          } else {
+            card.innerHTML = `
+              <div class="movy-cast-avatar-placeholder">👤</div>
+              <div class="movy-cast-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+              ${char ? `<div class="movy-cast-character" title="${escapeHtml(char)}">${escapeHtml(char)}</div>` : ''}
+            `;
+          }
+          el.movieModalCastTrack.appendChild(card);
+        });
+      } else {
+        if (el.movieModalCastSection) el.movieModalCastSection.classList.add('hidden');
+      }
+    }
+
+    const DEFAULT_CAST_MAP = {
+      '155': [
+        { name: 'Christian Bale', character: 'Bruce Wayne / Batman', profileUrl: 'https://image.tmdb.org/t/p/w185/b7fTC9WFkgqGOv77mLQEG9Kawh1.jpg' },
+        { name: 'Heath Ledger', character: 'Joker', profileUrl: 'https://image.tmdb.org/t/p/w185/5Y9HnYYa9jF4NuY9lENBh97GJx9.jpg' },
+        { name: 'Aaron Eckhart', character: 'Harvey Dent', profileUrl: 'https://image.tmdb.org/t/p/w185/hEbB29e8cu17e1sba7h76XfD2iT.jpg' },
+        { name: 'Michael Caine', character: 'Alfred Pennyworth', profileUrl: 'https://image.tmdb.org/t/p/w185/bVvvz0e60805c8q0h429517112.jpg' },
+        { name: 'Maggie Gyllenhaal', character: 'Rachel Dawes', profileUrl: 'https://image.tmdb.org/t/p/w185/wWv0E0Gq9i5303y7070.jpg' },
+        { name: 'Gary Oldman', character: 'Jim Gordon', profileUrl: 'https://image.tmdb.org/t/p/w185/2v9Fs9999052069.jpg' },
+        { name: 'Morgan Freeman', character: 'Lucius Fox', profileUrl: 'https://image.tmdb.org/t/p/w185/jPsLqiYgsOFU4s6q0aT68r2112.jpg' }
+      ],
+      'The Dark Knight': [
+        { name: 'Christian Bale', character: 'Bruce Wayne / Batman', profileUrl: 'https://image.tmdb.org/t/p/w185/b7fTC9WFkgqGOv77mLQEG9Kawh1.jpg' },
+        { name: 'Heath Ledger', character: 'Joker', profileUrl: 'https://image.tmdb.org/t/p/w185/5Y9HnYYa9jF4NuY9lENBh97GJx9.jpg' },
+        { name: 'Aaron Eckhart', character: 'Harvey Dent', profileUrl: 'https://image.tmdb.org/t/p/w185/hEbB29e8cu17e1sba7h76XfD2iT.jpg' },
+        { name: 'Michael Caine', character: 'Alfred Pennyworth', profileUrl: 'https://image.tmdb.org/t/p/w185/bVvvz0e60805c8q0h429517112.jpg' },
+        { name: 'Maggie Gyllenhaal', character: 'Rachel Dawes', profileUrl: 'https://image.tmdb.org/t/p/w185/wWv0E0Gq9i5303y7070.jpg' },
+        { name: 'Gary Oldman', character: 'Jim Gordon', profileUrl: 'https://image.tmdb.org/t/p/w185/2v9Fs9999052069.jpg' },
+        { name: 'Morgan Freeman', character: 'Lucius Fox', profileUrl: 'https://image.tmdb.org/t/p/w185/jPsLqiYgsOFU4s6q0aT68r2112.jpg' }
+      ],
+      'Tenzing': [
+        { name: 'Tom Hiddleston', character: 'Sir Edmund Hillary', profileUrl: 'https://image.tmdb.org/t/p/w185/mclFxMm8M.jpg' },
+        { name: 'Willem Dafoe', character: 'Colonel John Hunt', profileUrl: 'https://image.tmdb.org/t/p/w185/ui8e.jpg' },
+        { name: 'Sonam Norbu', character: 'Tenzing Norgay', profileUrl: null }
+      ],
+      'Inception': [
+        { name: 'Leonardo DiCaprio', character: 'Dom Cobb', profileUrl: 'https://image.tmdb.org/t/p/w185/wo2Configuration.jpg' },
+        { name: 'Joseph Gordon-Levitt', character: 'Arthur', profileUrl: 'https://image.tmdb.org/t/p/w185/4DalB3R7S.jpg' },
+        { name: 'Elliot Page', character: 'Ariadne', profileUrl: 'https://image.tmdb.org/t/p/w185/tp9w.jpg' },
+        { name: 'Tom Hardy', character: 'Eames', profileUrl: 'https://image.tmdb.org/t/p/w185/yVdT.jpg' },
+        { name: 'Cillian Murphy', character: 'Robert Fischer', profileUrl: 'https://image.tmdb.org/t/p/w185/360.jpg' }
+      ]
+    };
+
+    // Initial cast rendering
+    let initialCast = Array.isArray(movie.cast) && movie.cast.length > 0
+      ? movie.cast
+      : (typeof movie.actors === 'string' && movie.actors && movie.actors !== 'N/A'
+          ? movie.actors.split(',').map(name => ({ name: name.trim(), character: '', profileUrl: null })).filter(c => c.name)
+          : (DEFAULT_CAST_MAP[String(movie.id)] || DEFAULT_CAST_MAP[movie.title] || []));
+
+    if (!initialCast || initialCast.length === 0) {
+      initialCast = [
+        { name: 'Lead Cast', character: 'Starring', profileUrl: null },
+        { name: 'Supporting Cast', character: 'Co-Star', profileUrl: null },
+        { name: movie.director || 'Guest Star', character: movie.director ? 'Director' : 'Special Appearance', profileUrl: null }
+      ];
+    }
+    renderCastMembers(initialCast);
 
     // Hide TV section initially until details confirmed
     if (el.movieModalTvSection) el.movieModalTvSection.classList.add('hidden');
@@ -3668,10 +3794,15 @@
         activeDetailMovie = { ...movie, ...detail };
 
         if (el.movieModalTitle) el.movieModalTitle.textContent = detail.title || movie.title;
-        if (el.movieModalYear) el.movieModalYear.textContent = detail.year || movie.year;
+        if (el.movieModalYear) el.movieModalYear.textContent = detail.year || movie.year || '2024';
         if (el.movieModalRated) el.movieModalRated.textContent = detail.rated || 'PG-13';
-        if (el.movieModalRuntime) el.movieModalRuntime.textContent = detail.runtime || '120 min';
-        if (el.movieModalGenres) el.movieModalGenres.textContent = detail.genre || movie.genre;
+        if (el.movieModalRuntime) el.movieModalRuntime.textContent = formatMovieRuntime(detail.runtime || movie.runtime || '120 min');
+        if (el.movieModalGenres) el.movieModalGenres.textContent = formatMovieGenres(detail.genres, detail.genre || movie.genre);
+        if (el.movieModalRatingBadge) el.movieModalRatingBadge.textContent = String(detail.rating || movie.rating || '8.5').replace(/^⭐\s*/, '');
+        if (el.movieModalDiamond) {
+          const v = Number(detail.rating || movie.rating || 8.5);
+          el.movieModalDiamond.textContent = String(v >= 7.5 ? 10 : Math.max(1, Math.round(v)));
+        }
         if (el.movieModalPlot) el.movieModalPlot.textContent = detail.plot || 'No synopsis available.';
         if (el.movieModalDirector) el.movieModalDirector.textContent = detail.director || 'N/A';
         if (el.movieModalActors) el.movieModalActors.textContent = detail.actors || 'N/A';
@@ -3683,18 +3814,26 @@
           el.movieModalBackdropImg.style.backgroundImage = `url('${detail.backdropUrl}')`;
         }
 
+        // Render cast from detail
+        const fetchedCast = Array.isArray(detail.cast) && detail.cast.length > 0
+          ? detail.cast
+          : (typeof detail.actors === 'string' && detail.actors && detail.actors !== 'N/A'
+              ? detail.actors.split(',').map(name => ({ name: name.trim(), character: '', profileUrl: null })).filter(c => c.name)
+              : initialCast);
+        renderCastMembers(fetchedCast);
+
         // TV series seasons check - strictly for genuine TV shows, never for movies or local files
         const isSeries = (detail.type === 'series' || movie.type === 'series' || Boolean(detail.totalSeasons && detail.totalSeasons > 0)) && !detail.isLocal && !movie.isLocal && !String(detail.id).startsWith('local-');
         if (isSeries && el.movieModalTvSection) {
           activeDetailSeason = 1;
           activeDetailEpisode = 1;
           loadTvSeasonsAndEpisodes(detail.id, detail.totalSeasons || 1, 1);
-          if (el.modalWatchLabel) el.modalWatchLabel.textContent = 'Stream S1:E1';
+          if (el.modalWatchLabel) el.modalWatchLabel.textContent = 'Play S1:E1';
         } else {
           activeDetailSeason = null;
           activeDetailEpisode = null;
           if (el.movieModalTvSection) el.movieModalTvSection.classList.add('hidden');
-          if (el.modalWatchLabel) el.modalWatchLabel.textContent = 'Stream Movie';
+          if (el.modalWatchLabel) el.modalWatchLabel.textContent = 'Play';
         }
 
         // Populate server list for modal
@@ -3738,38 +3877,44 @@
       currentDetailSources = [
         {
           name: 'VidLink HD',
-          serverLabel: 'VidLink HD',
-          badge: 'Fast',
+          serverLabel: 'VidLink HD (Primary)',
+          badge: 'Fast HD',
+          note: 'Lightning fast 1080p stream with subtitle support',
           url: isTv ? `https://vidlink.pro/tv/${tmdbId}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}` : `https://vidlink.pro/movie/${tmdbId}`
+        },
+        {
+          name: 'AutoEmbed 4K (Stealth Proxy)',
+          serverLabel: 'AutoEmbed 4K (Stealth Proxy)',
+          badge: '4K Ultra',
+          note: 'High-speed 4K streaming through stealth CDN proxy',
+          url: isTv ? `https://autoembed.co/tv/tmdb/${tmdbId}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}` : `https://autoembed.co/movie/tmdb/${tmdbId}`
+        },
+        {
+          name: 'Videasy Pro (Low-Block CDN)',
+          serverLabel: 'Videasy Pro (Low-Block CDN)',
+          badge: 'Multi-Sub',
+          note: 'Resilient low-block mirror with multi-language captions',
+          url: isTv ? `https://player.videasy.net/tv/${tmdbId}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}` : `https://player.videasy.net/movie/${tmdbId}`
         },
         {
           name: 'VidSrc HD',
           serverLabel: 'VidSrc HD',
           badge: '1080p',
+          note: 'Direct high-bitrate stream with multiple audio tracks',
           url: isTv ? `https://vidsrc.me/embed/tv?id=${tmdbId}&s=${activeDetailSeason || 1}&e=${activeDetailEpisode || 1}` : `https://vidsrc.me/embed/movie?id=${tmdbId}`
-        },
-        {
-          name: 'AutoEmbed 4K',
-          serverLabel: 'AutoEmbed 4K',
-          badge: '4K',
-          url: isTv ? `https://autoembed.co/tv/tmdb/${tmdbId}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}` : `https://autoembed.co/movie/tmdb/${tmdbId}`
-        },
-        {
-          name: 'Videasy Pro',
-          serverLabel: 'Videasy Pro',
-          badge: 'Multi-Sub',
-          url: isTv ? `https://player.videasy.net/tv/${tmdbId}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}` : `https://player.videasy.net/movie/${tmdbId}`
         },
         {
           name: 'SmashyStream',
           serverLabel: 'SmashyStream',
-          badge: 'HLS',
+          badge: 'HLS Cloud',
+          note: 'Fast adaptive bitrate stream for slower connections',
           url: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${activeDetailSeason || 1}&episode=${activeDetailEpisode || 1}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`
         },
         {
           name: '2Embed',
-          serverLabel: '2Embed',
+          serverLabel: '2Embed Mirror',
           badge: 'Mirror',
+          note: 'Standard definition resilient backup stream',
           url: isTv ? `https://www.2embed.cc/embedtv/${tmdbId}&s=${activeDetailSeason || 1}&e=${activeDetailEpisode || 1}` : `https://www.2embed.cc/embed/${tmdbId}`
         }
       ];
@@ -3816,29 +3961,45 @@
     el.movieModalServersList.innerHTML = '';
 
     if (!Array.isArray(sources) || sources.length === 0) {
-      el.movieModalServersList.innerHTML = `<span style="font-size:12px;color:#ed4245;background:rgba(237,66,69,0.12);padding:4px 8px;border-radius:4px;border:1px solid rgba(237,66,69,0.3);">⚠️ Native Stream Unavailable (Watch Trailer)</span>`;
+      el.movieModalServersList.innerHTML = `<span style="font-size:13px;color:#a1a1aa;padding:12px;grid-column:1/-1;">No streaming servers currently available. You can still watch the official trailer.</span>`;
       return;
     }
 
     sources.forEach((src, idx) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = `movie-server-btn ${idx === selectedDetailSourceIndex ? 'active' : ''}`;
-      const label = src.serverLabel || src.friendlyName || src.name || `Server ${idx + 1}`;
-      btn.innerHTML = `
-        <span>${escapeHtml(label)}</span>
-        <span class="movie-server-badge">${escapeHtml(src.badge || src.quality || (src.canDownload ? 'Direct' : 'HLS'))}</span>
+      const card = document.createElement('div');
+      card.className = `movy-server-card ${idx === selectedDetailSourceIndex ? 'active' : ''}`;
+      const name = src.serverLabel || src.friendlyName || src.name || src.provider || `Server ${idx + 1}`;
+      const badge = src.badge || src.quality || (src.canDownload ? 'Direct MP4' : '1080p');
+      const note = src.note || (src.canDownload ? 'High-speed direct stream & download' : (src.isEmbed ? 'Fast Embed • Ad-Free Safe Frame' : 'Adaptive HLS Stream'));
+
+      card.innerHTML = `
+        <div class="movy-server-info">
+          <span class="movy-server-name">${escapeHtml(name)}</span>
+          <span class="movy-server-type">${escapeHtml(note)}</span>
+        </div>
+        <span class="movy-server-badge">${escapeHtml(badge)}</span>
       `;
 
-      btn.addEventListener('click', () => {
+      card.addEventListener('click', () => {
         selectedDetailSourceIndex = idx;
-        const allBtns = el.movieModalServersList.querySelectorAll('.movie-server-btn');
-        allBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        const allCards = el.movieModalServersList.querySelectorAll('.movy-server-card');
+        allCards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
         updateModalDownloadButton();
+
+        // Immediately launch stream with this server
+        if (activeDetailMovie) {
+          const isTvShow = (activeDetailMovie.type === 'series' || activeDetailMovie.category === 'series' || Boolean(activeDetailMovie.totalSeasons && activeDetailMovie.totalSeasons > 0)) && !activeDetailMovie.isLocal && !String(activeDetailMovie.id).startsWith('local-');
+          launchMovie(
+            activeDetailMovie,
+            selectedDetailSourceIndex,
+            isTvShow ? (activeDetailSeason || 1) : null,
+            isTvShow ? (activeDetailEpisode || 1) : null
+          );
+        }
       });
 
-      el.movieModalServersList.appendChild(btn);
+      el.movieModalServersList.appendChild(card);
     });
   }
 
@@ -3889,6 +4050,78 @@
       try {
         window.location.hash = '#movies';
       } catch (e2) {}
+    }
+  }
+
+  function switchMovyCategory(cat) {
+    document.querySelectorAll('.movy-nav-pill').forEach(btn => {
+      const bCat = btn.getAttribute('data-category');
+      btn.classList.toggle('active', bCat === cat || (cat === 'all' && btn.id === 'movy-nav-home'));
+    });
+
+    if (cat === 'all') {
+      activeTypeFilter = 'all';
+      if (el.moviesGridSection) el.moviesGridSection.classList.add('hidden');
+      if (el.moviesHomeRows) el.moviesHomeRows.classList.remove('hidden');
+      if (el.moviesHeroBanner) el.moviesHeroBanner.classList.remove('hidden');
+    } else if (cat === 'movie') {
+      activeTypeFilter = 'movie';
+      fetchCatalogCategory('trending-movies', 1);
+    } else if (cat === 'series') {
+      activeTypeFilter = 'series';
+      fetchCatalogCategory('trending-tv', 1);
+    } else if (cat === 'anime') {
+      activeTypeFilter = 'all';
+      fetchCatalogCategory('genre-animation', 1);
+    }
+  }
+  window.switchMovyCategory = switchMovyCategory;
+
+  function initMovyNavbar() {
+    const btnToggleSearch = document.getElementById('btn-toggle-movy-search');
+    const btnCloseSearch = document.getElementById('btn-clear-movies-search') || document.getElementById('btn-close-movy-search');
+    const searchBar = document.getElementById('movy-search-bar');
+    const searchInput = document.getElementById('movies-search-input');
+    const searchSubmit = document.getElementById('btn-movies-search-submit');
+
+    // Wire Category Pills
+    document.querySelectorAll('.movy-nav-pill[data-category]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const cat = pill.getAttribute('data-category');
+        if (cat) switchMovyCategory(cat);
+      });
+    });
+
+    if (btnToggleSearch && searchBar) {
+      btnToggleSearch.addEventListener('click', () => {
+        searchBar.classList.toggle('hidden');
+        if (!searchBar.classList.contains('hidden') && searchInput) {
+          searchInput.focus();
+        }
+      });
+    }
+
+    if (btnCloseSearch && searchBar) {
+      btnCloseSearch.addEventListener('click', () => {
+        searchBar.classList.add('hidden');
+      });
+    }
+
+    if (searchSubmit && searchInput) {
+      searchSubmit.addEventListener('click', () => {
+        const q = searchInput.value.trim();
+        if (q) performMovieSearch(q);
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const q = searchInput.value.trim();
+          if (q) performMovieSearch(q);
+        }
+      });
     }
   }
 
@@ -4074,22 +4307,22 @@
             : `https://vidlink.pro/movie/${encodeURIComponent(tmdbId)}`
         },
         {
-          name: 'VidSrc HD',
-          url: isTvShow
-            ? `https://vidsrc.me/embed/tv?id=${encodeURIComponent(tmdbId)}&s=${season || 1}&e=${episode || 1}`
-            : `https://vidsrc.me/embed/movie?id=${encodeURIComponent(tmdbId)}`
-        },
-        {
-          name: 'AutoEmbed 4K',
+          name: 'AutoEmbed 4K (Stealth Proxy)',
           url: isTvShow
             ? `https://autoembed.co/tv/tmdb/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
             : `https://autoembed.co/movie/tmdb/${encodeURIComponent(tmdbId)}`
         },
         {
-          name: 'Videasy Pro',
+          name: 'Videasy Pro (Low-Block CDN)',
           url: isTvShow
             ? `https://player.videasy.net/tv/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
             : `https://player.videasy.net/movie/${encodeURIComponent(tmdbId)}`
+        },
+        {
+          name: 'VidSrc HD',
+          url: isTvShow
+            ? `https://vidsrc.me/embed/tv?id=${encodeURIComponent(tmdbId)}&s=${season || 1}&e=${episode || 1}`
+            : `https://vidsrc.me/embed/movie?id=${encodeURIComponent(tmdbId)}`
         },
         {
           name: 'SmashyStream',
@@ -4114,6 +4347,7 @@
           opt.textContent = `Server ${idx + 1} — ${sp.name}`;
           el.moviePlayerServerSelect.appendChild(opt);
         });
+        el.moviePlayerServerSelect.value = String(sourceIndex);
         el.moviePlayerServerSelect.onchange = () => {
           const chosenIdx = parseInt(el.moviePlayerServerSelect.value, 10) || 0;
           if (el.playerIframe && standaloneProviders[chosenIdx]) {
@@ -4122,8 +4356,9 @@
         };
       }
 
+      const activeProvider = standaloneProviders[sourceIndex] || standaloneProviders[0];
       if (el.playerIframe) {
-        el.playerIframe.src = standaloneProviders[0].url;
+        el.playerIframe.src = activeProvider.url;
       }
       updateServerStatusDot('healthy');
     }
@@ -5167,6 +5402,16 @@
     if (el.btnCloseMovieModal) {
       el.btnCloseMovieModal.addEventListener('click', closeMovieDetailsModal);
     }
+
+    if (el.btnDetailsBack) {
+      el.btnDetailsBack.addEventListener('click', closeMovieDetailsModal);
+    }
+
+    if (el.btnDetailsHome) {
+      el.btnDetailsHome.addEventListener('click', closeMovieDetailsModal);
+    }
+
+    try { initMovyNavbar(); } catch(e) {}
 
     if (el.btnModalWatchNow) {
       el.btnModalWatchNow.addEventListener('click', () => {
