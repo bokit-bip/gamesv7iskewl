@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xhtml="http://www.w3.org/1999/xhtml"
+     viewBox="0 0 1200 675"
+     width="100%" height="100%">
+  <title>Classes</title>
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fc2651"/>
+      <stop offset="100%" stop-color="#fc2651"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Static Preview for Image Viewers -->
+  <rect width="100%" height="100%" fill="url(#bg-grad)"/>
+
+  <!-- Interactive ForeignObject Runner -->
+  <foreignObject x="0" y="0" width="100%" height="100%">
+    <xhtml:div id="app-container" style="position:fixed;inset:0;width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#fc2651;">
+      <xhtml:style><![CDATA[
+        html,body,#app-container{margin:0;padding:0;width:100%;height:100%;background:#fc2651;color:#fff;font-family:Arial,sans-serif;overflow:hidden;}
+        #l{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#fc2651;z-index:10;}
+        #c{width:min(420px,82vw);text-align:center;}
+        .spinner{position:relative;width:17.6px;height:17.6px;margin:0 auto 44px;animation:spinner-o824ag 1.4s infinite linear;}
+        .spinner div{position:absolute;width:100%;height:100%;background:#ffffff;border-radius:2px;animation:spinner-vse6n7 1.75s infinite ease;filter:drop-shadow(0 0 1px rgba(168,85,247,.32));}
+        .spinner div:nth-child(1){--rotation:90;}
+        .spinner div:nth-child(2){--rotation:180;}
+        .spinner div:nth-child(3){--rotation:270;}
+        .spinner div:nth-child(4){--rotation:360;}
+        .t{font-size:14px;margin-bottom:10px;color:#d8b4fe;}
+        .b{height:8px;background:#171717;border-radius:999px;overflow:hidden;}
+        .p{height:100%;width:0;background:#a855f7;border-radius:999px;box-shadow:0 0 3px rgba(168,85,247,.25);transition:width .12s linear;}
+        .n{margin-top:9px;font-size:12px;color:#a855f7;}
+        #frame{position:fixed;inset:0;width:100%;height:100%;border:none;margin:0;padding:0;background:#06070a;display:none;z-index:20;}
+        @keyframes spinner-vse6n7{0%,100%{transform:rotate(calc(var(--rotation)*1deg)) translateY(0);}50%{transform:rotate(calc(var(--rotation)*1deg)) translateY(300%);}}
+        @keyframes spinner-o824ag{to{transform:rotate(360deg);}}
+      ]]></xhtml:style>
+
+      <!-- Animated Stream Loader -->
+      <xhtml:div id="l">
+        <xhtml:div id="c">
+          <xhtml:div class="spinner">
+            <xhtml:div></xhtml:div>
+            <xhtml:div></xhtml:div>
+            <xhtml:div></xhtml:div>
+            <xhtml:div></xhtml:div>
+          </xhtml:div>
+          <xhtml:div class="t" id="t">Loading Games V7...</xhtml:div>
+          <xhtml:div class="b"><xhtml:div class="p" id="p"></xhtml:div></xhtml:div>
+          <xhtml:div class="n" id="n">0%</xhtml:div>
+        </xhtml:div>
+      </xhtml:div>
+
+      <!-- Stealth Active App Frame -->
+      <xhtml:iframe id="frame" allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></xhtml:iframe>
+    </xhtml:div>
+  </foreignObject>
+
+  <script><![CDATA[
+    (async function(){
+      var u = [
+        "aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL2Jva2l0LWJpcC9nYW1lc3Y3aXNrZXdsQG1haW4vaW5kZXguaHRtbA==",
+        "aHR0cHM6Ly9mYXN0bHkuanNkZWxpdnIubmV0L2doL2Jva2l0LWJpcC9nYW1lc3Y3aXNrZXdsQG1haW4vaW5kZXguaHRtbA==",
+        "aHR0cHM6Ly9nY29yZS5qc2RlbGl2ci5uZXQvZ2gvYm9raXQtYmlwL2dhbWVzdjdpc2tld2xAbWFpbi9pbmRleC5odG1s",
+        "aHR0cHM6Ly90ZXN0aW5nY2YuanNkZWxpdnIubmV0L2doL2Jva2l0LWJpcC9nYW1lc3Y3aXNrZXdsQG1haW4vaW5kZXguaHRtbA==",
+        "aHR0cHM6Ly9vcmlnaW5mYXN0bHkuanNkZWxpdnIubmV0L2doL2Jva2l0LWJpcC9nYW1lc3Y3aXNrZXdsQG1haW4vaW5kZXguaHRtbA==",
+        "aHR0cHM6Ly9xdWFudGlsLmpzZGVsaXZyLm5ldC9naC9ib2tpdC1iaXAvZ2FtZXN2N2lza2V3bEBtYWluL2luZGV4Lmh0bWw=",
+        "aHR0cHM6Ly9qc2RlbGl2ci5iLWNkbi5uZXQvZ2gvYm9raXQtYmlwL2dhbWVzdjdpc2tld2xAbWFpbi9pbmRleC5odG1s",
+        "aHR0cHM6Ly9jZG4uc3RhdGljYWxseS5pby9naC9ib2tpdC1iaXAvZ2FtZXN2N2lza2V3bEBtYWluL2luZGV4Lmh0bWw=",
+        "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2Jva2l0LWJpcC9nYW1lc3Y3aXNrZXdsL21haW4vaW5kZXguaHRtbA==",
+        "aHR0cHM6Ly9yYXcuZ2l0aGFjay5jb20vYm9raXQtYmlwL2dhbWVzdjdpc2tld2wvbWFpbi9pbmRleC5odG1s"
+      ].map(function(x){ return atob(x); });
+
+      var p = document.getElementById("p");
+      var n = document.getElementById("n");
+      var t = document.getElementById("t");
+      var l = document.getElementById("l");
+      var frame = document.getElementById("frame");
+
+      var est = 72000;
+      var stall = 15000;
+      var minLen = 5000;
+      var fmt = function(x){ return x > 1048576 ? (x/1048576).toFixed(1) + " MB" : (x/1024).toFixed(0) + " KB"; };
+
+      function launchFrame(fullHtml, directUrl) {
+        if (!frame) return;
+        if (fullHtml) {
+          try {
+            var blob = new Blob([fullHtml], { type: "text/html" });
+            var blobUrl = URL.createObjectURL(blob);
+            frame.src = blobUrl;
+            frame.srcdoc = fullHtml;
+          } catch(e) {
+            frame.src = directUrl || "https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/index.svg";
+          }
+        } else {
+          frame.src = directUrl || "https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/index.svg";
+        }
+        if (l) l.style.display = "none";
+        frame.style.display = "block";
+      }
+
+      for (var i = 0; i < u.length; i++) {
+        var ac = new AbortController();
+        try {
+          if (t) t.textContent = "Loading Games V7...";
+          if (n) n.textContent = "Connecting...";
+          if (p) p.style.width = "0%";
+
+          var r = await fetch(u[i], { cache: "no-store", signal: ac.signal });
+          if (!r.ok || !r.body) continue;
+
+          var total = +(r.headers.get("content-length") || 0);
+          var enc = r.headers.get("content-encoding");
+          var trusted = !!total && !enc;
+          var rd = r.body.getReader();
+          var a = [];
+          var got = 0;
+
+          for (;;) {
+            var tm = null;
+            var q = null;
+            try {
+              q = await Promise.race([
+                rd.read(),
+                new Promise(function(_, rej){ tm = setTimeout(function(){ rej(new Error("stall")); }, stall); })
+              ]);
+            } finally {
+              if (tm) clearTimeout(tm);
+            }
+
+            if (q.done) break;
+            a.push(q.value);
+            got += q.value.length;
+
+            if (trusted && got > total * 1.02) trusted = false;
+            var den = trusted ? total : Math.max(est, got * 1.05);
+            var pc = Math.min(98, (got / den) * 100);
+            if (p) p.style.width = pc.toFixed(1) + "%";
+            if (n) n.textContent = trusted ? pc.toFixed(0) + "% · " + fmt(got) + " / " + fmt(total) : pc.toFixed(0) + "% · " + fmt(got);
+          }
+
+          if (got < minLen) throw new Error("too small");
+
+          var all = new Uint8Array(got);
+          var o = 0;
+          for (var k = 0; k < a.length; k++) {
+            all.set(a[k], o);
+            o += a[k].length;
+          }
+
+          if (p) p.style.width = "100%";
+          if (n) n.textContent = "100% · " + fmt(got);
+
+          var x = new TextDecoder().decode(all);
+          if (!x.trim()) continue;
+
+          var baseTag = '<base href="https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/">';
+          if (x.includes("<head>")) {
+            x = x.replace("<head>", "<head>" + baseTag);
+          } else if (x.includes("<html>")) {
+            x = x.replace("<html>", "<html><head>" + baseTag + "</head>");
+          } else {
+            x = baseTag + x;
+          }
+
+          launchFrame(x, u[i]);
+          return;
+        } catch(e) {
+          ac.abort();
+          if (t) t.textContent = "Trying backup...";
+          if (n) n.textContent = "Source " + (i + 1) + " failed";
+          await new Promise(function(res){ setTimeout(res, 150); });
+        }
+      }
+
+      // Stealth Direct Gateway Fallback
+      if (t) t.textContent = "Launching Stealth Gateway...";
+      if (n) n.textContent = "Connecting to Games V7...";
+      if (p) p.style.width = "100%";
+      launchFrame(null, "https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/index.svg");
+    })();
+  ]]></script>
+</svg>
