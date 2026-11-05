@@ -107,8 +107,7 @@
             });
             const blobUrl = URL.createObjectURL(blob);
 
-            const gameInstance = UnityLoader.instantiate("unityContainer", json, {
-                url: blobUrl,
+            window.gameInstance = UnityLoader.instantiate("unityContainer", blobUrl, {
                 Module: {
                     onRuntimeInitialized: () => {
                         const loadingText = document.querySelector("#loading-text");

@@ -3260,7 +3260,6 @@ var UnityLoader = UnityLoader || {
       if (!t) {
         var r = new ArrayBuffer(16777216),
           n = (function (e, t, r) {
-            "use asm";
             var n = new e.Uint32Array(r);
             function o(e, t) {
               e = e | 0;
@@ -4442,10 +4441,14 @@ var UnityLoader = UnityLoader || {
         Jobs: {},
         buildDownloadProgress: {},
 			resolveBuildUrl: function (e) {
-					if (e.includes("YandereSim.data.unityweb")) {
+					if (!e) return e;
+					if (window.dataUrll && (e.indexOf("YandereSim.data.unityweb") !== -1 || e === window.dataUrll)) {
 						return window.dataUrll;
 					}
-					return e.match(/(http|https|ftp|file):\/\//) ? e : "Build/" + e;
+					if (e.indexOf("blob:") === 0 || e.match(/(http|https|ftp|file|blob):\/\//)) {
+						return e;
+					}
+					return "Build/" + e;
 				},
         streamingAssetsUrl: function () {
           return o(this.resolveBuildUrl("../StreamingAssets"));
