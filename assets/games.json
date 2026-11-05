@@ -4642,5 +4642,41 @@
     "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/slendytubbies.jpg",
     "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/slendytubbies.jpg",
     "url": "games/Slendytubbies 1/index.html"
+  },
+  {
+    "id": "undertale",
+    "title": "Undertale",
+    "category": "RPG, Action",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/undertale.jpg",
+    "coverFile": "undertale.jpg",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/undertale.jpg",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/undertale.jpg",
+    "url": "games/undertale/index.html"
+  },
+  {
+    "id": "yandere-simulator",
+    "title": "Yandere Simulator",
+    "category": "Simulation, Anime",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/yandere-simulator.jpg",
+    "coverFile": "yandere-simulator.jpg",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/yandere-simulator.jpg",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/yandere-simulator.jpg",
+    "url": "games/Yandere Simulator/index.html"
+  },
+  {
+    "id": "slendytubbies-2",
+    "title": "Slendytubbies II",
+    "category": "Horror, Survival",
+    "isFlash": false,
+    "isPapas": false,
+    "cover": "covers/slendytubbies2.jpg",
+    "coverFile": "slendytubbies2.jpg",
+    "tailscaleCover": "https://pop-leave.tailcb4af7.ts.net/covers/slendytubbies2.jpg",
+    "cdnCover": "https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/slendytubbies2.jpg",
+    "url": "games/Slendytubbies II/index.html"
   }
 ]
