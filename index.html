@@ -35,6 +35,7 @@
         <li><button class="nav-tab-btn" data-tab="games" onclick="switchTab('games')">GAMES</button></li>
         <li><button class="nav-tab-btn" data-tab="movies" onclick="switchTab('movies')">MOVIES</button></li>
         <li><button class="nav-tab-btn" data-tab="music" onclick="switchTab('music')">MUSIC</button></li>
+        <li><button class="nav-tab-btn" data-tab="ai" onclick="switchTab('ai')">AI</button></li>
         <li><button class="nav-tab-btn" data-tab="proxy" onclick="switchTab('proxy')">PROXY</button></li>
         <li><button class="nav-tab-btn" data-tab="editor" onclick="switchTab('editor')">CODE EDITOR</button></li>
         <li><button class="nav-tab-btn" data-tab="settings" onclick="switchTab('settings')">SETTINGS</button></li>
@@ -735,6 +736,104 @@
 
       <!-- Hidden HTML5 Audio Element for streaming -->
       <audio id="gamesv7-music-audio" preload="auto" crossorigin="anonymous"></audio>
+    </section>
+
+    <!-- ====================================================================
+         2.5 NEMOTRON 3 ULTRA AI TAB — REASONING ASSISTANT
+         ==================================================================== -->
+    <section id="ai-view" class="tab-view" aria-label="Nemotron 3 Ultra AI Assistant">
+      <div class="ai-view-container">
+        <!-- AI Top Bar -->
+        <header class="ai-header-bar">
+          <div class="ai-header-left">
+            <div class="ai-avatar-badge">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path>
+                <rect x="4" y="8" width="16" height="12" rx="3"></rect>
+                <circle cx="9" cy="13" r="1.5" fill="currentColor"></circle>
+                <circle cx="15" cy="13" r="1.5" fill="currentColor"></circle>
+                <path d="M9 17h6"></path>
+                <line x1="2" y1="14" x2="4" y2="14"></line>
+                <line x1="20" y1="14" x2="22" y2="14"></line>
+              </svg>
+            </div>
+            <div class="ai-header-titles">
+              <div class="ai-header-title-row">
+                <span class="ai-title">NEMOTRON AI</span>
+                <span class="ai-model-tag">550B ULTRA</span>
+                <span class="ai-status-indicator"><span class="ai-status-dot"></span> NVIDIA NIM</span>
+              </div>
+              <p class="ai-subtitle">// 550B PARAMETER REASONING ENGINE · ZERO LATENCY</p>
+            </div>
+          </div>
+          <div class="ai-header-actions">
+            <label class="ai-thinking-toggle" title="Toggle CoT (Chain-of-Thought) deep reasoning">
+              <input type="checkbox" id="ai-toggle-thinking" checked />
+              <span class="ai-toggle-slider"></span>
+              <span class="ai-toggle-label">🧠 THINKING</span>
+            </label>
+            <button type="button" id="ai-btn-clear" class="ai-action-btn" title="Clear conversation history">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>CLEAR</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Chat Conversation Area -->
+        <div id="ai-chat-messages" class="ai-chat-messages custom-scrollbar">
+          <!-- Welcome Placeholder (shown when empty) -->
+          <div id="ai-welcome-card" class="ai-welcome-card">
+            <div class="ai-welcome-icon">⚡</div>
+            <h2>NEMOTRON-3 ULTRA 550B</h2>
+            <p>Supercharged conversational intelligence powered by NVIDIA GPU computing and deep reasoning.</p>
+            <div class="ai-prompt-chips">
+              <button type="button" class="ai-prompt-chip" data-prompt="Write a limerick about the wonders of GPU computing.">
+                ✨ GPU Computing Limerick
+              </button>
+              <button type="button" class="ai-prompt-chip" data-prompt="Explain how deep neural networks work using an analogy.">
+                🧠 How Neural Networks Work
+              </button>
+              <button type="button" class="ai-prompt-chip" data-prompt="Write an HTML5 Canvas script that renders glowing neon particles flowing toward the cursor.">
+                🎨 Glowing Neon Particle Canvas
+              </button>
+              <button type="button" class="ai-prompt-chip" data-prompt="What are the key differences between CPU and GPU architectures for AI workloads?">
+                ⚡ CPU vs GPU for AI
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Footer -->
+        <footer class="ai-input-footer">
+          <div class="ai-input-container">
+            <textarea id="ai-input-prompt" class="ai-input-textarea" placeholder="Message Nemotron 3 Ultra... (Press Enter to send, Shift+Enter for newline)" rows="1"></textarea>
+            <div class="ai-input-btns">
+              <button type="button" id="ai-btn-stop" class="ai-btn-stop hidden" title="Stop Generation">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                </svg>
+                <span>STOP</span>
+              </button>
+              <button type="button" id="ai-btn-send" class="ai-btn-send" title="Send Message">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="ai-footer-hint">
+            <span>Model: nvidia/nemotron-3-ultra-550b-a55b</span>
+            <span>•</span>
+            <span>Max Tokens: 16,384</span>
+            <span>•</span>
+            <span>Reasoning Stream Enabled</span>
+          </div>
+        </footer>
+      </div>
     </section>
 
     <!-- ====================================================================

@@ -228,6 +228,83 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // NVIDIA Nemotron AI Assistant Gateway
+  if (reqPath.startsWith('/api/ai/')) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    if (reqPath === '/api/ai/health') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok', provider: 'nvidia-nim', model: 'nvidia/nemotron-3-ultra-550b-a55b' }));
+      return;
+    }
+    if (reqPath === '/api/ai/chat' && req.method === 'POST') {
+      let bodyData = '';
+      req.on('data', chunk => bodyData += chunk);
+      req.on('end', async () => {
+        try {
+          const parsed = JSON.parse(bodyData || '{}');
+          const payload = {
+            model: parsed.model || 'nvidia/nemotron-3-ultra-550b-a55b',
+            messages: parsed.messages || [],
+            temperature: Number(parsed.temperature) || 1,
+            top_p: Number(parsed.top_p) || 0.95,
+            max_tokens: Number(parsed.max_tokens) || 16384,
+            chat_template_kwargs: { enable_thinking: parsed.enable_thinking !== false },
+            stream: parsed.stream !== false
+          };
+          const apiKey = (parsed.apiKey && String(parsed.apiKey).trim()) || process.env.NVIDIA_API_KEY || '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';
+          const upstream = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!upstream.ok) {
+            const errTxt = await upstream.text();
+            res.writeHead(upstream.status, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: errTxt }));
+            return;
+          }
+          if (!payload.stream) {
+            const data = await upstream.json();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(data));
+            return;
+          }
+          res.writeHead(200, {
+            'Content-Type': 'text/event-stream; charset=utf-8',
+            'Cache-Control': 'no-cache, no-transform',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no'
+          });
+          const reader = upstream.body.getReader();
+          const decoder = new TextDecoder();
+          req.on('close', () => { try { reader.cancel(); } catch (e) {} });
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            res.write(decoder.decode(value, { stream: true }));
+          }
+          res.end();
+        } catch (e) {
+          if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: e.message }));
+          } else {
+            res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`);
+            res.end();
+          }
+        }
+      });
+      return;
+    }
+  }
+
   // Handle Proxy Gateway
   if (reqPath.startsWith('/browser/gateway') || reqPath.startsWith('/proxy/gateway') || reqPath.startsWith('/api/proxy') || reqPath.startsWith('/api/movies/proxy')) {
     try {

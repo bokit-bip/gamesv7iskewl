@@ -120,6 +120,10 @@
       if (typeof initGamesV7Music === 'function') {
         initGamesV7Music();
       }
+    } else if (tabName === 'ai') {
+      if (typeof initGamesV7Ai === 'function') {
+        initGamesV7Ai();
+      }
     }
   };
 
@@ -136,7 +140,11 @@
       switchTab('music');
       return;
     }
-    if (raw.startsWith('movies') || ['home', 'games', 'proxy', 'editor', 'settings', 'movies', 'music'].includes(hash)) {
+    if (raw.startsWith('ai')) {
+      switchTab('ai');
+      return;
+    }
+    if (raw.startsWith('movies') || ['home', 'games', 'proxy', 'editor', 'settings', 'movies', 'music', 'ai'].includes(hash)) {
       if (raw.startsWith('movies')) {
         switchTab('movies');
         if (typeof handleMovieHashRoute === 'function') {
@@ -6901,6 +6909,414 @@
 
   // Initialize music engine listeners
   initGamesV7Music();
+
+  // ========================================================================
+  // 14. NEMOTRON 3 ULTRA AI ASSISTANT (NVIDIA NIM)
+  // ========================================================================
+  const GV7_AI_STORAGE_KEY = 'gamesv7_ai_chat_history';
+  let gv7AiHistory = [];
+  let gv7AiAbortController = null;
+  let isGv7AiGenerating = false;
+  let gv7AiInitialized = false;
+
+  function loadGv7AiHistory() {
+    try {
+      const raw = safeStorage.getItem(GV7_AI_STORAGE_KEY);
+      gv7AiHistory = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(gv7AiHistory)) gv7AiHistory = [];
+    } catch (e) {
+      gv7AiHistory = [];
+    }
+  }
+
+  function saveGv7AiHistory() {
+    try {
+      safeStorage.setItem(GV7_AI_STORAGE_KEY, JSON.stringify(gv7AiHistory));
+    } catch (e) {}
+  }
+
+  function formatGv7AiMarkdown(text) {
+    if (!text) return '';
+    const codeBlocks = [];
+    let formatted = String(text).replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+      const idx = codeBlocks.length;
+      codeBlocks.push({ lang: lang || 'code', code: code });
+      return `__AI_CODE_BLOCK_${idx}__`;
+    });
+
+    formatted = escapeHtml(formatted);
+    formatted = formatted.replace(/^### (.*$)/gim, '<h4 class="ai-h4">$1</h4>');
+    formatted = formatted.replace(/^## (.*$)/gim, '<h3 class="ai-h3">$1</h3>');
+    formatted = formatted.replace(/^# (.*$)/gim, '<h2 class="ai-h2">$1</h2>');
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    formatted = formatted.replace(/`([^`]+)`/g, '<code class="ai-inline-code">$1</code>');
+    formatted = formatted.replace(/^\s*[-*]\s+(.*)$/gim, '<li class="ai-li">$1</li>');
+    formatted = formatted.replace(/\n/g, '<br>');
+
+    formatted = formatted.replace(/__AI_CODE_BLOCK_(\d+)__/g, (m, id) => {
+      const block = codeBlocks[Number(id)];
+      if (!block) return '';
+      const safeCode = escapeHtml(block.code);
+      return `
+        <div class="ai-code-wrapper">
+          <div class="ai-code-header">
+            <span class="ai-code-lang">${escapeHtml(block.lang)}</span>
+            <button type="button" class="ai-btn-copy-code" onclick="copyGv7AiCode(this)">Copy</button>
+          </div>
+          <pre><code class="language-${escapeHtml(block.lang)}">${safeCode}</code></pre>
+        </div>
+      `;
+    });
+
+    return formatted;
+  }
+
+  window.copyGv7AiCode = function (btn) {
+    try {
+      const codeWrapper = btn.closest('.ai-code-wrapper');
+      const codeEl = codeWrapper ? codeWrapper.querySelector('code') : null;
+      if (codeEl) {
+        navigator.clipboard.writeText(codeEl.textContent);
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = originalText; }, 2000);
+      }
+    } catch (e) {}
+  };
+
+  window.copyGv7AiMessage = function (btn) {
+    try {
+      const card = btn.closest('.ai-assistant-card');
+      const content = card ? card.querySelector('.ai-content-body') : null;
+      if (content) {
+        navigator.clipboard.writeText(content.innerText);
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied';
+        setTimeout(() => { btn.textContent = originalText; }, 2000);
+      }
+    } catch (e) {}
+  };
+
+  window.toggleGv7AiThinking = function (headerEl) {
+    const card = headerEl.closest('.ai-thinking-card');
+    if (card) {
+      card.classList.toggle('collapsed');
+    }
+  };
+
+  function renderSavedGv7AiChat() {
+    const chatContainer = document.getElementById('ai-chat-messages');
+    const welcomeCard = document.getElementById('ai-welcome-card');
+    if (!chatContainer) return;
+    chatContainer.innerHTML = '';
+
+    if (gv7AiHistory.length === 0) {
+      if (welcomeCard) chatContainer.appendChild(welcomeCard);
+      return;
+    }
+
+    for (const msg of gv7AiHistory) {
+      if (msg.role === 'user') {
+        renderGv7AiUserMessageInDom(msg.content);
+      } else if (msg.role === 'assistant') {
+        renderGv7AiAssistantMessageInDom(msg.content, msg.reasoning || null);
+      }
+    }
+    scrollGv7AiMessagesToBottom();
+  }
+
+  function renderGv7AiUserMessageInDom(content) {
+    const chatContainer = document.getElementById('ai-chat-messages');
+    if (!chatContainer) return;
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'ai-message ai-message-user';
+    msgDiv.innerHTML = `
+      <div class="ai-message-avatar">👤</div>
+      <div class="ai-message-body">
+        <div class="ai-user-bubble">${escapeHtml(content)}</div>
+      </div>
+    `;
+    chatContainer.appendChild(msgDiv);
+  }
+
+  function renderGv7AiAssistantMessageInDom(content, reasoning) {
+    const chatContainer = document.getElementById('ai-chat-messages');
+    if (!chatContainer) return;
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'ai-message ai-message-assistant';
+
+    let thinkingHtml = '';
+    if (reasoning) {
+      thinkingHtml = `
+        <div class="ai-thinking-card collapsed">
+          <div class="ai-thinking-header" onclick="toggleGv7AiThinking(this)">
+            <div class="ai-thinking-title">
+              <span class="ai-thinking-icon">🧠</span>
+              <span>Reasoning Process</span>
+            </div>
+            <span class="ai-thinking-arrow">▼</span>
+          </div>
+          <div class="ai-thinking-body">${escapeHtml(reasoning)}</div>
+        </div>
+      `;
+    }
+
+    msgDiv.innerHTML = `
+      <div class="ai-message-avatar">⚡</div>
+      <div class="ai-message-body" style="width: 100%;">
+        <div class="ai-assistant-card">
+          ${thinkingHtml}
+          <div class="ai-content-body">${formatGv7AiMarkdown(content)}</div>
+          <div class="ai-message-actions">
+            <button type="button" class="ai-btn-action" onclick="copyGv7AiMessage(this)">📋 Copy</button>
+          </div>
+        </div>
+      </div>
+    `;
+    chatContainer.appendChild(msgDiv);
+  }
+
+  function scrollGv7AiMessagesToBottom() {
+    const chatContainer = document.getElementById('ai-chat-messages');
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  }
+
+  async function handleSendGv7AiMessage(customPrompt = null) {
+    if (isGv7AiGenerating) return;
+    const promptInput = document.getElementById('ai-input-prompt');
+    const prompt = (customPrompt !== null ? customPrompt : (promptInput ? promptInput.value : '')).trim();
+    if (!prompt) return;
+
+    if (promptInput) {
+      promptInput.value = '';
+      promptInput.style.height = 'auto';
+    }
+
+    const chatContainer = document.getElementById('ai-chat-messages');
+    const welcome = chatContainer ? chatContainer.querySelector('#ai-welcome-card') : null;
+    if (welcome) welcome.remove();
+
+    // 1. Add user message
+    gv7AiHistory.push({ role: 'user', content: prompt });
+    renderGv7AiUserMessageInDom(prompt);
+    saveGv7AiHistory();
+    scrollGv7AiMessagesToBottom();
+
+    // 2. Prepare Assistant container
+    const assistantMsgDiv = document.createElement('div');
+    assistantMsgDiv.className = 'ai-message ai-message-assistant';
+    assistantMsgDiv.innerHTML = `
+      <div class="ai-message-avatar">⚡</div>
+      <div class="ai-message-body" style="width: 100%;">
+        <div class="ai-assistant-card">
+          <div class="ai-thinking-card hidden">
+            <div class="ai-thinking-header" onclick="toggleGv7AiThinking(this)">
+              <div class="ai-thinking-title">
+                <span class="ai-thinking-icon">💭</span>
+                <span class="ai-thinking-status-text">Thinking...</span>
+              </div>
+              <span class="ai-thinking-arrow">▼</span>
+            </div>
+            <div class="ai-thinking-body"></div>
+          </div>
+          <div class="ai-content-body"><span class="ai-streaming-cursor"></span></div>
+          <div class="ai-message-actions hidden">
+            <button type="button" class="ai-btn-action" onclick="copyGv7AiMessage(this)">📋 Copy</button>
+          </div>
+        </div>
+      </div>
+    `;
+    if (chatContainer) chatContainer.appendChild(assistantMsgDiv);
+    scrollGv7AiMessagesToBottom();
+
+    const thinkingCard = assistantMsgDiv.querySelector('.ai-thinking-card');
+    const thinkingBody = assistantMsgDiv.querySelector('.ai-thinking-body');
+    const thinkingStatusText = assistantMsgDiv.querySelector('.ai-thinking-status-text');
+    const contentBody = assistantMsgDiv.querySelector('.ai-content-body');
+    const actionsBar = assistantMsgDiv.querySelector('.ai-message-actions');
+    const btnSend = document.getElementById('ai-btn-send');
+    const btnStop = document.getElementById('ai-btn-stop');
+    const toggleThinking = document.getElementById('ai-toggle-thinking');
+
+    isGv7AiGenerating = true;
+    gv7AiAbortController = new AbortController();
+    if (btnSend) btnSend.classList.add('hidden');
+    if (btnStop) btnStop.classList.remove('hidden');
+
+    let fullReasoning = '';
+    let fullContent = '';
+    const enableThinking = toggleThinking ? toggleThinking.checked : true;
+
+    try {
+      const apiOrigin = getServerOrigin();
+      const endpoint = `${apiOrigin.replace(/\/$/, '')}/api/ai/chat`;
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: gv7AiHistory,
+          model: 'nvidia/nemotron-3-ultra-550b-a55b',
+          temperature: 1,
+          top_p: 0.95,
+          max_tokens: 16384,
+          enable_thinking: enableThinking,
+          stream: true
+        }),
+        signal: gv7AiAbortController.signal
+      });
+
+      if (!res.ok) {
+        let errMessage = `HTTP ${res.status}`;
+        try {
+          const errJson = await res.json();
+          if (errJson.error) errMessage = errJson.error;
+        } catch (e) {}
+        throw new Error(errMessage);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let streamBuffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        streamBuffer += decoder.decode(value, { stream: true });
+        const lines = streamBuffer.split('\n');
+        streamBuffer = lines.pop();
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data:')) continue;
+          const dataStr = trimmed.slice(5).trim();
+          if (dataStr === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(dataStr);
+            if (!parsed.choices || parsed.choices.length === 0) continue;
+            const delta = parsed.choices[0].delta || {};
+
+            if (delta.reasoning_content) {
+              fullReasoning += delta.reasoning_content;
+              if (thinkingCard.classList.contains('hidden')) {
+                thinkingCard.classList.remove('hidden');
+              }
+              thinkingBody.textContent = fullReasoning;
+              scrollGv7AiMessagesToBottom();
+            }
+
+            if (delta.content) {
+              if (thinkingStatusText && thinkingStatusText.textContent !== 'Thought Process') {
+                thinkingStatusText.textContent = 'Thought Process';
+                thinkingCard.classList.add('collapsed');
+              }
+              fullContent += delta.content;
+              contentBody.innerHTML = formatGv7AiMarkdown(fullContent) + '<span class="ai-streaming-cursor"></span>';
+              scrollGv7AiMessagesToBottom();
+            }
+          } catch (jsonErr) {}
+        }
+      }
+
+      contentBody.innerHTML = formatGv7AiMarkdown(fullContent || '*(No response received)*');
+      if (actionsBar) actionsBar.classList.remove('hidden');
+
+      gv7AiHistory.push({
+        role: 'assistant',
+        content: fullContent,
+        reasoning: fullReasoning || null
+      });
+      saveGv7AiHistory();
+
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        contentBody.innerHTML = formatGv7AiMarkdown(fullContent) + ' <em style="color:#94a3b8;">[Generation stopped]</em>';
+        if (fullContent) {
+          gv7AiHistory.push({
+            role: 'assistant',
+            content: fullContent,
+            reasoning: fullReasoning || null
+          });
+          saveGv7AiHistory();
+        }
+      } else {
+        console.error('[Games V7 AI Error]:', err);
+        contentBody.innerHTML = `<div style="color: #ff2a4b; padding: 10px; background: rgba(255, 42, 75, 0.1); border-radius: 8px; border: 1px solid rgba(255, 42, 75, 0.3);">
+          <strong>⚠️ AI Request Failed:</strong> ${escapeHtml(err.message)}
+        </div>`;
+      }
+    } finally {
+      isGv7AiGenerating = false;
+      gv7AiAbortController = null;
+      if (btnSend) btnSend.classList.remove('hidden');
+      if (btnStop) btnStop.classList.add('hidden');
+      scrollGv7AiMessagesToBottom();
+    }
+  }
+
+  function initGamesV7Ai() {
+    if (gv7AiInitialized) return;
+    gv7AiInitialized = true;
+    loadGv7AiHistory();
+    renderSavedGv7AiChat();
+
+    const btnSend = document.getElementById('ai-btn-send');
+    const btnStop = document.getElementById('ai-btn-stop');
+    const btnClear = document.getElementById('ai-btn-clear');
+    const inputPrompt = document.getElementById('ai-input-prompt');
+    const chatContainer = document.getElementById('ai-chat-messages');
+
+    if (btnSend) {
+      btnSend.addEventListener('click', () => handleSendGv7AiMessage());
+    }
+
+    if (btnStop) {
+      btnStop.addEventListener('click', () => {
+        if (gv7AiAbortController) gv7AiAbortController.abort();
+      });
+    }
+
+    if (btnClear) {
+      btnClear.addEventListener('click', () => {
+        if (confirm('Clear all conversation messages?')) {
+          gv7AiHistory = [];
+          saveGv7AiHistory();
+          renderSavedGv7AiChat();
+        }
+      });
+    }
+
+    if (chatContainer) {
+      chatContainer.addEventListener('click', (e) => {
+        const chip = e.target.closest('.ai-prompt-chip');
+        if (chip) {
+          const prompt = chip.getAttribute('data-prompt');
+          if (prompt) handleSendGv7AiMessage(prompt);
+        }
+      });
+    }
+
+    if (inputPrompt) {
+      inputPrompt.addEventListener('input', () => {
+        inputPrompt.style.height = 'auto';
+        inputPrompt.style.height = Math.min(inputPrompt.scrollHeight, 180) + 'px';
+      });
+
+      inputPrompt.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleSendGv7AiMessage();
+        }
+      });
+    }
+  }
+  window.initGamesV7Ai = initGamesV7Ai;
+  initGamesV7Ai();
 
   window.addEventListener('hashchange', checkHashRouting);
 
