@@ -240,7 +240,13 @@ const server = http.createServer((req, res) => {
     }
     if (reqPath === '/api/ai/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok', provider: 'nvidia-nim', model: 'nvidia/nemotron-3-ultra-550b-a55b' }));
+      res.end(JSON.stringify({
+        status: 'ok',
+        name: 'Bokit AI',
+        provider: 'nvidia-nim',
+        textModel: 'nvidia/nemotron-3-ultra-550b-a55b',
+        visionModel: 'nvidia/nemotron-3.5-super-vl-120b-a12b'
+      }));
       return;
     }
     if (reqPath === '/api/ai/chat' && req.method === 'POST') {
@@ -249,9 +255,29 @@ const server = http.createServer((req, res) => {
       req.on('end', async () => {
         try {
           const parsed = JSON.parse(bodyData || '{}');
+          let model = parsed.model || 'nvidia/nemotron-3-ultra-550b-a55b';
+          const rawMessages = parsed.messages || [];
+
+          // Detect multimodal image content in messages
+          const hasImage = rawMessages.some(msg => {
+            if (Array.isArray(msg.content)) {
+              return msg.content.some(part => part && (part.type === 'image_url' || part.image_url));
+            }
+            return false;
+          });
+
+          if (hasImage && (!model || model.includes('nemotron-3-ultra'))) {
+            model = 'nvidia/nemotron-3.5-super-vl-120b-a12b';
+          }
+
+          const sanitizedMessages = rawMessages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }));
+
           const payload = {
-            model: parsed.model || 'nvidia/nemotron-3-ultra-550b-a55b',
-            messages: parsed.messages || [],
+            model,
+            messages: sanitizedMessages,
             temperature: Number(parsed.temperature) || 1,
             top_p: Number(parsed.top_p) || 0.95,
             max_tokens: Number(parsed.max_tokens) || 16384,

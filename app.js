@@ -6911,10 +6911,11 @@
   initGamesV7Music();
 
   // ========================================================================
-  // 14. NEMOTRON 3 ULTRA AI ASSISTANT (NVIDIA NIM)
+  // 14. BOKIT AI ASSISTANT (NVIDIA NIM 550B & MULTIMODAL VISION)
   // ========================================================================
   const GV7_AI_STORAGE_KEY = 'gamesv7_ai_chat_history';
   let gv7AiHistory = [];
+  let gv7AiPendingAttachments = [];
   let gv7AiAbortController = null;
   let isGv7AiGenerating = false;
   let gv7AiInitialized = false;
@@ -6934,6 +6935,83 @@
       safeStorage.setItem(GV7_AI_STORAGE_KEY, JSON.stringify(gv7AiHistory));
     } catch (e) {}
   }
+
+  function formatGv7AiFileSize(bytes) {
+    if (!bytes || isNaN(bytes)) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function renderGv7AiAttachmentShelf() {
+    const shelf = document.getElementById('ai-attached-shelf');
+    if (!shelf) return;
+    if (gv7AiPendingAttachments.length === 0) {
+      shelf.classList.add('hidden');
+      shelf.innerHTML = '';
+      return;
+    }
+    shelf.classList.remove('hidden');
+    shelf.innerHTML = gv7AiPendingAttachments.map((att, idx) => {
+      const isImg = att.type === 'image';
+      const visual = isImg
+        ? `<img src="${att.dataUrl}" class="ai-attachment-thumb" alt="${escapeHtml(att.name)}" />`
+        : `<span class="ai-attachment-icon">📄</span>`;
+      return `
+        <div class="ai-attachment-item">
+          ${visual}
+          <div class="ai-attachment-info">
+            <span class="ai-attachment-name" title="${escapeHtml(att.name)}">${escapeHtml(att.name)}</span>
+            <span class="ai-attachment-size">${formatGv7AiFileSize(att.size)}</span>
+          </div>
+          <button type="button" class="ai-attachment-remove" onclick="removeGv7AiAttachment(${idx})" title="Remove attachment">✕</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.removeGv7AiAttachment = function (idx) {
+    gv7AiPendingAttachments.splice(idx, 1);
+    renderGv7AiAttachmentShelf();
+  };
+
+  async function handleAddGv7AiFiles(files) {
+    if (!files || files.length === 0) return;
+    for (const file of Array.from(files)) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`File "${file.name}" exceeds the 10MB limit.`);
+        continue;
+      }
+      const isImage = file.type.startsWith('image/');
+      if (isImage) {
+        const dataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsDataURL(file);
+        });
+        gv7AiPendingAttachments.push({
+          type: 'image',
+          name: file.name,
+          size: file.size,
+          dataUrl: dataUrl
+        });
+      } else {
+        const textContent = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.readAsText(file);
+        });
+        gv7AiPendingAttachments.push({
+          type: 'file',
+          name: file.name,
+          size: file.size,
+          textContent: textContent
+        });
+      }
+    }
+    renderGv7AiAttachmentShelf();
+  }
+  window.handleAddGv7AiFiles = handleAddGv7AiFiles;
 
   function formatGv7AiMarkdown(text) {
     if (!text) return '';
@@ -6958,11 +7036,36 @@
       const block = codeBlocks[Number(id)];
       if (!block) return '';
       const safeCode = escapeHtml(block.code);
+      const langLower = (block.lang || '').toLowerCase().trim();
+      const codeTrimmed = block.code.trim();
+      const isHtml = langLower === 'html' || langLower === 'htm' ||
+                     codeTrimmed.startsWith('<!DOCTYPE html') ||
+                     codeTrimmed.startsWith('<html') ||
+                     (codeTrimmed.includes('<html') && codeTrimmed.includes('</html>'));
+
+      let actionButtons = '';
+      if (isHtml) {
+        actionButtons = `
+          <span class="ai-code-badge-html">🌐 HTML</span>
+          <button type="button" class="ai-btn-copy-code" onclick="copyGv7AiCode(this)">📋 Copy HTML</button>
+          <button type="button" class="ai-btn-download-html" onclick="downloadGv7AiHtml(this)" title="Download as .html file">💾 Download .html</button>
+          <button type="button" class="ai-btn-preview-html" onclick="previewGv7AiHtml(this)" title="Preview HTML in new tab">▶ Preview</button>
+        `;
+      } else {
+        actionButtons = `
+          <button type="button" class="ai-btn-copy-code" onclick="copyGv7AiCode(this)">📋 Copy</button>
+        `;
+      }
+
       return `
         <div class="ai-code-wrapper">
           <div class="ai-code-header">
-            <span class="ai-code-lang">${escapeHtml(block.lang)}</span>
-            <button type="button" class="ai-btn-copy-code" onclick="copyGv7AiCode(this)">Copy</button>
+            <div class="ai-code-header-left">
+              <span class="ai-code-lang">${escapeHtml(block.lang)}</span>
+            </div>
+            <div class="ai-code-header-actions">
+              ${actionButtons}
+            </div>
           </div>
           <pre><code class="language-${escapeHtml(block.lang)}">${safeCode}</code></pre>
         </div>
@@ -6972,17 +7075,87 @@
     return formatted;
   }
 
+  function copyGv7Fallback(text) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch (e) {}
+  }
+
   window.copyGv7AiCode = function (btn) {
     try {
       const codeWrapper = btn.closest('.ai-code-wrapper');
       const codeEl = codeWrapper ? codeWrapper.querySelector('code') : null;
       if (codeEl) {
-        navigator.clipboard.writeText(codeEl.textContent);
-        const originalText = btn.textContent;
-        btn.textContent = 'Copied!';
-        setTimeout(() => { btn.textContent = originalText; }, 2000);
+        const text = codeEl.textContent;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).catch(() => copyGv7Fallback(text));
+        } else {
+          copyGv7Fallback(text);
+        }
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✓ Copied!';
+        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
       }
     } catch (e) {}
+  };
+
+  window.downloadGv7AiHtml = function (btn) {
+    try {
+      const codeWrapper = btn.closest('.ai-code-wrapper');
+      const codeEl = codeWrapper ? codeWrapper.querySelector('code') : null;
+      if (!codeEl) return;
+      const htmlCode = codeEl.textContent;
+      const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const titleMatch = htmlCode.match(/<title>([^<]+)<\/title>/i);
+      const cleanTitle = titleMatch ? titleMatch[1].trim().replace(/[^a-zA-Z0-9_-]/g, '_') : 'bokit_ai_page';
+      a.download = `${cleanTitle || 'bokit_ai_page'}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '✓ Downloaded!';
+      setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+    } catch (e) {
+      console.error('Failed to download HTML:', e);
+      alert('Failed to download HTML: ' + e.message);
+    }
+  };
+
+  window.previewGv7AiHtml = function (btn) {
+    try {
+      const codeWrapper = btn.closest('.ai-code-wrapper');
+      const codeEl = codeWrapper ? codeWrapper.querySelector('code') : null;
+      if (!codeEl) return;
+      const htmlCode = codeEl.textContent;
+      const blob = new Blob([htmlCode], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e) {
+      console.error('Failed to preview HTML:', e);
+    }
+  };
+
+  window.downloadFirstGv7HtmlFromMessage = function (btn) {
+    const card = btn.closest('.ai-assistant-card');
+    if (!card) return;
+    const downloadBtn = card.querySelector('.ai-btn-download-html');
+    if (downloadBtn) {
+      downloadBtn.click();
+    }
   };
 
   window.copyGv7AiMessage = function (btn) {
@@ -6990,10 +7163,15 @@
       const card = btn.closest('.ai-assistant-card');
       const content = card ? card.querySelector('.ai-content-body') : null;
       if (content) {
-        navigator.clipboard.writeText(content.innerText);
-        const originalText = btn.textContent;
-        btn.textContent = '✓ Copied';
-        setTimeout(() => { btn.textContent = originalText; }, 2000);
+        const text = content.innerText;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).catch(() => copyGv7Fallback(text));
+        } else {
+          copyGv7Fallback(text);
+        }
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✓ Copied';
+        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
       }
     } catch (e) {}
   };
@@ -7018,7 +7196,7 @@
 
     for (const msg of gv7AiHistory) {
       if (msg.role === 'user') {
-        renderGv7AiUserMessageInDom(msg.content);
+        renderGv7AiUserMessageInDom(msg.content, msg._displayAttachments || []);
       } else if (msg.role === 'assistant') {
         renderGv7AiAssistantMessageInDom(msg.content, msg.reasoning || null);
       }
@@ -7026,15 +7204,54 @@
     scrollGv7AiMessagesToBottom();
   }
 
-  function renderGv7AiUserMessageInDom(content) {
+  function renderGv7AiUserMessageInDom(content, attachments = []) {
     const chatContainer = document.getElementById('ai-chat-messages');
     if (!chatContainer) return;
     const msgDiv = document.createElement('div');
     msgDiv.className = 'ai-message ai-message-user';
+
+    let textToDisplay = '';
+    const imgs = [];
+    const files = [];
+
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      for (const att of attachments) {
+        if (att.type === 'image') imgs.push(att);
+        else files.push(att);
+      }
+    }
+
+    if (typeof content === 'string') {
+      textToDisplay = content;
+    } else if (Array.isArray(content)) {
+      for (const part of content) {
+        if (part.type === 'text') {
+          textToDisplay += (textToDisplay ? '\n' : '') + part.text;
+        } else if (part.type === 'image_url' && part.image_url?.url && imgs.length === 0) {
+          imgs.push({ type: 'image', dataUrl: part.image_url.url, name: 'image' });
+        }
+      }
+    }
+
+    let attHtml = '';
+    if (imgs.length > 0 || files.length > 0) {
+      attHtml = '<div class="ai-user-attachments">';
+      for (const img of imgs) {
+        attHtml += `<img src="${img.dataUrl}" class="ai-user-img-preview" alt="${escapeHtml(img.name || 'image')}" onclick="window.open(this.src, '_blank')" title="Click to open image" />`;
+      }
+      for (const f of files) {
+        attHtml += `<span class="ai-user-file-chip">📄 <strong>${escapeHtml(f.name)}</strong> ${f.size ? `(${formatGv7AiFileSize(f.size)})` : ''}</span>`;
+      }
+      attHtml += '</div>';
+    }
+
     msgDiv.innerHTML = `
       <div class="ai-message-avatar">👤</div>
       <div class="ai-message-body">
-        <div class="ai-user-bubble">${escapeHtml(content)}</div>
+        <div class="ai-user-bubble">
+          ${attHtml}
+          <div>${escapeHtml(textToDisplay)}</div>
+        </div>
       </div>
     `;
     chatContainer.appendChild(msgDiv);
@@ -7053,7 +7270,7 @@
           <div class="ai-thinking-header" onclick="toggleGv7AiThinking(this)">
             <div class="ai-thinking-title">
               <span class="ai-thinking-icon">🧠</span>
-              <span>Reasoning Process</span>
+              <span>Thought Process</span>
             </div>
             <span class="ai-thinking-arrow">▼</span>
           </div>
@@ -7062,6 +7279,12 @@
       `;
     }
 
+    const hasHtmlBlock = content.includes('```html') || content.includes('```htm') || (content.includes('<html') && content.includes('</html>'));
+    const actionBtns = hasHtmlBlock
+      ? `<button type="button" class="ai-btn-action" onclick="copyGv7AiMessage(this)">📋 Copy</button>
+         <button type="button" class="ai-btn-action" style="color: #00ffe2; font-weight: 700;" onclick="downloadFirstGv7HtmlFromMessage(this)">💾 Download .html</button>`
+      : `<button type="button" class="ai-btn-action" onclick="copyGv7AiMessage(this)">📋 Copy</button>`;
+
     msgDiv.innerHTML = `
       <div class="ai-message-avatar">⚡</div>
       <div class="ai-message-body" style="width: 100%;">
@@ -7069,7 +7292,7 @@
           ${thinkingHtml}
           <div class="ai-content-body">${formatGv7AiMarkdown(content)}</div>
           <div class="ai-message-actions">
-            <button type="button" class="ai-btn-action" onclick="copyGv7AiMessage(this)">📋 Copy</button>
+            ${actionBtns}
           </div>
         </div>
       </div>
@@ -7088,7 +7311,7 @@
     if (isGv7AiGenerating) return;
     const promptInput = document.getElementById('ai-input-prompt');
     const prompt = (customPrompt !== null ? customPrompt : (promptInput ? promptInput.value : '')).trim();
-    if (!prompt) return;
+    if (!prompt && gv7AiPendingAttachments.length === 0) return;
 
     if (promptInput) {
       promptInput.value = '';
@@ -7099,9 +7322,53 @@
     const welcome = chatContainer ? chatContainer.querySelector('#ai-welcome-card') : null;
     if (welcome) welcome.remove();
 
+    // Snapshot current attachments and clear shelf
+    const attachmentsToSend = [...gv7AiPendingAttachments];
+    gv7AiPendingAttachments = [];
+    renderGv7AiAttachmentShelf();
+
+    // Construct user content payload
+    const hasImages = attachmentsToSend.some(a => a.type === 'image');
+    let userMsgPayloadContent;
+
+    if (hasImages) {
+      const parts = [];
+      const textIntro = prompt || (attachmentsToSend.length > 0 ? 'Please inspect the attached images and files.' : '');
+      parts.push({ type: 'text', text: textIntro });
+
+      for (const att of attachmentsToSend) {
+        if (att.type === 'file') {
+          const ext = att.name.split('.').pop() || 'txt';
+          parts.push({
+            type: 'text',
+            text: `\n\n[Attached File: ${att.name}]\n\`\`\`${ext}\n${att.textContent}\n\`\`\`\n`
+          });
+        } else if (att.type === 'image') {
+          parts.push({
+            type: 'image_url',
+            image_url: { url: att.dataUrl }
+          });
+        }
+      }
+      userMsgPayloadContent = parts;
+    } else {
+      let fullText = prompt;
+      for (const att of attachmentsToSend) {
+        if (att.type === 'file') {
+          const ext = att.name.split('.').pop() || 'txt';
+          fullText += (fullText ? '\n\n' : '') + `[Attached File: ${att.name}]\n\`\`\`${ext}\n${att.textContent}\n\`\`\`\n`;
+        }
+      }
+      userMsgPayloadContent = fullText || '(No prompt)';
+    }
+
     // 1. Add user message
-    gv7AiHistory.push({ role: 'user', content: prompt });
-    renderGv7AiUserMessageInDom(prompt);
+    gv7AiHistory.push({
+      role: 'user',
+      content: userMsgPayloadContent,
+      _displayAttachments: attachmentsToSend
+    });
+    renderGv7AiUserMessageInDom(userMsgPayloadContent, attachmentsToSend);
     saveGv7AiHistory();
     scrollGv7AiMessagesToBottom();
 
@@ -7224,7 +7491,18 @@
       }
 
       contentBody.innerHTML = formatGv7AiMarkdown(fullContent || '*(No response received)*');
-      if (actionsBar) actionsBar.classList.remove('hidden');
+      if (actionsBar) {
+        const hasHtmlBlock = fullContent.includes('```html') || fullContent.includes('```htm') || (fullContent.includes('<html') && fullContent.includes('</html>'));
+        if (hasHtmlBlock) {
+          actionsBar.innerHTML = `
+            <button type="button" class="ai-btn-action" onclick="copyGv7AiMessage(this)">📋 Copy</button>
+            <button type="button" class="ai-btn-action" style="color: #00ffe2; font-weight: 700;" onclick="downloadFirstGv7HtmlFromMessage(this)">💾 Download .html</button>
+          `;
+        } else {
+          actionsBar.innerHTML = `<button type="button" class="ai-btn-action" onclick="copyGv7AiMessage(this)">📋 Copy</button>`;
+        }
+        actionsBar.classList.remove('hidden');
+      }
 
       gv7AiHistory.push({
         role: 'assistant',
@@ -7247,7 +7525,7 @@
       } else {
         console.error('[Games V7 AI Error]:', err);
         contentBody.innerHTML = `<div style="color: #ff2a4b; padding: 10px; background: rgba(255, 42, 75, 0.1); border-radius: 8px; border: 1px solid rgba(255, 42, 75, 0.3);">
-          <strong>⚠️ AI Request Failed:</strong> ${escapeHtml(err.message)}
+          <strong>⚠️ Bokit AI Request Failed:</strong> ${escapeHtml(err.message)}
         </div>`;
       }
     } finally {
@@ -7270,6 +7548,9 @@
     const btnClear = document.getElementById('ai-btn-clear');
     const inputPrompt = document.getElementById('ai-input-prompt');
     const chatContainer = document.getElementById('ai-chat-messages');
+    const btnAttach = document.getElementById('ai-btn-attach');
+    const fileInput = document.getElementById('ai-file-input');
+    const aiView = document.getElementById('ai-view');
 
     if (btnSend) {
       btnSend.addEventListener('click', () => handleSendGv7AiMessage());
@@ -7287,6 +7568,35 @@
           gv7AiHistory = [];
           saveGv7AiHistory();
           renderSavedGv7AiChat();
+        }
+      });
+    }
+
+    if (btnAttach && fileInput) {
+      btnAttach.addEventListener('click', () => {
+        fileInput.click();
+      });
+      fileInput.addEventListener('change', (e) => {
+        handleAddGv7AiFiles(e.target.files);
+        fileInput.value = '';
+      });
+    }
+
+    if (aiView) {
+      aiView.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        aiView.classList.add('ai-drag-over');
+      });
+      aiView.addEventListener('dragleave', (e) => {
+        if (!aiView.contains(e.relatedTarget)) {
+          aiView.classList.remove('ai-drag-over');
+        }
+      });
+      aiView.addEventListener('drop', (e) => {
+        e.preventDefault();
+        aiView.classList.remove('ai-drag-over');
+        if (e.dataTransfer && e.dataTransfer.files) {
+          handleAddGv7AiFiles(e.dataTransfer.files);
         }
       });
     }
@@ -7311,6 +7621,21 @@
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           handleSendGv7AiMessage();
+        }
+      });
+
+      inputPrompt.addEventListener('paste', (e) => {
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        const pastedFiles = [];
+        for (const item of items) {
+          if (item.kind === 'file') {
+            const f = item.getAsFile();
+            if (f) pastedFiles.push(f);
+          }
+        }
+        if (pastedFiles.length > 0) {
+          handleAddGv7AiFiles(pastedFiles);
         }
       });
     }
