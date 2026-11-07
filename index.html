@@ -741,44 +741,34 @@
     <!-- ====================================================================
          2.5 BOKIT AI TAB — MULTIMODAL REASONING ASSISTANT
          ==================================================================== -->
-    <section id="ai-view" class="tab-view" aria-label="Bokit AI Assistant">
+    <section id="ai-view" class="tab-view" aria-label="Ask EDUrocks AI">
       <div class="ai-view-container">
-        <!-- AI Top Bar -->
-        <header class="ai-header-bar">
-          <div class="ai-header-left">
-            <div class="ai-avatar-badge">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path>
-                <rect x="4" y="8" width="16" height="12" rx="3"></rect>
-                <circle cx="9" cy="13" r="1.5" fill="currentColor"></circle>
-                <circle cx="15" cy="13" r="1.5" fill="currentColor"></circle>
-                <path d="M9 17h6"></path>
-                <line x1="2" y1="14" x2="4" y2="14"></line>
-                <line x1="20" y1="14" x2="22" y2="14"></line>
-              </svg>
+        <!-- Top Bar (Ask EDUrocks AI) -->
+        <header class="edurocks-ai-header">
+          <div class="edurocks-header-left">
+            <div class="edurocks-title-row">
+              <h1 class="edurocks-title">Ask EDUrocks AI</h1>
+              <span class="edurocks-status-pill">
+                <span class="edurocks-status-dot"></span>
+                <span>Ready</span>
+              </span>
             </div>
-            <div class="ai-header-titles">
-              <div class="ai-header-title-row">
-                <span class="ai-title">BOKIT AI</span>
-                <span class="ai-model-tag">550B ULTRA</span>
-                <span class="ai-status-indicator"><span class="ai-status-dot"></span> NVIDIA NIM</span>
-              </div>
-              <p class="ai-subtitle">// MULTIMODAL INTELLIGENCE · VISION & FILES · DEEP REASONING</p>
-            </div>
+            <p class="edurocks-subtitle">Private help for explanations, summaries, and step-by-step questions.</p>
           </div>
-          <div class="ai-header-actions">
-            <label class="ai-thinking-toggle" title="Toggle CoT (Chain-of-Thought) deep reasoning">
-              <input type="checkbox" id="ai-toggle-thinking" checked />
-              <span class="ai-toggle-slider"></span>
-              <span class="ai-toggle-label">🧠 THINKING</span>
-            </label>
-            <button type="button" id="ai-btn-clear" class="ai-action-btn" title="Clear conversation history">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-              <span>CLEAR</span>
-            </button>
+          <div class="edurocks-header-right">
+            <div class="edurocks-select-wrap">
+              <select id="edurocks-ai-mode-select" class="edurocks-mode-select" title="Detail level">
+                <option value="quick">Quick</option>
+                <option value="medium" selected>Medium</option>
+                <option value="detailed">Step-by-step</option>
+              </select>
+            </div>
+            <div class="edurocks-quick-chips">
+              <button type="button" class="edurocks-chip-btn" data-preset="quick-summary">Quick summary</button>
+              <button type="button" class="edurocks-chip-btn" data-preset="explain-simply">Explain simply</button>
+              <button type="button" class="edurocks-chip-btn" data-preset="step-by-step">Step-by-step help</button>
+              <button type="button" id="ai-btn-clear" class="edurocks-chip-btn edurocks-btn-clear" title="Clear chat history">Clear</button>
+            </div>
           </div>
         </header>
 
@@ -786,21 +776,21 @@
         <div id="ai-chat-messages" class="ai-chat-messages custom-scrollbar">
           <!-- Welcome Placeholder (shown when empty) -->
           <div id="ai-welcome-card" class="ai-welcome-card">
-            <div class="ai-welcome-icon">⚡</div>
-            <h2>BOKIT AI — 550B ULTRA</h2>
-            <p>Supercharged conversational intelligence powered by NVIDIA GPU computing, multimodal image analysis, and deep reasoning.</p>
+            <div class="edurocks-welcome-icon">⚡</div>
+            <h2>Ask EDUrocks AI</h2>
+            <p>Private help for explanations, summaries, and step-by-step questions. Powered by NVIDIA 550B reasoning & multimodal vision.</p>
             <div class="ai-prompt-chips">
+              <button type="button" class="ai-prompt-chip" data-prompt="Help me solve this step-by-step with explanations.">
+                📝 Step-by-step Homework Help
+              </button>
               <button type="button" class="ai-prompt-chip" data-prompt="Write a complete standalone HTML game of Pong with neon visuals and sound effects.">
                 🎮 HTML5 Pong Game (.html)
               </button>
-              <button type="button" class="ai-prompt-chip" data-prompt="Create a single-page HTML portfolio with glowing dark mode cards and smooth scrolling.">
-                🌐 HTML Portfolio (.html)
+              <button type="button" class="ai-prompt-chip" data-prompt="Explain how lines of symmetry work using visual geometry steps.">
+                📐 Symmetry & Geometry Help
               </button>
-              <button type="button" class="ai-prompt-chip" data-prompt="Write a limerick about the wonders of GPU computing.">
-                ✨ GPU Computing Limerick
-              </button>
-              <button type="button" class="ai-prompt-chip" data-prompt="Explain how deep neural networks work using an analogy.">
-                🧠 How Neural Networks Work
+              <button type="button" class="ai-prompt-chip" data-prompt="Give me a quick summary of how neural networks learn.">
+                🧠 Quick Neural Network Summary
               </button>
             </div>
           </div>
@@ -813,21 +803,21 @@
 
           <div class="ai-input-container">
             <input type="file" id="ai-file-input" class="hidden" multiple accept="image/*,.html,.htm,.js,.jsx,.ts,.tsx,.json,.css,.py,.txt,.md,.xml,.svg,.c,.cpp,.java,.sh,.yaml,.yml" />
-            <button type="button" id="ai-btn-attach" class="ai-btn-attach" title="Attach images or files (code, HTML, JSON, etc.)">
+            <button type="button" id="ai-btn-attach" class="ai-btn-attach" title="Attach image or problem file">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
               </svg>
             </button>
-            <textarea id="ai-input-prompt" class="ai-input-textarea" placeholder="Message Bokit AI... (Attach images/files with 📎 or paste/drag-drop)" rows="1"></textarea>
+            <textarea id="ai-input-prompt" class="ai-input-textarea" placeholder="Ask a question, upload an image or problem... (Press Enter to send, Shift+Enter for newline)" rows="1"></textarea>
             <div class="ai-input-btns">
               <button type="button" id="ai-btn-stop" class="ai-btn-stop hidden" title="Stop Generation">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <rect x="6" y="6" width="12" height="12" rx="2"></rect>
                 </svg>
-                <span>STOP</span>
+                <span>Stop</span>
               </button>
-              <button type="button" id="ai-btn-send" class="ai-btn-send" title="Send Message">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <button type="button" id="ai-btn-send" class="ai-btn-send" title="Send Question">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="22" y1="2" x2="11" y2="13"></line>
                   <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>

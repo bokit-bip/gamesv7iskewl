@@ -7237,7 +7237,7 @@
     if (imgs.length > 0 || files.length > 0) {
       attHtml = '<div class="ai-user-attachments">';
       for (const img of imgs) {
-        attHtml += `<img src="${img.dataUrl}" class="ai-user-img-preview" alt="${escapeHtml(img.name || 'image')}" onclick="window.open(this.src, '_blank')" title="Click to open image" />`;
+        attHtml += `<div class="ai-user-img-preview-card"><img src="${img.dataUrl}" alt="${escapeHtml(img.name || 'image')}" onclick="window.open(this.src, '_blank')" title="Click to view full image" /></div>`;
       }
       for (const f of files) {
         attHtml += `<span class="ai-user-file-chip">📄 <strong>${escapeHtml(f.name)}</strong> ${f.size ? `(${formatGv7AiFileSize(f.size)})` : ''}</span>`;
@@ -7246,11 +7246,10 @@
     }
 
     msgDiv.innerHTML = `
-      <div class="ai-message-avatar">👤</div>
       <div class="ai-message-body">
         <div class="ai-user-bubble">
           ${attHtml}
-          <div>${escapeHtml(textToDisplay)}</div>
+          ${textToDisplay ? `<div>${escapeHtml(textToDisplay)}</div>` : ''}
         </div>
       </div>
     `;
@@ -7282,11 +7281,10 @@
     const hasHtmlBlock = content.includes('```html') || content.includes('```htm') || (content.includes('<html') && content.includes('</html>'));
     const actionBtns = hasHtmlBlock
       ? `<button type="button" class="ai-btn-action" onclick="copyGv7AiMessage(this)">📋 Copy</button>
-         <button type="button" class="ai-btn-action" style="color: #00ffe2; font-weight: 700;" onclick="downloadFirstGv7HtmlFromMessage(this)">💾 Download .html</button>`
+         <button type="button" class="ai-btn-action" style="color: #ffafd0; font-weight: 700;" onclick="downloadFirstGv7HtmlFromMessage(this)">💾 Download .html</button>`
       : `<button type="button" class="ai-btn-action" onclick="copyGv7AiMessage(this)">📋 Copy</button>`;
 
     msgDiv.innerHTML = `
-      <div class="ai-message-avatar">⚡</div>
       <div class="ai-message-body" style="width: 100%;">
         <div class="ai-assistant-card">
           ${thinkingHtml}
@@ -7376,7 +7374,6 @@
     const assistantMsgDiv = document.createElement('div');
     assistantMsgDiv.className = 'ai-message ai-message-assistant';
     assistantMsgDiv.innerHTML = `
-      <div class="ai-message-avatar">⚡</div>
       <div class="ai-message-body" style="width: 100%;">
         <div class="ai-assistant-card">
           <div class="ai-thinking-card hidden">
@@ -7417,6 +7414,15 @@
     let fullContent = '';
     const enableThinking = toggleThinking ? toggleThinking.checked : true;
 
+    const modeSelect = document.getElementById('edurocks-ai-mode-select');
+    const currentMode = modeSelect ? modeSelect.value : 'medium';
+    let maxTokens = 16384;
+    let temperature = 1;
+    if (currentMode === 'quick') {
+      maxTokens = 4096;
+      temperature = 0.7;
+    }
+
     try {
       const apiOrigin = getServerOrigin();
       const endpoint = `${apiOrigin.replace(/\/$/, '')}/api/ai/chat`;
@@ -7427,9 +7433,9 @@
         body: JSON.stringify({
           messages: gv7AiHistory,
           model: 'nvidia/nemotron-3-ultra-550b-a55b',
-          temperature: 1,
+          temperature,
           top_p: 0.95,
-          max_tokens: 16384,
+          max_tokens: maxTokens,
           enable_thinking: enableThinking,
           stream: true
         }),
@@ -7495,8 +7501,8 @@
         const hasHtmlBlock = fullContent.includes('```html') || fullContent.includes('```htm') || (fullContent.includes('<html') && fullContent.includes('</html>'));
         if (hasHtmlBlock) {
           actionsBar.innerHTML = `
-            <button type="button" class="ai-btn-action" onclick="copyGv7AiMessage(this)">📋 Copy</button>
-            <button type="button" class="ai-btn-action" style="color: #00ffe2; font-weight: 700;" onclick="downloadFirstGv7HtmlFromMessage(this)">💾 Download .html</button>
+            <button type="button" class="ai-btn-action" onclick="copyGv7AiMessage(this)">📋 Copy Message</button>
+            <button type="button" class="ai-btn-action" style="color: #ffafd0; font-weight: 700;" onclick="downloadFirstGv7HtmlFromMessage(this)">💾 Download .html</button>
           `;
         } else {
           actionsBar.innerHTML = `<button type="button" class="ai-btn-action" onclick="copyGv7AiMessage(this)">📋 Copy</button>`;
@@ -7551,6 +7557,37 @@
     const btnAttach = document.getElementById('ai-btn-attach');
     const fileInput = document.getElementById('ai-file-input');
     const aiView = document.getElementById('ai-view');
+
+    // Header Quick Preset Chips (Quick summary, Explain simply, Step-by-step help)
+    const presetChips = document.querySelectorAll('.edurocks-chip-btn[data-preset]');
+    presetChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const preset = chip.getAttribute('data-preset');
+        const inputVal = (inputPrompt ? inputPrompt.value : '').trim();
+        if (preset === 'quick-summary') {
+          if (inputVal || gv7AiPendingAttachments.length > 0) {
+            handleSendGv7AiMessage(inputVal ? 'Quick summary: ' + inputVal : 'Give me a quick summary of this.');
+          } else if (inputPrompt) {
+            inputPrompt.value = 'Give me a quick summary of: ';
+            inputPrompt.focus();
+          }
+        } else if (preset === 'explain-simply') {
+          if (inputVal || gv7AiPendingAttachments.length > 0) {
+            handleSendGv7AiMessage(inputVal ? 'Explain simply: ' + inputVal : 'Explain this simply step-by-step.');
+          } else if (inputPrompt) {
+            inputPrompt.value = 'Explain simply: ';
+            inputPrompt.focus();
+          }
+        } else if (preset === 'step-by-step') {
+          if (inputVal || gv7AiPendingAttachments.length > 0) {
+            handleSendGv7AiMessage(inputVal ? 'Step-by-step help for: ' + inputVal : 'Provide step-by-step help for this problem.');
+          } else if (inputPrompt) {
+            inputPrompt.value = 'Provide step-by-step help for: ';
+            inputPrompt.focus();
+          }
+        }
+      });
+    });
 
     if (btnSend) {
       btnSend.addEventListener('click', () => handleSendGv7AiMessage());
