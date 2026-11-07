@@ -2365,7 +2365,16 @@
       .replace(/'/g, '&#039;');
   }
 
+  const BOKITCORD_SERVER_ORIGIN = 'https://pop-leave.tailcb4af7.ts.net';
+
   function getServerOrigin() {
+    try {
+      const custom = localStorage.getItem('bokit_proxy_server') || localStorage.getItem('gamesv7_movie_proxy');
+      if (custom && custom.trim()) {
+        return custom.trim().replace(/\/$/, '');
+      }
+    } catch (e) {}
+
     if (typeof window !== 'undefined' && window.location) {
       if ((window.location.protocol === 'http:' || window.location.protocol === 'https:') &&
           window.location.origin && window.location.origin !== 'null' && 
@@ -2374,7 +2383,7 @@
         return window.location.origin;
       }
     }
-    return '';
+    return BOKITCORD_SERVER_ORIGIN;
   }
 
   function isServerHosted() {
@@ -3874,10 +3883,22 @@
     if (!currentDetailSources || currentDetailSources.length === 0) {
       const tmdbId = activeDetailMovie.tmdbId || activeDetailMovie.id;
       const isTv = (activeDetailMovie.type === 'series' || activeDetailMovie.category === 'series');
+      const serverOrigin = getServerOrigin();
+      const bokitPlayerUrl = isTv
+        ? `${serverOrigin}/embed/player/tv/${encodeURIComponent(tmdbId)}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}`
+        : `${serverOrigin}/embed/player/movie/${encodeURIComponent(tmdbId)}`;
+
       currentDetailSources = [
         {
+          name: 'BokitCord Core (Official Proxy)',
+          serverLabel: 'BokitCord Core (Official Proxy)',
+          badge: 'Proxied HD',
+          note: 'Ad-free cinema player powered by BokitCord proxy and multi-stream resolvers',
+          url: bokitPlayerUrl
+        },
+        {
           name: 'VidLink HD',
-          serverLabel: 'VidLink HD (Primary)',
+          serverLabel: 'VidLink HD (Secondary)',
           badge: 'Fast HD',
           note: 'Lightning fast 1080p stream with subtitle support',
           url: isTv ? `https://vidlink.pro/tv/${tmdbId}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}` : `https://vidlink.pro/movie/${tmdbId}`
@@ -4289,79 +4310,77 @@
     const serverOrigin = getServerOrigin();
     const tmdbId = movie.tmdbId || movie.id;
 
-    if (serverOrigin && window.__USE_SERVER_PLAYER__) {
-      const playerUrl = (isTvShow && season)
-        ? `${serverOrigin}/embed/player/tv/${encodeURIComponent(movie.id)}/${season || 1}/${episode || 1}`
-        : `${serverOrigin}/embed/player/movie/${encodeURIComponent(movie.id)}`;
+    const bokitPlayerUrl = (isTvShow && season)
+      ? `${serverOrigin}/embed/player/tv/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
+      : `${serverOrigin}/embed/player/movie/${encodeURIComponent(tmdbId)}`;
 
-      if (el.playerIframe) {
-        el.playerIframe.src = playerUrl;
+    // Standalone & multi-server embed player (BokitCord Proxy as Server 1)
+    const standaloneProviders = [
+      {
+        name: 'BokitCord Core (Proxied & Ad-Free)',
+        url: bokitPlayerUrl
+      },
+      {
+        name: 'VidLink HD',
+        url: isTvShow
+          ? `https://vidlink.pro/tv/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
+          : `https://vidlink.pro/movie/${encodeURIComponent(tmdbId)}`
+      },
+      {
+        name: 'AutoEmbed 4K (Stealth Proxy)',
+        url: isTvShow
+          ? `https://autoembed.co/tv/tmdb/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
+          : `https://autoembed.co/movie/tmdb/${encodeURIComponent(tmdbId)}`
+      },
+      {
+        name: 'Videasy Pro (Low-Block CDN)',
+        url: isTvShow
+          ? `https://player.videasy.net/tv/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
+          : `https://player.videasy.net/movie/${encodeURIComponent(tmdbId)}`
+      },
+      {
+        name: 'VidSrc HD',
+        url: isTvShow
+          ? `https://vidsrc.me/embed/tv?id=${encodeURIComponent(tmdbId)}&s=${season || 1}&e=${episode || 1}`
+          : `https://vidsrc.me/embed/movie?id=${encodeURIComponent(tmdbId)}`
+      },
+      {
+        name: 'SmashyStream',
+        url: isTvShow
+          ? `https://embed.smashystream.com/playere.php?tmdb=${encodeURIComponent(tmdbId)}&season=${season || 1}&episode=${episode || 1}`
+          : `https://embed.smashystream.com/playere.php?tmdb=${encodeURIComponent(tmdbId)}`
+      },
+      {
+        name: '2Embed',
+        url: isTvShow
+          ? `https://www.2embed.cc/embedtv/${encodeURIComponent(tmdbId)}&s=${season || 1}&e=${episode || 1}`
+          : `https://www.2embed.cc/embed/${encodeURIComponent(tmdbId)}`
       }
-    } else {
-      // Standalone / CDN mode: Multi-server direct embed player
-      const standaloneProviders = [
-        {
-          name: 'VidLink HD',
-          url: isTvShow
-            ? `https://vidlink.pro/tv/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
-            : `https://vidlink.pro/movie/${encodeURIComponent(tmdbId)}`
-        },
-        {
-          name: 'AutoEmbed 4K (Stealth Proxy)',
-          url: isTvShow
-            ? `https://autoembed.co/tv/tmdb/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
-            : `https://autoembed.co/movie/tmdb/${encodeURIComponent(tmdbId)}`
-        },
-        {
-          name: 'Videasy Pro (Low-Block CDN)',
-          url: isTvShow
-            ? `https://player.videasy.net/tv/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
-            : `https://player.videasy.net/movie/${encodeURIComponent(tmdbId)}`
-        },
-        {
-          name: 'VidSrc HD',
-          url: isTvShow
-            ? `https://vidsrc.me/embed/tv?id=${encodeURIComponent(tmdbId)}&s=${season || 1}&e=${episode || 1}`
-            : `https://vidsrc.me/embed/movie?id=${encodeURIComponent(tmdbId)}`
-        },
-        {
-          name: 'SmashyStream',
-          url: isTvShow
-            ? `https://embed.smashystream.com/playere.php?tmdb=${encodeURIComponent(tmdbId)}&season=${season || 1}&episode=${episode || 1}`
-            : `https://embed.smashystream.com/playere.php?tmdb=${encodeURIComponent(tmdbId)}`
-        },
-        {
-          name: '2Embed',
-          url: isTvShow
-            ? `https://www.2embed.cc/embedtv/${encodeURIComponent(tmdbId)}&s=${season || 1}&e=${episode || 1}`
-            : `https://www.2embed.cc/embed/${encodeURIComponent(tmdbId)}`
+    ];
+
+    // Populate Server Select in player topbar
+    if (el.moviePlayerServerSelect) {
+      el.moviePlayerServerSelect.innerHTML = '';
+      standaloneProviders.forEach((sp, idx) => {
+        const opt = document.createElement('option');
+        opt.value = String(idx);
+        opt.textContent = `Server ${idx + 1} — ${sp.name}`;
+        el.moviePlayerServerSelect.appendChild(opt);
+      });
+      el.moviePlayerServerSelect.value = String(sourceIndex);
+      el.moviePlayerServerSelect.onchange = () => {
+        const chosenIdx = parseInt(el.moviePlayerServerSelect.value, 10) || 0;
+        if (el.playerIframe && standaloneProviders[chosenIdx]) {
+          el.playerIframe.src = standaloneProviders[chosenIdx].url;
         }
-      ];
-
-      // Populate Server Select in player topbar
-      if (el.moviePlayerServerSelect) {
-        el.moviePlayerServerSelect.innerHTML = '';
-        standaloneProviders.forEach((sp, idx) => {
-          const opt = document.createElement('option');
-          opt.value = String(idx);
-          opt.textContent = `Server ${idx + 1} — ${sp.name}`;
-          el.moviePlayerServerSelect.appendChild(opt);
-        });
-        el.moviePlayerServerSelect.value = String(sourceIndex);
-        el.moviePlayerServerSelect.onchange = () => {
-          const chosenIdx = parseInt(el.moviePlayerServerSelect.value, 10) || 0;
-          if (el.playerIframe && standaloneProviders[chosenIdx]) {
-            el.playerIframe.src = standaloneProviders[chosenIdx].url;
-          }
-        };
-      }
-
-      const activeProvider = standaloneProviders[sourceIndex] || standaloneProviders[0];
-      if (el.playerIframe) {
-        el.playerIframe.src = activeProvider.url;
-      }
-      updateServerStatusDot('healthy');
+      };
     }
+
+    const activeProvider = standaloneProviders[sourceIndex] || standaloneProviders[0];
+    if (el.playerIframe) {
+      el.playerIframe.src = activeProvider.url;
+    }
+    updateServerStatusDot('healthy');
   }
 
   function updateServerStatusDot(status = 'healthy') {
