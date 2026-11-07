@@ -7467,6 +7467,40 @@ input:checked + .slider:before {
   color: #ffafd0;
 }
 
+/* ================= KATEX MATH RENDERING ================= */
+.katex {
+  font-size: 1.08em;
+  color: #eee0e4;
+  text-rendering: auto;
+}
+
+.katex-display {
+  display: block;
+  margin: 14px 0 !important;
+  text-align: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 0;
+}
+
+.katex-display > .katex {
+  display: inline-block;
+  white-space: nowrap;
+  text-align: initial;
+}
+
+.ai-content-body .ai-li {
+  margin-left: 20px;
+  margin-bottom: 6px;
+  list-style-type: disc;
+}
+
+.ai-content-body .ai-li-num {
+  margin-left: 14px;
+  margin-bottom: 8px;
+  list-style-type: none;
+}
+
 /* Code Wrapper & HTML Actions */
 .ai-code-wrapper {
   margin: 14px 0;

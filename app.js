@@ -7013,8 +7013,27 @@
   }
   window.handleAddGv7AiFiles = handleAddGv7AiFiles;
 
+  function renderGv7KaTeX(tex, displayMode) {
+    const cleanTex = String(tex || '').trim();
+    if (!cleanTex) return '';
+    if (typeof window !== 'undefined' && window.katex && typeof window.katex.renderToString === 'function') {
+      try {
+        return window.katex.renderToString(cleanTex, {
+          displayMode: Boolean(displayMode),
+          throwOnError: false,
+          strict: false
+        });
+      } catch (e) {}
+    }
+    return displayMode
+      ? `<div class="katex-display">${escapeHtml(cleanTex)}</div>`
+      : `<span class="katex">${escapeHtml(cleanTex)}</span>`;
+  }
+
   function formatGv7AiMarkdown(text) {
     if (!text) return '';
+
+    // 1. Preserve fenced code blocks
     const codeBlocks = [];
     let formatted = String(text).replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
       const idx = codeBlocks.length;
@@ -7022,16 +7041,62 @@
       return `__AI_CODE_BLOCK_${idx}__`;
     });
 
+    // 2. Preserve inline backtick code
+    const inlineCodeBlocks = [];
+    formatted = formatted.replace(/`([^`\n]+)`/g, (match, code) => {
+      const idx = inlineCodeBlocks.length;
+      inlineCodeBlocks.push(code);
+      return `__AI_INLINE_CODE_${idx}__`;
+    });
+
+    // 3. Extract and render LaTeX Math blocks (KaTeX)
+    const mathBlocks = [];
+
+    // 3a. Display Math: $$ ... $$ and \[ ... \]
+    formatted = formatted.replace(/\$\$([\s\S]*?)\$\$/g, (m, tex) => {
+      const idx = mathBlocks.length;
+      mathBlocks.push(renderGv7KaTeX(tex, true));
+      return `\n__AI_MATH_BLOCK_${idx}__\n`;
+    });
+    formatted = formatted.replace(/\\\[([\s\S]*?)\\\]/g, (m, tex) => {
+      const idx = mathBlocks.length;
+      mathBlocks.push(renderGv7KaTeX(tex, true));
+      return `\n__AI_MATH_BLOCK_${idx}__\n`;
+    });
+
+    // 3b. Inline Math: \( ... \) and $ ... $
+    formatted = formatted.replace(/\\\(([\s\S]*?)\\\)/g, (m, tex) => {
+      const idx = mathBlocks.length;
+      mathBlocks.push(renderGv7KaTeX(tex, false));
+      return `__AI_MATH_BLOCK_${idx}__`;
+    });
+    formatted = formatted.replace(/(^|[^\\])\$([^\$\s\n](?:[^\$\n]*?[^\$\s\n])?)\$/g, (m, prefix, tex) => {
+      const idx = mathBlocks.length;
+      mathBlocks.push(renderGv7KaTeX(tex, false));
+      return `${prefix}__AI_MATH_BLOCK_${idx}__`;
+    });
+
+    // 4. Markdown Formatting
     formatted = escapeHtml(formatted);
     formatted = formatted.replace(/^### (.*$)/gim, '<h4 class="ai-h4">$1</h4>');
     formatted = formatted.replace(/^## (.*$)/gim, '<h3 class="ai-h3">$1</h3>');
     formatted = formatted.replace(/^# (.*$)/gim, '<h2 class="ai-h2">$1</h2>');
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    formatted = formatted.replace(/`([^`]+)`/g, '<code class="ai-inline-code">$1</code>');
-    formatted = formatted.replace(/^\s*[-*]\s+(.*)$/gim, '<li class="ai-li">$1</li>');
+    formatted = formatted.replace(/^\s*[-*•]\s+(.*)$/gim, '<li class="ai-li">$1</li>');
+    formatted = formatted.replace(/^\s*(\d+)\.\s+(.*)$/gim, '<li class="ai-li ai-li-num"><strong>$1.</strong> $2</li>');
     formatted = formatted.replace(/\n/g, '<br>');
 
+    // 5. Restore Math Blocks
+    formatted = formatted.replace(/__AI_MATH_BLOCK_(\d+)__/g, (m, id) => mathBlocks[Number(id)] || '');
+
+    // 6. Restore Inline Code
+    formatted = formatted.replace(/__AI_INLINE_CODE_(\d+)__/g, (m, id) => {
+      const c = inlineCodeBlocks[Number(id)];
+      return `<code class="ai-inline-code">${escapeHtml(c)}</code>`;
+    });
+
+    // 7. Restore Fenced Code Blocks
     formatted = formatted.replace(/__AI_CODE_BLOCK_(\d+)__/g, (m, id) => {
       const block = codeBlocks[Number(id)];
       if (!block) return '';
@@ -7074,6 +7139,7 @@
 
     return formatted;
   }
+  window.formatGv7AiMarkdown = formatGv7AiMarkdown;
 
   function copyGv7Fallback(text) {
     try {
