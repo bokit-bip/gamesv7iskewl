@@ -2708,7 +2708,8 @@
     el.movieModalEpisodesList.innerHTML = `<div style="grid-column: 1/-1; padding: 12px; color: #949ba4; font-size: 13px;">Loading Season ${season} episodes...</div>`;
 
     try {
-      const res = await fetch(`/api/movies/episodes?id=${encodeURIComponent(id)}&season=${season}`);
+      const serverOrigin = getServerOrigin();
+      const res = await fetch(`${serverOrigin}/api/movies/episodes?id=${encodeURIComponent(id)}&season=${season}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const episodes = Array.isArray(data.episodes) && data.episodes.length > 0 ? data.episodes : [];
@@ -3060,7 +3061,8 @@
       const nextPage = catalogCurrentPage + 1;
       const typeParam = activeTypeFilter !== 'all' ? `&type=${encodeURIComponent(activeTypeFilter)}` : '';
       const yearParam = (activeYearFilter && activeYearFilter !== 'all') ? `&year=${encodeURIComponent(activeYearFilter)}` : '';
-      const res = await fetch(`/api/movies/catalog?page=${nextPage}&category=${encodeURIComponent(activeGenreFilter)}&limit=20${typeParam}${yearParam}`);
+      const serverOrigin = getServerOrigin();
+      const res = await fetch(`${serverOrigin}/api/movies/catalog?page=${nextPage}&category=${encodeURIComponent(activeGenreFilter)}&limit=20${typeParam}${yearParam}`);
 
       if (res.ok) {
         const data = await res.json();
@@ -3365,6 +3367,7 @@
     const rowEl = document.createElement('div');
     rowEl.className = 'movies-row';
     rowEl.id = `row-${row.id}`;
+    rowEl.setAttribute('data-row-id', row.id);
 
     const isTop10Row = (row.id === 'trending-movies' || row.id === 'top-10');
     const displayTitle = isTop10Row ? 'TOP 10 on Games V7' : row.title;
@@ -3435,6 +3438,12 @@
         el.moviesGridSection.classList.add('hidden');
         el.moviesHomeRows.classList.remove('hidden');
         if (el.moviesHeroBanner) el.moviesHeroBanner.classList.remove('hidden');
+        if (el.moviesSearchInput) el.moviesSearchInput.value = '';
+        const searchBar = document.getElementById('movy-search-bar');
+        if (searchBar) searchBar.classList.add('hidden');
+        const toggleBtn = document.getElementById('btn-toggle-movy-search');
+        if (toggleBtn) toggleBtn.classList.remove('active');
+        switchMovyCategory(activeTypeFilter || 'all');
       };
     }
   }
@@ -3496,8 +3505,27 @@
     isCatalogSearching = false;
     catalogCurrentPage = page;
 
+    if (el.moviesHeroBanner) el.moviesHeroBanner.classList.add('hidden');
     if (el.moviesHomeRows) el.moviesHomeRows.classList.add('hidden');
     if (el.moviesGridSection) el.moviesGridSection.classList.remove('hidden');
+
+    let categoryDisplayTitle = '🎬 Movies & TV';
+    if (category === 'trending-movies' || activeTypeFilter === 'movie') categoryDisplayTitle = '🎬 Trending Movies';
+    else if (category === 'trending-tv' || activeTypeFilter === 'series') categoryDisplayTitle = '📺 Trending TV Shows';
+    else if (category === 'popular-movies') categoryDisplayTitle = '⭐ Popular Movies';
+    else if (category === 'popular-tv') categoryDisplayTitle = '⭐ Popular TV Series';
+    else if (category === 'top-rated-movies') categoryDisplayTitle = '🏆 Top Rated Movies';
+    else if (category === 'top-rated-tv') categoryDisplayTitle = '🏆 Top Rated Series';
+    else if (category === 'now-playing') categoryDisplayTitle = '🍿 Now Playing';
+    else if (category === 'upcoming') categoryDisplayTitle = '📅 Upcoming Releases';
+    else if (category.startsWith('genre-')) categoryDisplayTitle = category.replace('genre-', '').toUpperCase() + ' Cinema';
+
+    if (el.moviesCatalogTitle) {
+      el.moviesCatalogTitle.textContent = categoryDisplayTitle;
+    }
+    if (el.moviesCatalogCount) {
+      el.moviesCatalogCount.textContent = 'Loading titles...';
+    }
 
     renderMoviesSkeleton(el.moviesGrid, 12);
 
@@ -3505,9 +3533,10 @@
       const typeParam = activeTypeFilter !== 'all' ? `&type=${encodeURIComponent(activeTypeFilter)}` : '';
       const yearParam = (activeYearFilter && activeYearFilter !== 'all') ? `&year=${encodeURIComponent(activeYearFilter)}` : '';
       let items = [];
+      const serverOrigin = getServerOrigin();
 
       try {
-        const res = await fetch(`/api/movies/catalog?page=${page}&category=${encodeURIComponent(category)}&limit=20${typeParam}${yearParam}`);
+        const res = await fetch(`${serverOrigin}/api/movies/catalog?page=${page}&category=${encodeURIComponent(category)}&limit=20${typeParam}${yearParam}`);
         if (res.ok) {
           const data = await res.json();
           catalogTotalPages = data.totalPages || data.total_pages || 1;
@@ -3523,12 +3552,20 @@
             if (!seen.has(m.id)) { seen.add(m.id); items.push(m); }
           }));
         } else {
-          const cleanCat = category.replace('genre-', '').replace('-movies', '').replace('-tv', '').toLowerCase();
-          const matchedRow = homepageDataCache.rows.find(r =>
-            (r.title || '').toLowerCase().includes(cleanCat) || (r.id || '').toLowerCase().includes(cleanCat)
-          );
-          if (matchedRow && matchedRow.items) {
-            items = matchedRow.items;
+          // Exact row match first
+          const exactRow = homepageDataCache.rows.find(r => r.id === category);
+          if (exactRow && Array.isArray(exactRow.items) && exactRow.items.length > 0) {
+            items = exactRow.items;
+          } else {
+            const isTvSearch = category.includes('tv') || activeTypeFilter === 'series';
+            const matchedRow = homepageDataCache.rows.find(r => {
+              if (isTvSearch) return r.id.includes('tv');
+              const cleanCat = category.replace('genre-', '').replace('-movies', '').toLowerCase();
+              return !r.id.includes('tv') && (r.id.includes(cleanCat) || (r.title || '').toLowerCase().includes(cleanCat));
+            });
+            if (matchedRow && matchedRow.items) {
+              items = matchedRow.items;
+            }
           }
         }
       }
@@ -3576,9 +3613,10 @@
       const typeParam = activeTypeFilter !== 'all' ? `&type=${encodeURIComponent(activeTypeFilter)}` : '';
       const yearParam = (activeYearFilter && activeYearFilter !== 'all') ? `&year=${encodeURIComponent(activeYearFilter)}` : '';
       let list = [];
+      const serverOrigin = getServerOrigin();
 
       try {
-        const res = await fetch(`/api/movies/search?q=${encodeURIComponent(query)}${typeParam}${yearParam}`);
+        const res = await fetch(`${serverOrigin}/api/movies/search?q=${encodeURIComponent(query)}${typeParam}${yearParam}`);
         if (res.ok) {
           const data = await res.json();
           list = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
@@ -3617,13 +3655,28 @@
         homepageDataCache.rows.forEach(r => (r.items || []).forEach(m => {
           if (!seen.has(m.id)) {
             seen.add(m.id);
-            if ((m.title || '').toLowerCase().includes(q) || (m.genre || '').toLowerCase().includes(q) || (m.plot || '').toLowerCase().includes(q)) {
+            const titleMatch = (m.title || '').toLowerCase().includes(q);
+            const genreMatch = (m.genre || '').toLowerCase().includes(q);
+            const plotMatch = (m.plot || '').toLowerCase().includes(q);
+            if (titleMatch || genreMatch || plotMatch) {
+              if (activeTypeFilter === 'movie' && (m.type === 'series' || m.category === 'series')) return;
+              if (activeTypeFilter === 'series' && m.type !== 'series' && m.category !== 'series') return;
               list.push(m);
             }
           }
         }));
       }
 
+      // Filter results if user is on Movies or Shows tab
+      if (activeTypeFilter === 'movie') {
+        list = list.filter(m => m.type !== 'series' && m.category !== 'series');
+      } else if (activeTypeFilter === 'series') {
+        list = list.filter(m => m.type === 'series' || m.category === 'series');
+      }
+
+      if (el.moviesCatalogTitle) {
+        el.moviesCatalogTitle.textContent = `Search results for "${query}"`;
+      }
       if (el.moviesCatalogCount) {
         el.moviesCatalogCount.textContent = `${list.length} Found`;
       }
@@ -3801,7 +3854,8 @@
     try {
       const typeParam = (movie.type || movie.category) ? `&type=${encodeURIComponent(movie.type || movie.category)}` : '';
       const seasonParam = isInitialSeries ? '&s=1&e=1' : '';
-      const res = await fetch(`/api/movies/detail?id=${encodeURIComponent(movie.id)}${typeParam}${seasonParam}`);
+      const serverOrigin = getServerOrigin();
+      const res = await fetch(`${serverOrigin}/api/movies/detail?id=${encodeURIComponent(movie.id)}${typeParam}${seasonParam}`);
       if (res.ok) {
         const detail = await res.json();
         if (isInitialSeries && detail.type !== 'series') {
@@ -3853,18 +3907,22 @@
           if (el.modalWatchLabel) el.modalWatchLabel.textContent = 'Play';
         }
 
-        // Populate server list for modal
-        try {
-          const provRes = await fetch(`/api/movies/sources?id=${encodeURIComponent(detail.id)}`);
-          if (provRes.ok) {
-            const provData = await provRes.json();
-            currentDetailSources = provData.availableServers || provData.sources || [];
-          } else {
-            currentDetailSources = [];
+        // Populate server list for modal - BokitCord only
+        const serverOrigin = getServerOrigin();
+        const tmdbId = detail.tmdbId || detail.id;
+        const bokitPlayerUrl = isSeries
+          ? `${serverOrigin}/embed/player/tv/${encodeURIComponent(tmdbId)}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}`
+          : `${serverOrigin}/embed/player/movie/${encodeURIComponent(tmdbId)}`;
+
+        currentDetailSources = [
+          {
+            name: 'BokitCord Core (Official Proxy)',
+            serverLabel: 'BokitCord Core (Official Proxy)',
+            badge: 'Proxied HD',
+            note: 'Ad-free cinema player powered by BokitCord proxy and multi-stream resolvers',
+            url: bokitPlayerUrl
           }
-        } catch (e) {
-          currentDetailSources = [];
-        }
+        ];
 
         // Populate Similar Movies Carousel
         if (el.movieModalSimilarSection && el.movieModalSimilarList) {
@@ -3903,48 +3961,6 @@
           badge: 'Proxied HD',
           note: 'Ad-free cinema player powered by BokitCord proxy and multi-stream resolvers',
           url: bokitPlayerUrl
-        },
-        {
-          name: 'VidLink HD',
-          serverLabel: 'VidLink HD (Secondary)',
-          badge: 'Fast HD',
-          note: 'Lightning fast 1080p stream with subtitle support',
-          url: isTv ? `https://vidlink.pro/tv/${tmdbId}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}` : `https://vidlink.pro/movie/${tmdbId}`
-        },
-        {
-          name: 'AutoEmbed 4K (Stealth Proxy)',
-          serverLabel: 'AutoEmbed 4K (Stealth Proxy)',
-          badge: '4K Ultra',
-          note: 'High-speed 4K streaming through stealth CDN proxy',
-          url: isTv ? `https://autoembed.co/tv/tmdb/${tmdbId}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}` : `https://autoembed.co/movie/tmdb/${tmdbId}`
-        },
-        {
-          name: 'Videasy Pro (Low-Block CDN)',
-          serverLabel: 'Videasy Pro (Low-Block CDN)',
-          badge: 'Multi-Sub',
-          note: 'Resilient low-block mirror with multi-language captions',
-          url: isTv ? `https://player.videasy.net/tv/${tmdbId}/${activeDetailSeason || 1}/${activeDetailEpisode || 1}` : `https://player.videasy.net/movie/${tmdbId}`
-        },
-        {
-          name: 'VidSrc HD',
-          serverLabel: 'VidSrc HD',
-          badge: '1080p',
-          note: 'Direct high-bitrate stream with multiple audio tracks',
-          url: isTv ? `https://vidsrc.me/embed/tv?id=${tmdbId}&s=${activeDetailSeason || 1}&e=${activeDetailEpisode || 1}` : `https://vidsrc.me/embed/movie?id=${tmdbId}`
-        },
-        {
-          name: 'SmashyStream',
-          serverLabel: 'SmashyStream',
-          badge: 'HLS Cloud',
-          note: 'Fast adaptive bitrate stream for slower connections',
-          url: isTv ? `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${activeDetailSeason || 1}&episode=${activeDetailEpisode || 1}` : `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}`
-        },
-        {
-          name: '2Embed',
-          serverLabel: '2Embed Mirror',
-          badge: 'Mirror',
-          note: 'Standard definition resilient backup stream',
-          url: isTv ? `https://www.2embed.cc/embedtv/${tmdbId}&s=${activeDetailSeason || 1}&e=${activeDetailEpisode || 1}` : `https://www.2embed.cc/embed/${tmdbId}`
         }
       ];
       renderModalServerPills(currentDetailSources);
@@ -4088,21 +4104,65 @@
       btn.classList.toggle('active', bCat === cat || (cat === 'all' && btn.id === 'movy-nav-home'));
     });
 
-    if (cat === 'all') {
-      activeTypeFilter = 'all';
-      if (el.moviesGridSection) el.moviesGridSection.classList.add('hidden');
-      if (el.moviesHomeRows) el.moviesHomeRows.classList.remove('hidden');
-      if (el.moviesHeroBanner) el.moviesHeroBanner.classList.remove('hidden');
-    } else if (cat === 'movie') {
-      activeTypeFilter = 'movie';
-      fetchCatalogCategory('trending-movies', 1);
-    } else if (cat === 'series') {
-      activeTypeFilter = 'series';
-      fetchCatalogCategory('trending-tv', 1);
-    } else if (cat === 'anime') {
-      activeTypeFilter = 'all';
-      fetchCatalogCategory('genre-animation', 1);
+    activeTypeFilter = cat === 'all' ? 'all' : cat;
+
+    // Close search bar if open
+    const searchBar = document.getElementById('movy-search-bar');
+    const toggleSearchBtn = document.getElementById('btn-toggle-movy-search');
+    if (searchBar) searchBar.classList.add('hidden');
+    if (toggleSearchBtn) toggleSearchBtn.classList.remove('active');
+    if (el.moviesSearchInput) el.moviesSearchInput.value = '';
+
+    // Switch view to rows
+    if (el.moviesGridSection) el.moviesGridSection.classList.add('hidden');
+    if (el.moviesHomeRows) el.moviesHomeRows.classList.remove('hidden');
+    if (el.moviesHeroBanner) el.moviesHeroBanner.classList.remove('hidden');
+
+    // Filter home rows
+    const allRows = document.querySelectorAll('.movies-row');
+    allRows.forEach(row => {
+      const rowId = (row.id || '').replace(/^row-/, '') || row.getAttribute('data-row-id') || '';
+      const isTv = rowId.includes('tv') || rowId === 'trending-tv' || rowId === 'popular-tv' || rowId === 'top-rated-tv' || rowId === 'recently-added-tv';
+      const isAnime = rowId.includes('animation') || rowId.includes('anime');
+
+      if (cat === 'all') {
+        row.style.display = '';
+      } else if (cat === 'movie') {
+        row.style.display = isTv ? 'none' : '';
+      } else if (cat === 'series') {
+        row.style.display = isTv ? '' : 'none';
+      } else if (cat === 'anime') {
+        row.style.display = isAnime ? '' : 'none';
+      }
+    });
+
+    // Update featured hero banner according to category
+    if (homepageDataCache) {
+      if (cat === 'series') {
+        const tvRow = (homepageDataCache.rows || []).find(r => r.id === 'trending-tv' || r.id.includes('tv'));
+        if (tvRow && Array.isArray(tvRow.items) && tvRow.items.length > 0) {
+          renderHeroBanner(tvRow.items[0], 0);
+        }
+      } else if (cat === 'anime') {
+        const animeRow = (homepageDataCache.rows || []).find(r => r.id.includes('animation') || r.id.includes('anime'));
+        if (animeRow && Array.isArray(animeRow.items) && animeRow.items.length > 0) {
+          renderHeroBanner(animeRow.items[0], 0);
+        }
+      } else {
+        const movieHero = (homepageDataCache.hero && homepageDataCache.hero.type !== 'series')
+          ? homepageDataCache.hero
+          : (homepageDataCache.rows || []).find(r => r.id === 'trending-movies')?.items?.[0];
+        if (movieHero) {
+          renderHeroBanner(movieHero, 0);
+        }
+      }
     }
+
+    // Scroll to top of movies container
+    try {
+      const container = document.querySelector('.movies-container');
+      if (container) container.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {}
   }
   window.switchMovyCategory = switchMovyCategory;
 
@@ -4123,9 +4183,14 @@
 
     if (btnToggleSearch && searchBar) {
       btnToggleSearch.addEventListener('click', () => {
+        const isHidden = searchBar.classList.contains('hidden');
         searchBar.classList.toggle('hidden');
-        if (!searchBar.classList.contains('hidden') && searchInput) {
+        btnToggleSearch.classList.toggle('active', isHidden);
+        if (isHidden && searchInput) {
           searchInput.focus();
+        } else if (!isHidden) {
+          if (searchInput) searchInput.value = '';
+          switchMovyCategory(activeTypeFilter || 'all');
         }
       });
     }
@@ -4133,6 +4198,9 @@
     if (btnCloseSearch && searchBar) {
       btnCloseSearch.addEventListener('click', () => {
         searchBar.classList.add('hidden');
+        if (btnToggleSearch) btnToggleSearch.classList.remove('active');
+        if (searchInput) searchInput.value = '';
+        switchMovyCategory(activeTypeFilter || 'all');
       });
     }
 
@@ -4149,7 +4217,27 @@
           e.preventDefault();
           const q = searchInput.value.trim();
           if (q) performMovieSearch(q);
+        } else if (e.key === 'Escape') {
+          if (searchBar) searchBar.classList.add('hidden');
+          if (btnToggleSearch) btnToggleSearch.classList.remove('active');
+          searchInput.value = '';
+          switchMovyCategory(activeTypeFilter || 'all');
         }
+      });
+
+      // Instant live search with debounce
+      searchInput.addEventListener('input', () => {
+        const q = searchInput.value.trim();
+        clearTimeout(movieSearchDebounceTimer);
+        if (!q) {
+          if (el.moviesGridSection) el.moviesGridSection.classList.add('hidden');
+          if (el.moviesHomeRows) el.moviesHomeRows.classList.remove('hidden');
+          if (el.moviesHeroBanner) el.moviesHeroBanner.classList.remove('hidden');
+          return;
+        }
+        movieSearchDebounceTimer = setTimeout(() => {
+          performMovieSearch(q);
+        }, 250);
       });
     }
   }
@@ -4322,69 +4410,26 @@
       ? `${serverOrigin}/embed/player/tv/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
       : `${serverOrigin}/embed/player/movie/${encodeURIComponent(tmdbId)}`;
 
-    // Standalone & multi-server embed player (BokitCord Proxy as Server 1)
+    // Standalone embed player - BokitCord Core only
     const standaloneProviders = [
       {
         name: 'BokitCord Core (Proxied & Ad-Free)',
         url: bokitPlayerUrl
-      },
-      {
-        name: 'VidLink HD',
-        url: isTvShow
-          ? `https://vidlink.pro/tv/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
-          : `https://vidlink.pro/movie/${encodeURIComponent(tmdbId)}`
-      },
-      {
-        name: 'AutoEmbed 4K (Stealth Proxy)',
-        url: isTvShow
-          ? `https://autoembed.co/tv/tmdb/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
-          : `https://autoembed.co/movie/tmdb/${encodeURIComponent(tmdbId)}`
-      },
-      {
-        name: 'Videasy Pro (Low-Block CDN)',
-        url: isTvShow
-          ? `https://player.videasy.net/tv/${encodeURIComponent(tmdbId)}/${season || 1}/${episode || 1}`
-          : `https://player.videasy.net/movie/${encodeURIComponent(tmdbId)}`
-      },
-      {
-        name: 'VidSrc HD',
-        url: isTvShow
-          ? `https://vidsrc.me/embed/tv?id=${encodeURIComponent(tmdbId)}&s=${season || 1}&e=${episode || 1}`
-          : `https://vidsrc.me/embed/movie?id=${encodeURIComponent(tmdbId)}`
-      },
-      {
-        name: 'SmashyStream',
-        url: isTvShow
-          ? `https://embed.smashystream.com/playere.php?tmdb=${encodeURIComponent(tmdbId)}&season=${season || 1}&episode=${episode || 1}`
-          : `https://embed.smashystream.com/playere.php?tmdb=${encodeURIComponent(tmdbId)}`
-      },
-      {
-        name: '2Embed',
-        url: isTvShow
-          ? `https://www.2embed.cc/embedtv/${encodeURIComponent(tmdbId)}&s=${season || 1}&e=${episode || 1}`
-          : `https://www.2embed.cc/embed/${encodeURIComponent(tmdbId)}`
       }
     ];
 
     // Populate Server Select in player topbar
     if (el.moviePlayerServerSelect) {
-      el.moviePlayerServerSelect.innerHTML = '';
-      standaloneProviders.forEach((sp, idx) => {
-        const opt = document.createElement('option');
-        opt.value = String(idx);
-        opt.textContent = `Server ${idx + 1} — ${sp.name}`;
-        el.moviePlayerServerSelect.appendChild(opt);
-      });
-      el.moviePlayerServerSelect.value = String(sourceIndex);
+      el.moviePlayerServerSelect.innerHTML = '<option value="0">Server 1 — BokitCord Core (Official Proxy)</option>';
+      el.moviePlayerServerSelect.value = '0';
       el.moviePlayerServerSelect.onchange = () => {
-        const chosenIdx = parseInt(el.moviePlayerServerSelect.value, 10) || 0;
-        if (el.playerIframe && standaloneProviders[chosenIdx]) {
-          el.playerIframe.src = standaloneProviders[chosenIdx].url;
+        if (el.playerIframe && standaloneProviders[0]) {
+          el.playerIframe.src = standaloneProviders[0].url;
         }
       };
     }
 
-    const activeProvider = standaloneProviders[sourceIndex] || standaloneProviders[0];
+    const activeProvider = standaloneProviders[0];
     if (el.playerIframe) {
       el.playerIframe.src = activeProvider.url;
     }
@@ -5371,7 +5416,8 @@
               found = { id: id, title: decodeURIComponent(id.replace(/^local-/, '').replace(/-/g, ' ')), isLocal: true, canDownload: true };
             } else {
               try {
-                const detRes = await fetch(`/api/movies/detail?id=${encodeURIComponent(id)}${s ? `&s=${s}&e=${e || 1}` : ''}`);
+                const serverOrigin = getServerOrigin();
+                const detRes = await fetch(`${serverOrigin}/api/movies/detail?id=${encodeURIComponent(id)}${s ? `&s=${s}&e=${e || 1}` : ''}`);
                 if (detRes.ok) {
                   found = await detRes.json();
                 }
@@ -5398,7 +5444,8 @@
                   allLocalMovies.find(m => String(m.id) === String(id));
       if (!found) {
         try {
-          const detRes = await fetch(`/api/movies/detail?id=${encodeURIComponent(id)}`);
+          const serverOrigin = getServerOrigin();
+          const detRes = await fetch(`${serverOrigin}/api/movies/detail?id=${encodeURIComponent(id)}`);
           if (detRes.ok) {
             found = await detRes.json();
           }
