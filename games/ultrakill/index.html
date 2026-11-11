@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes" />
+    <title>Unity WebGL Player | ULTRAKILL</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #07090e;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        color: #f8fafc;
+      }
+      #unity-container {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at center, #1a080d 0%, #07090e 75%);
+      }
+      #unity-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        background: #07090e;
+        outline: none;
+      }
+      #loading-overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        background: radial-gradient(circle at center, #1e070c 0%, #06070a 80%);
+        z-index: 20;
+        padding: 24px;
+        text-align: center;
+      }
+      #loading-title {
+        font-size: 32px;
+        font-weight: 900;
+        letter-spacing: 3px;
+        color: #ff2a4b;
+        text-shadow: 0 0 18px rgba(255, 42, 75, 0.55);
+      }
+      #loading-text {
+        font-size: 16px;
+        font-weight: 600;
+        color: #e2e8f0;
+        letter-spacing: 0.5px;
+      }
+      #progress-track {
+        width: min(420px, 85vw);
+        height: 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 42, 75, 0.35);
+        overflow: hidden;
+      }
+      #progress-fill {
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, #dc2626, #ff2a4b, #fb7185);
+        transition: width 0.15s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loading-overlay">
+      <div id="loading-title">ULTRAKILL</div>
+      <div id="progress-track"><div id="progress-fill"></div></div>
+      <div id="loading-text">INITIALIZING... (0.00 MB / 93.09 MB)</div>
+    </div>
+    <div id="unity-container">
+      <canvas id="unity-canvas" tabindex="-1"></canvas>
+    </div>
+
+    <script>
+      (function () {
+        const canvas = document.querySelector('#unity-canvas');
+        const overlay = document.querySelector('#loading-overlay');
+        const loadingText = document.querySelector('#loading-text');
+        const progressFill = document.querySelector('#progress-fill');
+        const totalBytes = 97607053;
+        const totalMb = 93.09;
+        let loadedBytes = 0;
+
+        try {
+          if (/^(about|blob):/i.test(document.URL || '') && document.baseURI && /^https?:/i.test(document.baseURI)) {
+            const resolvedDocUrl = new URL('index.html', document.baseURI).href;
+            Object.defineProperty(document, 'URL', { configurable: true, get: () => resolvedDocUrl });
+          }
+        } catch (e) {}
+
+        function resolveUrl(relPath) {
+          try {
+            return new URL(relPath, document.baseURI || window.location.href).href;
+          } catch (e) {
+            return relPath;
+          }
+        }
+
+        function resizeCanvas() {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          canvas.width = Math.max(1, Math.floor(window.innerWidth * dpr));
+          canvas.height = Math.max(1, Math.floor(window.innerHeight * dpr));
+          canvas.style.width = window.innerWidth + 'px';
+          canvas.style.height = window.innerHeight + 'px';
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        canvas.addEventListener('click', () => {
+          try { canvas.focus(); } catch (e) {}
+        });
+
+        function updateDownloadProgress() {
+          const pct = Math.min(90, Math.round((loadedBytes / totalBytes) * 90));
+          const mbDone = (loadedBytes / (1024 * 1024)).toFixed(2);
+          loadingText.textContent = `LOADING GAME DATA... ${mbDone} MB / ${totalMb.toFixed(2)} MB (${pct}%)`;
+          progressFill.style.width = pct + '%';
+        }
+
+        async function fetchPart(relUrl) {
+          const fullUrl = resolveUrl(relUrl);
+          const response = await fetch(fullUrl);
+          if (!response.ok) throw new Error('HTTP ' + response.status + ' loading ' + relUrl);
+          if (!response.body || !response.body.getReader) {
+            const buf = await response.arrayBuffer();
+            loadedBytes += buf.byteLength;
+            updateDownloadProgress();
+            return buf;
+          }
+          const reader = response.body.getReader();
+          const chunks = [];
+          let received = 0;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            received += value.length;
+            loadedBytes += value.length;
+            updateDownloadProgress();
+          }
+          const merged = new Uint8Array(received);
+          let offset = 0;
+          for (const chunk of chunks) {
+            merged.set(chunk, offset);
+            offset += chunk.length;
+          }
+          return merged.buffer;
+        }
+
+        async function mergeFiles(fileParts, cacheKey) {
+          let cache = null;
+          try {
+            if (typeof caches !== 'undefined' && caches.open) {
+              cache = await caches.open('ultrakill-v14-cache');
+              const cachedResp = await cache.match(cacheKey);
+              if (cachedResp) {
+                const blob = await cachedResp.blob();
+                loadedBytes += blob.size;
+                updateDownloadProgress();
+                return URL.createObjectURL(blob);
+              }
+            }
+          } catch (e) {}
+
+          const buffers = await Promise.all(fileParts.map(fetchPart));
+          const mergedBlob = new Blob(buffers);
+          try {
+            if (cache) {
+              await cache.put(cacheKey, new Response(mergedBlob));
+            }
+          } catch (e) {}
+          return URL.createObjectURL(mergedBlob);
+        }
+
+        function getParts(file, start, end) {
+          const parts = [];
+          for (let i = start; i <= end; i++) parts.push(file + '.part' + i);
+          return parts;
+        }
+
+        function loadScript(relUrl) {
+          return new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = resolveUrl(relUrl);
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load loader script: ' + relUrl));
+            document.body.appendChild(s);
+          });
+        }
+
+        (async () => {
+          try {
+            const [dataUrl, wasmUrl] = await Promise.all([
+              mergeFiles(getParts('Build/ultrakill.data.unityweb', 1, 4), 'ultrakill.data.unityweb'),
+              mergeFiles(getParts('Build/ultrakill.wasm.unityweb', 1, 2), 'ultrakill.wasm.unityweb'),
+              loadScript('Build/ultrakill.loader.js')
+            ]);
+
+            loadingText.textContent = 'STARTING UNITY WEBGL ENGINE...';
+            progressFill.style.width = '92%';
+
+            await createUnityInstance(canvas, {
+              dataUrl: dataUrl,
+              frameworkUrl: resolveUrl('Build/ultrakill.framework.js.unityweb'),
+              codeUrl: wasmUrl,
+              streamingAssetsUrl: resolveUrl('StreamingAssets'),
+              companyName: 'Hakita and Cake Logic',
+              productName: 'ULTRAKILL',
+              productVersion: '1.4'
+            }, (progress) => {
+              const pct = Math.min(100, Math.round(90 + progress * 10));
+              progressFill.style.width = pct + '%';
+              loadingText.textContent = `COMPILING ENGINE... ${Math.round(progress * 100)}%`;
+            });
+
+            overlay.style.display = 'none';
+            canvas.focus();
+          } catch (err) {
+            console.error('[ULTRAKILL Loader Error]:', err);
+            loadingText.style.color = '#fca5a5';
+            loadingText.textContent = 'Error loading ULTRAKILL: ' + (err && err.message ? err.message : String(err));
+          }
+        })();
+      })();
+    </script>
+  </body>
+</html>

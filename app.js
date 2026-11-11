@@ -235,7 +235,7 @@
   async function loadGamesCatalog() {
     try {
       let data = [];
-      const paths = ['assets/games.json?v=7.3', 'games.json?v=7.3', '../games.json?v=7.3', '/api/games'];
+      const paths = ['assets/games.json?v=8.6', 'games.json?v=8.6', '../games.json?v=8.6', '/api/games'];
       for (const p of paths) {
         try {
           const res = await fetch(p);
@@ -665,7 +665,7 @@
 
             const targetBase = new URL('./', currentUrl).href;
             const baseTag = '<base href="' + targetBase + '">';
-            const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
+            const shimScript = '<script>(function(){var tb=' + JSON.stringify(targetBase) + ';try{if(/^(about|blob):/i.test(document.URL||"")&&/^https?:/i.test(tb)){var du=new URL("index.html",tb).href;Object.defineProperty(document,"URL",{configurable:true,get:function(){return du;}});}}catch(e){}class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0){bStr=tb;}super(u,bStr);}}window.URL=PatchedURL;})();<' + '/script>';
             const fullHtml = html.includes('<head>')
               ? html.replace('<head>', '<head>' + baseTag + shimScript)
               : (baseTag + shimScript + html);
