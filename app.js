@@ -93,13 +93,14 @@
     state.currentTab = tabName;
 
     document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
-    document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.nav-tab-btn, .gv7-taskbar-btn').forEach(b => b.classList.remove('active'));
 
     const targetView = document.getElementById(`${tabName}-view`);
-    const targetBtn = document.querySelector(`.nav-tab-btn[data-tab="${tabName}"]`);
+    document.querySelectorAll(`.nav-tab-btn[data-tab="${tabName}"], .gv7-taskbar-btn[data-tab="${tabName}"]`).forEach(btn => {
+      btn.classList.add('active');
+    });
 
     if (targetView) targetView.classList.add('active');
-    if (targetBtn) targetBtn.classList.add('active');
 
     try {
       if (!window.location.hash || !window.location.hash.startsWith(`#${tabName}`)) {
@@ -108,9 +109,9 @@
     } catch (e) {}
 
     // Initializations when entering tabs
-    if (tabName === 'games' && state.games.length === 0) {
+    if ((tabName === 'games' || tabName === 'featured') && state.games.length === 0) {
       loadGamesCatalog();
-    } else if (tabName === 'editor' && !document.getElementById('code-textarea').value) {
+    } else if (tabName === 'editor' && document.getElementById('code-textarea') && !document.getElementById('code-textarea').value) {
       loadEditorTemplate('pong');
     } else if (tabName === 'movies') {
       if (typeof loadMoviesList === 'function') {
@@ -125,6 +126,10 @@
         initGamesV7Ai();
       }
     }
+
+    try {
+      window.dispatchEvent(new CustomEvent('gv7:tabchange', { detail: { tab: tabName } }));
+    } catch (e) {}
   };
 
   function checkHashRouting() {
@@ -144,7 +149,7 @@
       switchTab('ai');
       return;
     }
-    if (raw.startsWith('movies') || ['home', 'games', 'proxy', 'editor', 'settings', 'movies', 'music', 'ai'].includes(hash)) {
+    if (raw.startsWith('movies') || ['home', 'featured', 'games', 'proxy', 'editor', 'contact', 'settings', 'movies', 'music', 'ai'].includes(hash)) {
       if (raw.startsWith('movies')) {
         switchTab('movies');
         if (typeof handleMovieHashRoute === 'function') {
@@ -235,19 +240,28 @@
   async function loadGamesCatalog() {
     try {
       let data = [];
-      const paths = ['assets/games.json?v=8.6', 'games.json?v=8.6', '../games.json?v=8.6', '/api/games'];
+      const apiBase = typeof window.getGamesV7ApiOrigin === 'function' ? window.getGamesV7ApiOrigin() : '';
+      const paths = [];
+      if (apiBase) paths.push(`${apiBase}/api/games`);
+      paths.push('/api/games', 'assets/games.json?v=9.0', 'games.json?v=9.0', '../games.json?v=9.0');
       for (const p of paths) {
         try {
-          const res = await fetch(p);
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), 3500);
+          const res = await fetch(p, { signal: ctrl.signal });
+          clearTimeout(tid);
           if (res.ok) {
-            data = await res.json();
-            if (Array.isArray(data) && data.length > 0) break;
+            const parsed = await res.json();
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              data = parsed;
+              break;
+            }
           }
         } catch (err) {}
       }
       state.games = Array.isArray(data) ? data : [];
     } catch (e) {
-      console.warn('Local games.json fetch failed:', e);
+      console.warn('Games catalog fetch failed:', e);
     }
 
     const countElem = document.getElementById('stat-games-count');
@@ -256,6 +270,9 @@
     }
 
     filterAndRenderGames();
+    try {
+      window.dispatchEvent(new CustomEvent('gv7:gamesloaded', { detail: { games: state.games } }));
+    } catch (e) {}
 
     const raw = window.location.hash.replace(/^#/, '');
     if (raw.startsWith('play-') || raw.startsWith('game-')) {
@@ -269,6 +286,7 @@
       localStorage.setItem('gamesv7_favorites', JSON.stringify(state.favorites));
     } catch (e) {}
     updateFilterCounts();
+    try { window.dispatchEvent(new CustomEvent('gv7:userdata-changed')); } catch (e) {}
   }
 
   function saveRecentlyPlayed() {
@@ -276,7 +294,50 @@
       localStorage.setItem('gamesv7_recently_played', JSON.stringify(state.recentlyPlayed));
     } catch (e) {}
     updateFilterCounts();
+    try { window.dispatchEvent(new CustomEvent('gv7:userdata-changed')); } catch (e) {}
   }
+
+  // Platform bridge so gv7-platform.js (Featured, Accounts, Mod Menu) stays cleanly synced
+  window.__GV7_APP__ = {
+    getGames: () => state.games,
+    getFavorites: () => [...state.favorites],
+    getRecentlyPlayed: () => [...state.recentlyPlayed],
+    getState: () => state,
+    reloadCatalog: () => loadGamesCatalog(),
+    applySyncedData: (data) => {
+      if (!data || typeof data !== 'object') return;
+      if (Array.isArray(data.favorites)) {
+        state.favorites = [...new Set(data.favorites)];
+        try { localStorage.setItem('gamesv7_favorites', JSON.stringify(state.favorites)); } catch (e) {}
+      }
+      if (Array.isArray(data.recentlyPlayed)) {
+        state.recentlyPlayed = [...new Set(data.recentlyPlayed)];
+        try { localStorage.setItem('gamesv7_recently_played', JSON.stringify(state.recentlyPlayed)); } catch (e) {}
+      }
+      if (data.settings && typeof data.settings === 'object') {
+        if (data.settings.cloakKey && typeof window.applyTabCloak === 'function') {
+          window.applyTabCloak(data.settings.cloakKey);
+        }
+        if (data.settings.panicUrl) {
+          state.panicUrl = data.settings.panicUrl;
+          const pInput = document.getElementById('panic-url-input');
+          if (pInput) pInput.value = data.settings.panicUrl;
+        }
+        if (typeof data.settings.crtEnabled === 'boolean' && typeof window.toggleCrtEffect === 'function') {
+          window.toggleCrtEffect(data.settings.crtEnabled);
+          const crtEl = document.getElementById('toggle-crt-scanlines');
+          if (crtEl) crtEl.checked = data.settings.crtEnabled;
+        }
+        if (typeof data.settings.soundEnabled === 'boolean' && typeof window.toggleAudioBeeps === 'function') {
+          window.toggleAudioBeeps(data.settings.soundEnabled);
+          const sndEl = document.getElementById('toggle-retro-audio');
+          if (sndEl) sndEl.checked = data.settings.soundEnabled;
+        }
+      }
+      updateFilterCounts();
+      if (state.games.length > 0) filterAndRenderGames();
+    }
+  };
 
   window.recordRecentlyPlayed = function (gameId) {
     if (!gameId) return;
@@ -416,17 +477,17 @@
       // Step 1: Try relative root covers/
       img.src = `covers/${cleanCover.replace(/^covers\//, '')}`;
     } else if (step === 1) {
-      // Step 2: Try jsDelivr CDN from gamesssv7
-      img.src = `https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/${cleanCover}`;
+      // Step 2: Try Games V7 primary CDN mirror
+      img.src = `https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/${cleanCover}`;
     } else if (step === 2) {
-      // Step 3: Try jsDelivr CDN from somuuuu (for HTML5/Flash covers)
+      // Step 3: Try Games V7 secondary CDN mirror
+      img.src = `https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/${cleanCover}`;
+    } else if (step === 3) {
+      // Step 4: Try HTML5/Flash covers CDN mirror
       const fname = cleanCover.split('/').pop();
       img.src = `https://cdn.jsdelivr.net/gh/bokit-bip/somuuuu@main/covers/${fname}`;
-    } else if (step === 3) {
-      // Step 4: Try Tailscale public proxy
-      img.src = `https://pop-leave.tailcb4af7.ts.net/${cleanCover}`;
     } else {
-      // Step 5: High-tech retro SVG canvas tile (100% immune to network failure)
+      // Step 5: Offline-proof retro SVG tile (zero external dependency)
       img.onerror = null;
       img.src = generateRetroCoverDataUri(title, badgeText);
     }
@@ -499,7 +560,7 @@
             <button class="game-card-fav-btn ${isFav ? 'active' : ''}" data-gid="${gid}" onclick="event.stopPropagation(); toggleFavorite('${gid}')" title="${isFav ? 'Remove from favorites' : 'Add to favorites'}">
               <span class="fav-icon">${isFav ? '★' : '☆'}</span>
             </button>
-            <img class="game-card-thumb" src="${initialCover}" alt="${title}" loading="lazy" onerror="handleCoverError(this, '${cleanCover}', '${safeEscapedTitle}', '${badgeText}')" />
+            <img class="game-card-thumb" src="${initialCover}" alt="${title}" loading="lazy" decoding="async" onerror="handleCoverError(this, '${cleanCover}', '${safeEscapedTitle}', '${badgeText}')" />
           </div>
           <div class="game-card-content">
             <div>
@@ -612,21 +673,25 @@
       try { candidates.push(new URL(`games/${enc}/index.html`, base).href); } catch (e) {}
       try { candidates.push(new URL(`../games/${enc}/index.html`, base).href); } catch (e) {}
       candidates.push(
-        `https://raw.githubusercontent.com/bokit-bip/gamesv7iskewl/main/games/${enc}/index.html`,
         `https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/${enc}/index.html`,
-        `https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/${enc}/index.html`,
+        `https://raw.githubusercontent.com/bokit-bip/gamesv7iskewl/main/games/${enc}/index.html`,
         `https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/${enc}/index.html`,
-        `https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/${encodeURIComponent(gid)}.html`,
-        `http://localhost:8080/games/${enc}/index.html`,
-        `http://localhost:3000/games/${enc}/index.html`,
-        `https://pop-leave.tailcb4af7.ts.net/games/${enc}/index.html`
+        `https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/games/${enc}/index.html`,
+        `https://raw.githubusercontent.com/bokit-bip/gamesssv7/main/${encodeURIComponent(gid)}.html`
       );
+      try {
+        const optionalRelay = (localStorage.getItem('gamesv7_bokitcord_relay') || '').trim().replace(/\/+$/, '');
+        if (optionalRelay) candidates.push(`${optionalRelay}/games/${enc}/index.html`);
+      } catch (e) {}
 
       let loaded = false;
       for (const candUrl of candidates) {
         try {
           let currentUrl = candUrl;
-          let r = await fetch(currentUrl);
+          const fetchCtrl = new AbortController();
+          const fetchTid = setTimeout(() => fetchCtrl.abort(), 3000);
+          let r = await fetch(currentUrl, { signal: fetchCtrl.signal });
+          clearTimeout(fetchTid);
           if (r.ok) {
             let html = await r.text();
             // Validate response isn't a CDN package limit error or 404 message
@@ -1327,19 +1392,34 @@
   // 4. STEALTH PROXY BROWSER, WISP DIAGNOSTICS & FULLSCREEN
   // ========================================================================
 
-  function getProxyServerOrigin() {
+  function getGamesV7ApiOrigin() {
+    try {
+      const custom = (localStorage.getItem('gamesv7_api_origin') || '').trim().replace(/\/+$/, '');
+      if (custom) return custom;
+    } catch (e) {}
     try {
       const origin = window.location.origin;
-      if (origin && origin !== 'null' && !origin.includes('jsdelivr.net') && !origin.includes('github.io')) {
+      if (origin && origin !== 'null' && !origin.startsWith('file:') && !origin.includes('jsdelivr.net') && !origin.includes('github.io')) {
         return origin;
       }
     } catch (e) {}
-    return 'https://pop-leave.tailcb4af7.ts.net';
+    return '';
+  }
+  window.getGamesV7ApiOrigin = getGamesV7ApiOrigin;
+
+  function getProxyServerOrigin() {
+    const gv7 = getGamesV7ApiOrigin();
+    if (gv7) return gv7;
+    try {
+      const relay = (localStorage.getItem('gamesv7_bokitcord_relay') || '').trim().replace(/\/+$/, '');
+      if (relay) return relay;
+    } catch (e) {}
+    return '';
   }
 
-  // Wisp Multi-Server Registry
+  // Wisp Multi-Server Registry (Games V7 Native first — independent of BokitCord)
   const DEFAULT_WISP_SERVERS = [
-    { id: 'local', name: 'Tailscale / Bokit Relay', url: 'wss://pop-leave.tailcb4af7.ts.net/wisp/', pingUrl: '/wisp/ping', tag: 'OFFICIAL' },
+    { id: 'local', name: 'Games V7 Native Gateway', url: `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host || 'localhost:8080'}/wisp/`, pingUrl: '/wisp/ping', tag: 'GAMES V7' },
     { id: 'mercury', name: 'Mercury Workshop', url: 'wss://wisp.mercurywork.shop/', tag: 'COMMUNITY' },
     { id: 'ruby', name: 'Ruby Network', url: 'wss://ruby.rubynetwork.co/wisp/', tag: 'MIRROR' },
     { id: 'tomp', name: 'Tomp Edge Network', url: 'wss://tomp.app/wisp/', tag: 'MIRROR' },
@@ -1403,12 +1483,19 @@
     if (frame) {
       frame.style.display = 'block';
       const gatewaySelect = document.getElementById('proxy-gateway-select');
-      const chosenGateway = gatewaySelect ? gatewaySelect.value : 'tomp';
+      const chosenGateway = gatewaySelect ? gatewaySelect.value : 'gamesv7';
       const serverOrigin = getProxyServerOrigin();
 
       let proxyLaunchUrl = '';
-      if (chosenGateway === 'bokit') {
-        proxyLaunchUrl = `${serverOrigin}/browser/gateway?url=${encodeURIComponent(target)}`;
+      if (chosenGateway === 'gamesv7') {
+        proxyLaunchUrl = serverOrigin
+          ? `${serverOrigin}/browser/gateway?url=${encodeURIComponent(target)}`
+          : `https://tomp.app/service/${encodeURIComponent(target)}`;
+      } else if (chosenGateway === 'bokit') {
+        const relay = (localStorage.getItem('gamesv7_bokitcord_relay') || '').trim().replace(/\/+$/, '');
+        proxyLaunchUrl = relay
+          ? `${relay}/browser/gateway?url=${encodeURIComponent(target)}`
+          : (serverOrigin ? `${serverOrigin}/browser/gateway?url=${encodeURIComponent(target)}` : `https://tomp.app/service/${encodeURIComponent(target)}`);
       } else if (chosenGateway === 'ruby') {
         proxyLaunchUrl = `https://ruby.rubynetwork.co/service/${encodeURIComponent(target)}`;
       } else if (chosenGateway === 'mercury') {
@@ -1416,11 +1503,14 @@
       } else if (chosenGateway === 'direct') {
         proxyLaunchUrl = target;
       } else {
-        // Default to Tomp Cloud Public Unblocker (does not rely on BokitCord)
         proxyLaunchUrl = `https://tomp.app/service/${encodeURIComponent(target)}`;
       }
 
-      frame.src = proxyLaunchUrl;
+      if (window.GV7Platform && typeof window.GV7Platform.openInProxyTab === 'function') {
+        window.GV7Platform.openInProxyTab(target, proxyLaunchUrl, chosenGateway);
+      } else {
+        frame.src = proxyLaunchUrl;
+      }
     }
   };
 
@@ -1571,9 +1661,9 @@
         finish(false, 'Timeout');
       }, 3500);
 
-      // Prefer fast HTTP ping endpoint if same origin / local
-      if (server.pingUrl && (window.location.origin.includes('localhost') || window.location.origin.includes('pop-leave'))) {
-        fetch(server.pingUrl, { method: 'GET', cache: 'no-store' })
+      // Prefer fast HTTP ping endpoint if hosted on Games V7 backend
+      if (server.pingUrl && getGamesV7ApiOrigin()) {
+        fetch(`${getGamesV7ApiOrigin()}${server.pingUrl}`, { method: 'GET', cache: 'no-store' })
           .then(res => {
             clearTimeout(timer);
             if (res.ok) finish(true, 'OK');
@@ -2373,25 +2463,16 @@
       .replace(/'/g, '&#039;');
   }
 
-  const BOKITCORD_SERVER_ORIGIN = 'https://pop-leave.tailcb4af7.ts.net';
-
   function getServerOrigin() {
+    const gv7Origin = getGamesV7ApiOrigin();
+    if (gv7Origin) return gv7Origin;
     try {
-      const custom = localStorage.getItem('bokit_proxy_server') || localStorage.getItem('gamesv7_movie_proxy');
+      const custom = localStorage.getItem('gamesv7_movie_proxy') || localStorage.getItem('gamesv7_bokitcord_relay');
       if (custom && custom.trim()) {
-        return custom.trim().replace(/\/$/, '');
+        return custom.trim().replace(/\/+$/, '');
       }
     } catch (e) {}
-
-    if (typeof window !== 'undefined' && window.location) {
-      if ((window.location.protocol === 'http:' || window.location.protocol === 'https:') &&
-          window.location.origin && window.location.origin !== 'null' && 
-          !window.location.origin.includes('jsdelivr.net') && 
-          !window.location.origin.includes('github.io')) {
-        return window.location.origin;
-      }
-    }
-    return BOKITCORD_SERVER_ORIGIN;
+    return '';
   }
 
   function isServerHosted() {
@@ -3109,8 +3190,7 @@
         './movies_homepage.json',
         'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/assets/movies_homepage.json',
         'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/movies_homepage.json',
-        '/api/movies/homepage',
-        'https://pop-leave.tailcb4af7.ts.net/api/movies/homepage'
+        '/api/movies/homepage'
       ];
       for (const p of candidates) {
         try {
@@ -5907,20 +5987,13 @@
     }
 
     try {
-      let res;
-      try {
-        res = await fetch('/api/codes/redeem', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, username: 'gamesv7_user' })
-        });
-      } catch (errLocal) {
-        res = await fetch('http://localhost:3000/api/codes/redeem', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, username: 'gamesv7_user' })
-        });
-      }
+      const apiBase = getGamesV7ApiOrigin();
+      const redeemUrl = `${apiBase}/api/codes/redeem`;
+      const res = await fetch(redeemUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, username: 'gamesv7_user' })
+      });
 
       const data = await res.json();
       if (res.ok && data.success) {
@@ -6224,21 +6297,27 @@
       return;
     }
 
-    // 2. Fetch from local assets or remote mirrors
-    const candidates = [
+    // 2. Fetch from Games V7 independent backend or local assets (zero BokitCord dependency)
+    const customMusicBase = (function() {
+      try { return (localStorage.getItem('gamesv7_music_provider') || '').trim().replace(/\/+$/, ''); } catch (e) { return ''; }
+    })();
+    const apiBase = getGamesV7ApiOrigin();
+    const candidates = [];
+    if (customMusicBase) candidates.push(`${customMusicBase}/api/music/recommended`);
+    if (apiBase) candidates.push(`${apiBase}/api/music/recommended`);
+    candidates.push(
       'assets/recommended_music.json',
       './assets/recommended_music.json',
-      'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/assets/recommended_music.json',
-      '/api/music/recommended',
-      'https://pop-leave.tailcb4af7.ts.net/api/music/recommended'
-    ];
+      'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/assets/recommended_music.json'
+    );
 
     for (const p of candidates) {
       try {
         const res = await fetch(p);
         if (res.ok) {
-          const tracks = await res.json();
-          if (Array.isArray(tracks) && tracks.length > 0) {
+          const payload = await res.json();
+          const tracks = Array.isArray(payload) ? payload : (payload && Array.isArray(payload.tracks) ? payload.tracks : []);
+          if (tracks.length > 0) {
             gv7MusicState.recommendedTracks = tracks;
             if (gv7MusicState.activeView === 'home') {
               renderGamesV7MusicTracks(tracks, 'Recommended songs', tracks.length + ' songs');
@@ -6271,19 +6350,27 @@
 
     const qLower = query.toLowerCase();
 
-    // First try live Tailscale Funnel / backend search
+    // Try Games V7 independent music backend or custom configured music provider first
     let networkTracks = null;
-    const searchEndpoints = [
-      '/api/music/search?q=' + encodeURIComponent(query),
-      'https://pop-leave.tailcb4af7.ts.net/api/music/search?q=' + encodeURIComponent(query)
-    ];
+    const customMusicBase = (function() {
+      try { return (localStorage.getItem('gamesv7_music_provider') || '').trim().replace(/\/+$/, ''); } catch (e) { return ''; }
+    })();
+    const apiBase = getGamesV7ApiOrigin();
+    const searchEndpoints = [];
+    if (customMusicBase) searchEndpoints.push(`${customMusicBase}/api/music/search?q=${encodeURIComponent(query)}`);
+    if (apiBase) searchEndpoints.push(`${apiBase}/api/music/search?q=${encodeURIComponent(query)}`);
+    searchEndpoints.push('/api/music/search?q=' + encodeURIComponent(query));
 
     for (const url of searchEndpoints) {
       try {
         const res = await fetch(url);
         if (res.ok) {
-          networkTracks = await res.json();
-          if (Array.isArray(networkTracks) && networkTracks.length > 0) break;
+          const payload = await res.json();
+          const list = Array.isArray(payload) ? payload : (payload && Array.isArray(payload.tracks) ? payload.tracks : (payload && Array.isArray(payload.results) ? payload.results : []));
+          if (list.length > 0) {
+            networkTracks = list;
+            break;
+          }
         }
       } catch (e) {}
     }
@@ -6397,11 +6484,14 @@
       return rawUrl;
     }
     const cleanId = trackId || (rawUrl ? rawUrl.replace(/.*[?&]id=([^&]+).*/, '$1') : '');
-    const funnelBase = 'https://pop-leave.tailcb4af7.ts.net';
+    const customMusicBase = (function() {
+      try { return (localStorage.getItem('gamesv7_music_provider') || '').trim().replace(/\/+$/, ''); } catch (e) { return ''; }
+    })();
+    const musicBase = customMusicBase || getGamesV7ApiOrigin();
     if (rawUrl && rawUrl.startsWith('/')) {
-      return `${funnelBase}${rawUrl}`;
+      return `${musicBase}${rawUrl}`;
     }
-    return `${funnelBase}/api/music/stream?id=${encodeURIComponent(cleanId)}`;
+    return `${musicBase}/api/music/stream?id=${encodeURIComponent(cleanId)}`;
   }
 
   function playGamesV7Track(track, list, index) {
@@ -6440,16 +6530,32 @@
     highlightMusicPlayingRow();
 
     const streamUrl = resolveMusicStreamUrl(track.streamUrl, track.id);
+    const statusBanner = document.getElementById('music-status-banner');
+    if (statusBanner) statusBanner.classList.add('hidden');
     if (audio && streamUrl) {
       audio.src = streamUrl;
       audio.load();
       const p = audio.play();
       if (p !== undefined) {
         p.catch(err => {
-          console.warn('Funnel stream failed, trying Invidious audio fallback:', err);
+          console.warn('[GamesV7 Music] Primary stream failed, trying fallback provider:', err);
+          if (String(track.id || '').startsWith('itunes_')) {
+            if (statusBanner) {
+              statusBanner.className = 'music-status-banner error';
+              statusBanner.textContent = 'Audio preview could not be played. Try clicking Play again or pick another track.';
+              statusBanner.classList.remove('hidden');
+            }
+            return;
+          }
           const fallback = `https://invidious.nerdvpn.de/latest_version?id=${encodeURIComponent(track.id)}&itag=140`;
           audio.src = fallback;
-          audio.play().catch(e => console.warn('Fallback audio playback error:', e));
+          audio.play().catch(() => {
+            if (statusBanner) {
+              statusBanner.className = 'music-status-banner error';
+              statusBanner.textContent = 'Music provider unavailable right now. Search for any song to stream independent previews, or set a custom Music Provider in Settings.';
+              statusBanner.classList.remove('hidden');
+            }
+          });
         });
       }
     }
@@ -7536,9 +7642,31 @@
       temperature = 0.7;
     }
 
+    function setGv7AiStatus(stateType, labelText) {
+      const pill = document.querySelector('#ai-view .edurocks-status-pill');
+      const dot = document.querySelector('#ai-view .edurocks-status-dot');
+      if (pill) {
+        const spans = pill.querySelectorAll('span');
+        if (spans.length >= 2) spans[1].textContent = labelText;
+      }
+      if (dot) {
+        dot.style.background = stateType === 'online' ? '#10b981' : (stateType === 'busy' ? '#f59e0b' : '#ef4444');
+      }
+    }
+
+    function resolveGv7AiEndpoint() {
+      try {
+        const custom = (localStorage.getItem('gamesv7_ai_endpoint') || '').trim();
+        if (custom) return custom;
+      } catch (e) {}
+      const apiOrigin = getGamesV7ApiOrigin();
+      return `${apiOrigin}/api/ai/chat`;
+    }
+
+    setGv7AiStatus('busy', 'Thinking…');
+
     try {
-      const apiOrigin = getServerOrigin();
-      const endpoint = `${apiOrigin.replace(/\/$/, '')}/api/ai/chat`;
+      const endpoint = resolveGv7AiEndpoint();
 
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -7643,8 +7771,12 @@
         }
       } else {
         console.error('[Games V7 AI Error]:', err);
-        contentBody.innerHTML = `<div style="color: #ff2a4b; padding: 10px; background: rgba(255, 42, 75, 0.1); border-radius: 8px; border: 1px solid rgba(255, 42, 75, 0.3);">
-          <strong>⚠️ Bokit AI Request Failed:</strong> ${escapeHtml(err.message)}
+        setGv7AiStatus('offline', 'Unavailable');
+        contentBody.innerHTML = `<div style="color: #fca5a5; padding: 12px 14px; background: rgba(255, 42, 75, 0.1); border-radius: 10px; border: 1px solid rgba(255, 42, 75, 0.35); line-height: 1.5;">
+          <strong>⚠️ AI Assistant Unavailable:</strong> ${escapeHtml(err.message)}
+          <div style="margin-top:8px;font-size:12px;color:#cbd5e1;">
+            Configure <code>AI_API_KEY</code> in the Games V7 server <code>.env</code> file, or connect an independent AI API endpoint in <button type="button" onclick="switchTab('settings')" style="background:rgba(255,42,75,0.2);border:1px solid rgba(255,42,75,0.5);color:#fff;padding:2px 8px;border-radius:6px;cursor:pointer;font-size:11px;">Settings → Integrations</button>.
+          </div>
         </div>`;
       }
     } finally {
@@ -7652,6 +7784,10 @@
       gv7AiAbortController = null;
       if (btnSend) btnSend.classList.remove('hidden');
       if (btnStop) btnStop.classList.add('hidden');
+      const dot = document.querySelector('#ai-view .edurocks-status-dot');
+      if (dot && dot.style.background === 'rgb(245, 158, 11)') {
+        setGv7AiStatus('online', 'Ready');
+      }
       scrollGv7AiMessagesToBottom();
     }
   }
@@ -7661,6 +7797,34 @@
     gv7AiInitialized = true;
     loadGv7AiHistory();
     renderSavedGv7AiChat();
+
+    // Probe Games V7 AI backend health so user sees live Ready / Needs Key / Offline status
+    (async function checkAiHealth() {
+      const pill = document.querySelector('#ai-view .edurocks-status-pill');
+      const dot = document.querySelector('#ai-view .edurocks-status-dot');
+      const setLabel = (color, text) => {
+        if (dot) dot.style.background = color;
+        if (pill) {
+          const spans = pill.querySelectorAll('span');
+          if (spans.length >= 2) spans[1].textContent = text;
+        }
+      };
+      try {
+        const customEndpoint = (localStorage.getItem('gamesv7_ai_endpoint') || '').trim();
+        if (customEndpoint) {
+          setLabel('#10b981', 'Custom API');
+          return;
+        }
+        const res = await fetch(`${getGamesV7ApiOrigin()}/api/ai/health`);
+        if (res.ok) {
+          const info = await res.json();
+          if (info.configured) setLabel('#10b981', 'Ready');
+          else setLabel('#f59e0b', 'Needs API Key');
+          return;
+        }
+      } catch (e) {}
+      setLabel('#ef4444', 'Offline');
+    })();
 
     const btnSend = document.getElementById('ai-btn-send');
     const btnStop = document.getElementById('ai-btn-stop');

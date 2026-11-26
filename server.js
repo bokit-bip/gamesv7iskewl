@@ -1,27 +1,74 @@
 #!/usr/bin/env node
+'use strict';
 /**
- * GAMES V7 — STANDALONE LOCAL SERVER
- * Runs on http://localhost:8080
+ * GAMES V7 — INDEPENDENT FULL-STACK SERVER
+ * Runs on http://localhost:8080 (configurable via PORT env var)
+ *
+ * Strictly separate from BokitCord:
+ *  - Independent Accounts & Sync (scrypt + persistent JSON store)
+ *  - Owner / Co-Owner / Moderator Permissions (with optional BokitCord Bokit owner bridge)
+ *  - Real Online Visitor Presence Counter
+ *  - Private Bug Reports & Contact Inbox (Owner-only read/manage)
+ *  - Independent Built-in Web Proxy Gateway (with SSRF protection & compression)
+ *  - Independent Music Catalog, Search & Audio Streamer
+ *  - Independent Configurable AI Assistant Gateway (env-var API key, never exposed to client)
+ *  - Zero external npm dependencies
  */
 
 process.env.UV_THREADPOOL_SIZE = '64';
 
-// Top-level crash guards for upstream network/socket errors
 process.on('uncaughtException', (err) => {
-  console.error('[Process UncaughtException]:', err && err.message ? err.message : err);
+  console.error('[GamesV7 UncaughtException]:', err && err.message ? err.message : err);
 });
 process.on('unhandledRejection', (reason) => {
-  console.error('[Process UnhandledRejection]:', reason);
+  console.error('[GamesV7 UnhandledRejection]:', reason);
 });
 
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
+const crypto = require('crypto');
 const { exec } = require('child_process');
 
-const PORT = parseInt(process.env.PORT, 10) || 8080;
 const ROOT_DIR = __dirname;
-const SHARED_DIR = path.resolve(__dirname, '..', 'dead bokitware');
+
+// Lightweight zero-dependency .env loader (does not override already-set env vars)
+(function loadDotEnv() {
+  try {
+    const envPath = path.join(ROOT_DIR, '.env');
+    if (!fs.existsSync(envPath)) return;
+    const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+      const eq = line.indexOf('=');
+      if (eq === -1) continue;
+      const key = line.slice(0, eq).trim();
+      let val = line.slice(eq + 1).trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      if (key && process.env[key] === undefined) {
+        process.env[key] = val;
+      }
+    }
+  } catch (e) {
+    console.error('[GamesV7 .env] Load warning:', e.message);
+  }
+})();
+
+const store = require('./backend/store');
+const presence = require('./backend/presence');
+const proxyGateway = require('./backend/proxy');
+const musicBackend = require('./backend/music');
+
+const PORT = parseInt(process.env.PORT, 10) || 8080;
+const BOKITCORD_API_URL = (process.env.BOKITCORD_API_URL || '').trim().replace(/\/+$/, '');
+const AI_API_URL = (process.env.AI_API_URL || 'https://integrate.api.nvidia.com/v1/chat/completions').trim();
+const AI_DEFAULT_MODEL = (process.env.AI_MODEL || 'nvidia/nemotron-3-ultra-550b-a55b').trim();
+const AI_VISION_MODEL = (process.env.AI_VISION_MODEL || 'nvidia/nemotron-3.5-super-vl-120b-a12b').trim();
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -35,6 +82,9 @@ const MIME_TYPES = {
   '.gif': 'image/gif',
   '.webp': 'image/webp',
   '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
   '.wasm': 'application/wasm',
   '.data': 'application/octet-stream',
   '.nes': 'application/octet-stream',
@@ -44,14 +94,285 @@ const MIME_TYPES = {
   '.chd': 'application/octet-stream',
   '.bin': 'application/octet-stream',
   '.cue': 'text/plain',
-  '.swf': 'application/x-shockwave-flash'
+  '.swf': 'application/x-shockwave-flash',
+  '.mp3': 'audio/mpeg',
+  '.m4a': 'audio/mp4',
+  '.ogg': 'audio/ogg',
+  '.wav': 'audio/wav',
 };
 
-const server = http.createServer((req, res) => {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', '*');
+const COMPRESSIBLE_EXTS = new Set(['.html', '.css', '.js', '.json', '.svg', '.txt', '.xml']);
+
+// Simple in-memory sliding-window rate limiter
+const rateBuckets = new Map();
+function checkRateLimit(bucketKey, maxHits, windowMs) {
+  const now = Date.now();
+  let arr = rateBuckets.get(bucketKey);
+  if (!arr) {
+    arr = [];
+    rateBuckets.set(bucketKey, arr);
+  }
+  while (arr.length && now - arr[0] > windowMs) arr.shift();
+  if (arr.length >= maxHits) {
+    const retryAfterSec = Math.max(1, Math.ceil((windowMs - (now - arr[0])) / 1000));
+    return { allowed: false, retryAfterSec };
+  }
+  arr.push(now);
+  if (rateBuckets.size > 5000) {
+    const firstKey = rateBuckets.keys().next().value;
+    if (firstKey) rateBuckets.delete(firstKey);
+  }
+  return { allowed: true, retryAfterSec: 0 };
+}
+
+function getClientIp(req) {
+  const fwd = req.headers['x-forwarded-for'];
+  if (fwd) return String(fwd).split(',')[0].trim();
+  return req.socket && req.socket.remoteAddress ? String(req.socket.remoteAddress) : 'unknown';
+}
+
+function sendJson(req, res, statusCode, payload, extraHeaders = {}) {
+  if (res.headersSent) return;
+  const raw = Buffer.from(JSON.stringify(payload), 'utf8');
+  const acceptEnc = String(req.headers['accept-encoding'] || '').toLowerCase();
+  const headers = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    ...extraHeaders,
+  };
+  if (raw.length >= 1024 && acceptEnc.includes('gzip')) {
+    const gz = zlib.gzipSync(raw, { level: 4 });
+    headers['Content-Encoding'] = 'gzip';
+    headers['Content-Length'] = gz.length;
+    res.writeHead(statusCode, headers);
+    res.end(gz);
+  } else {
+    headers['Content-Length'] = raw.length;
+    res.writeHead(statusCode, headers);
+    res.end(raw);
+  }
+}
+
+function readJsonBody(req, maxBytes = 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks = [];
+    req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > maxBytes) {
+        reject(new Error('Request payload too large'));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      const raw = Buffer.concat(chunks).toString('utf8').trim();
+      if (!raw) return resolve({});
+      try {
+        resolve(JSON.parse(raw));
+      } catch (e) {
+        reject(new Error('Invalid JSON payload'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+function extractToken(req) {
+  const auth = req.headers.authorization || '';
+  if (auth.startsWith('Bearer ')) return auth.slice(7).trim();
+  if (req.headers['x-gamesv7-token']) return String(req.headers['x-gamesv7-token']).trim();
+  // Cookie fallback
+  const cookie = req.headers.cookie || '';
+  const m = cookie.match(/(?:^|;\s*)gv7_token=([a-f0-9]{32,128})/i);
+  return m ? m[1] : '';
+}
+
+function getAuthContext(req) {
+  const token = extractToken(req);
+  if (!token) return { token: '', user: null, safeUser: null };
+  const user = store.getUserByToken(token);
+  return { token, user, safeUser: user ? store.sanitizeUser(user) : null };
+}
+
+function requireAuth(req, res) {
+  const ctx = getAuthContext(req);
+  if (!ctx.user) {
+    sendJson(req, res, 401, { ok: false, error: 'Authentication required' });
+    return null;
+  }
+  return ctx;
+}
+
+function requireStaff(req, res, requiredPerm = null) {
+  const ctx = requireAuth(req, res);
+  if (!ctx) return null;
+  const role = ctx.safeUser.role;
+  const isStaff = role === 'owner' || role === 'co-owner' || role === 'moderator';
+  if (!isStaff) {
+    sendJson(req, res, 403, { ok: false, error: 'Staff access required' });
+    return null;
+  }
+  if (requiredPerm === 'owner_only' && role !== 'owner') {
+    sendJson(req, res, 403, { ok: false, error: 'Owner permission required' });
+    return null;
+  }
+  if (requiredPerm && requiredPerm !== 'owner_only' && !ctx.safeUser.permissions[requiredPerm]) {
+    sendJson(req, res, 403, { ok: false, error: `Missing permission: ${requiredPerm}` });
+    return null;
+  }
+  return ctx;
+}
+
+function roleRank(role) {
+  if (role === 'owner') return 3;
+  if (role === 'co-owner') return 2;
+  if (role === 'moderator') return 1;
+  return 0;
+}
+
+function fetchJsonUrl(targetUrl, headers = {}, timeoutMs = 6000) {
+  return new Promise((resolve, reject) => {
+    let u;
+    try {
+      u = new URL(targetUrl);
+    } catch (e) {
+      return reject(new Error('Invalid URL'));
+    }
+    const client = u.protocol === 'https:' ? https : http;
+    const req = client.get(
+      {
+        hostname: u.hostname,
+        port: u.port || (u.protocol === 'https:' ? 443 : 80),
+        path: u.pathname + u.search,
+        headers,
+        timeout: timeoutMs,
+      },
+      (res) => {
+        let body = '';
+        res.on('data', (c) => (body += c));
+        res.on('end', () => {
+          try {
+            resolve({ status: res.statusCode, data: JSON.parse(body || '{}') });
+          } catch (e) {
+            resolve({ status: res.statusCode, data: null });
+          }
+        });
+      }
+    );
+    req.on('timeout', () => req.destroy(new Error('Timeout')));
+    req.on('error', reject);
+  });
+}
+
+function getAiApiKey() {
+  return (process.env.AI_API_KEY || process.env.NVIDIA_API_KEY || '').trim();
+}
+
+function sanitizeAccountData(input, existing = store.defaultUserData()) {
+  const base = { ...store.defaultUserData(), ...(existing || {}) };
+  if (!input || typeof input !== 'object') return base;
+
+  const out = { ...base };
+  if (Array.isArray(input.favorites)) {
+    out.favorites = [...new Set(input.favorites.map((x) => String(x).slice(0, 120)))].slice(0, 500);
+  }
+  if (Array.isArray(input.recentlyPlayed)) {
+    out.recentlyPlayed = [...new Set(input.recentlyPlayed.map((x) => String(x).slice(0, 120)))].slice(0, 100);
+  }
+  if (Array.isArray(input.bookmarks)) {
+    out.bookmarks = input.bookmarks
+      .filter((b) => b && typeof b === 'object' && b.url)
+      .slice(0, 80)
+      .map((b) => ({
+        id: String(b.id || crypto.randomBytes(4).toString('hex')).slice(0, 40),
+        name: String(b.name || b.url).trim().slice(0, 60),
+        url: String(b.url).trim().slice(0, 500),
+        icon: String(b.icon || '🌐').slice(0, 8),
+        desc: String(b.desc || '').trim().slice(0, 40),
+      }));
+  }
+  if (input.gameProgress && typeof input.gameProgress === 'object' && !Array.isArray(input.gameProgress)) {
+    const cleanProg = { ...(base.gameProgress || {}) };
+    for (const [k, v] of Object.entries(input.gameProgress).slice(0, 200)) {
+      const key = String(k).slice(0, 100);
+      if (v && typeof v === 'object') {
+        cleanProg[key] = v;
+      }
+    }
+    out.gameProgress = cleanProg;
+  }
+  if (input.settings && typeof input.settings === 'object') {
+    const s = input.settings;
+    const validPos = ['bottom', 'left', 'right'].includes(s.taskbarPosition) ? s.taskbarPosition : base.settings.taskbarPosition;
+    out.settings = {
+      ...base.settings,
+      taskbarPosition: validPos,
+      cloakKey: typeof s.cloakKey === 'string' ? s.cloakKey.slice(0, 40) : base.settings.cloakKey,
+      panicUrl: typeof s.panicUrl === 'string' ? s.panicUrl.slice(0, 300) : base.settings.panicUrl,
+      crtEnabled: typeof s.crtEnabled === 'boolean' ? s.crtEnabled : base.settings.crtEnabled,
+      soundEnabled: typeof s.soundEnabled === 'boolean' ? s.soundEnabled : base.settings.soundEnabled,
+      aiEndpoint: typeof s.aiEndpoint === 'string' ? s.aiEndpoint.slice(0, 300) : base.settings.aiEndpoint,
+      musicProvider: typeof s.musicProvider === 'string' ? s.musicProvider.slice(0, 300) : base.settings.musicProvider,
+    };
+  }
+  if (Array.isArray(input.musicLikes)) {
+    out.musicLikes = input.musicLikes.slice(0, 400);
+  }
+  if (Array.isArray(input.musicPlaylists)) {
+    out.musicPlaylists = input.musicPlaylists.slice(0, 50);
+  }
+  return out;
+}
+
+function safeResolveStaticPath(rootDir, reqPath) {
+  const cleanRel = reqPath.replace(/^\/+/, '');
+  if (!cleanRel || cleanRel.includes('\0')) return null;
+  // Never expose backend data, server source, or env files over static file serving
+  const lower = cleanRel.toLowerCase();
+  if (
+    lower === '.env' ||
+    lower.startsWith('.env.') ||
+    lower.startsWith('data/') ||
+    lower === 'data' ||
+    lower.startsWith('backend/') ||
+    lower === 'backend' ||
+    lower === 'server.js' ||
+    lower.startsWith('.git')
+  ) {
+    return null;
+  }
+  const resolved = path.resolve(rootDir, cleanRel);
+  const rootWithSep = rootDir.endsWith(path.sep) ? rootDir : rootDir + path.sep;
+  if (resolved !== rootDir && !resolved.startsWith(rootWithSep)) return null;
+  return resolved;
+}
+
+function loadGamesCatalog() {
+  const candidates = [
+    path.join(ROOT_DIR, 'assets', 'games.json'),
+    path.join(ROOT_DIR, 'games.json'),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) {
+      try {
+        const parsed = JSON.parse(fs.readFileSync(c, 'utf8'));
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {}
+    }
+  }
+  return [];
+}
+
+const server = http.createServer(async (req, res) => {
+  // CORS headers (allows standalone index.svg & cross-origin web hosting)
+  const origin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin, Accept-Encoding');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-GamesV7-Token');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -59,101 +380,816 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  let reqPath = decodeURIComponent(req.url.split('?')[0]);
+  let reqUrlObj;
+  try {
+    reqUrlObj = new URL(req.url || '/', `http://${req.headers.host || `localhost:${PORT}`}`);
+  } catch (e) {
+    return sendJson(req, res, 400, { ok: false, error: 'Malformed URL' });
+  }
+
+  let reqPath;
+  try {
+    reqPath = decodeURIComponent(reqUrlObj.pathname);
+  } catch (e) {
+    return sendJson(req, res, 400, { ok: false, error: 'Invalid URL encoding' });
+  }
   if (reqPath.startsWith('/games-v7')) {
     reqPath = reqPath.slice('/games-v7'.length) || '/';
   }
-  if (reqPath === '/' || reqPath === '') reqPath = '/index.html';
 
-  // API endpoint for VIP / Ad-Free code redemption
-  if (reqPath === '/api/codes/redeem') {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', () => {
-      try {
-        const payload = JSON.parse(body || '{}');
-        const code = (payload.code || '').trim();
-        const codesManager = require(path.join(SHARED_DIR, 'server', 'codes.js'));
-        const result = codesManager.redeemCode(code, payload.username || 'gamesv7_user', req.socket.remoteAddress || '');
-        res.writeHead(result.success ? 200 : 400, {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': '*'
+  const ip = getClientIp(req);
+
+  try {
+    // =========================================================================
+    // 1. HEALTH & PUBLIC SITE CONFIGURATION
+    // =========================================================================
+    if (reqPath === '/api/health' && req.method === 'GET') {
+      return sendJson(req, res, 200, {
+        ok: true,
+        service: 'Games V7',
+        version: '9.0',
+        independent: true,
+        aiConfigured: Boolean(getAiApiKey()),
+        online: presence.getOnlineCount().online,
+        uptimeSec: Math.round(process.uptime()),
+      });
+    }
+
+    if (reqPath === '/api/site/state' && req.method === 'GET') {
+      const cfg = store.getSiteConfig();
+      const activeAnnouncements = (cfg.announcements || []).filter((a) => a && a.active !== false);
+      return sendJson(req, res, 200, {
+        ok: true,
+        siteName: cfg.siteName || 'Games V7',
+        tagline: cfg.tagline || 'Skeletal Flowers Retro Arcade',
+        bannerText: cfg.bannerText || '',
+        maintenanceNotice: cfg.maintenanceNotice || '',
+        featured: cfg.featured,
+        announcements: activeAnnouncements,
+        hiddenGames: cfg.hiddenGames || [],
+        customGames: cfg.customGames || [],
+        online: presence.getOnlineCount().online,
+        updatedAt: cfg.updatedAt,
+      });
+    }
+
+    // =========================================================================
+    // 2. REAL ONLINE VISITOR PRESENCE COUNTER
+    // =========================================================================
+    if (reqPath === '/api/presence/count' && req.method === 'GET') {
+      return sendJson(req, res, 200, presence.getOnlineCount());
+    }
+
+    if (reqPath === '/api/presence/heartbeat' && req.method === 'POST') {
+      const body = await readJsonBody(req, 16 * 1024);
+      const result = presence.recordHeartbeat(body.sessionId, ip);
+      return sendJson(req, res, result.ok ? 200 : 400, result);
+    }
+
+    if (reqPath === '/api/presence/leave' && req.method === 'POST') {
+      const body = await readJsonBody(req, 16 * 1024);
+      const result = presence.removeSession(body.sessionId);
+      return sendJson(req, res, 200, result);
+    }
+
+    // =========================================================================
+    // 3. OPTIONAL ACCOUNTS & AUTHENTICATION
+    // =========================================================================
+    if (reqPath === '/api/auth/register' && req.method === 'POST') {
+      const rl = checkRateLimit(`register:${ip}`, 10, 15 * 60 * 1000);
+      if (!rl.allowed) {
+        return sendJson(req, res, 429, { ok: false, error: `Too many registrations. Retry in ${rl.retryAfterSec}s.` });
+      }
+      const body = await readJsonBody(req, 256 * 1024);
+      const rawUser = String(body.username || '').trim();
+      const username = rawUser.toLowerCase();
+      const password = String(body.password || '');
+      const displayName = String(body.displayName || rawUser).trim().slice(0, 32) || rawUser;
+
+      if (!/^[a-z0-9_.-]{3,24}$/i.test(username)) {
+        return sendJson(req, res, 400, { ok: false, error: 'Username must be 3–24 characters (letters, numbers, _, ., -).' });
+      }
+      if (password.length < 6 || password.length > 128) {
+        return sendJson(req, res, 400, { ok: false, error: 'Password must be between 6 and 128 characters.' });
+      }
+      if (username === store.OWNER_USERNAME) {
+        return sendJson(req, res, 403, { ok: false, error: 'This username is reserved for the official Games V7 owner.' });
+      }
+
+      const users = store.getAllUsers();
+      if (users.some((u) => u.username.toLowerCase() === username)) {
+        return sendJson(req, res, 409, { ok: false, error: 'Username is already taken.' });
+      }
+
+      const newUser = {
+        id: 'usr_' + crypto.randomBytes(8).toString('hex'),
+        username,
+        displayName,
+        passwordHash: store.hashPassword(password),
+        role: 'user', // Strictly non-privileged — self-promotion is impossible
+        permissions: store.defaultPermissionsForRole('user'),
+        banned: false,
+        banReason: '',
+        linkedBokitCord: false,
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        data: sanitizeAccountData(body.importData, store.defaultUserData()),
+      };
+
+      users.push(newUser);
+      store.saveAllUsers(users);
+      const token = store.createSession(newUser.id);
+      return sendJson(req, res, 201, {
+        ok: true,
+        token,
+        user: store.sanitizeUser(newUser),
+        data: newUser.data,
+      });
+    }
+
+    if (reqPath === '/api/auth/login' && req.method === 'POST') {
+      const rl = checkRateLimit(`login:${ip}`, 20, 10 * 60 * 1000);
+      if (!rl.allowed) {
+        return sendJson(req, res, 429, { ok: false, error: `Too many login attempts. Retry in ${rl.retryAfterSec}s.` });
+      }
+      const body = await readJsonBody(req, 64 * 1024);
+      const username = String(body.username || '').trim().toLowerCase();
+      const password = String(body.password || '');
+
+      const users = store.getAllUsers();
+      const user = users.find((u) => u.username.toLowerCase() === username);
+      if (!user) {
+        return sendJson(req, res, 401, { ok: false, error: 'Invalid username or password.' });
+      }
+      if (user.banned) {
+        return sendJson(req, res, 403, { ok: false, error: user.banReason ? `Account suspended: ${user.banReason}` : 'Account suspended.' });
+      }
+      if (!user.passwordHash) {
+        if (user.role === 'owner') {
+          return sendJson(req, res, 401, {
+            ok: false,
+            error: 'Owner local password is not set in GAMESV7_OWNER_PASSWORD. Sign in via the Official Bokit (BokitCord) Owner Verification tab or set GAMESV7_OWNER_PASSWORD in .env.',
+          });
+        }
+        return sendJson(req, res, 401, { ok: false, error: 'Password login unavailable for this account.' });
+      }
+      if (!store.verifyPassword(password, user.passwordHash)) {
+        return sendJson(req, res, 401, { ok: false, error: 'Invalid username or password.' });
+      }
+
+      user.lastLoginAt = new Date().toISOString();
+      store.saveAllUsers(users);
+      const token = store.createSession(user.id);
+      return sendJson(req, res, 200, {
+        ok: true,
+        token,
+        user: store.sanitizeUser(user),
+        data: user.data || store.defaultUserData(),
+      });
+    }
+
+    // Official Bokit Owner Verification Bridge (verifies a BokitCord session token server-side)
+    if (reqPath === '/api/auth/bokitcord-verify' && req.method === 'POST') {
+      const rl = checkRateLimit(`bcverify:${ip}`, 15, 10 * 60 * 1000);
+      if (!rl.allowed) {
+        return sendJson(req, res, 429, { ok: false, error: `Rate limit exceeded. Retry in ${rl.retryAfterSec}s.` });
+      }
+      if (!BOKITCORD_API_URL) {
+        return sendJson(req, res, 503, {
+          ok: false,
+          error: 'BokitCord verification bridge is not configured on this Games V7 server (set BOKITCORD_API_URL in .env).',
         });
-        res.end(JSON.stringify(result));
+      }
+      const body = await readJsonBody(req, 32 * 1024);
+      const bcToken = String(body.bokitCordToken || '').trim();
+      if (!bcToken || bcToken.length < 10) {
+        return sendJson(req, res, 400, { ok: false, error: 'Please provide a valid BokitCord session token.' });
+      }
+      try {
+        const verifyRes = await fetchJsonUrl(`${BOKITCORD_API_URL}/api/auth/me`, {
+          Authorization: `Bearer ${bcToken}`,
+          'User-Agent': 'GamesV7-OwnerBridge/1.0',
+        }, 6000);
+
+        if (verifyRes.status !== 200 || !verifyRes.data) {
+          return sendJson(req, res, 401, { ok: false, error: 'BokitCord rejected that session token.' });
+        }
+        const remoteUser = verifyRes.data.user || verifyRes.data;
+        const remoteUsername = String(remoteUser.username || '').trim().toLowerCase();
+        if (remoteUsername !== store.OWNER_USERNAME) {
+          return sendJson(req, res, 403, {
+            ok: false,
+            error: `Only the official "${store.OWNER_USERNAME}" BokitCord account can claim Games V7 Owner access.`,
+          });
+        }
+
+        const users = store.getAllUsers();
+        const owner = users.find((u) => u.username.toLowerCase() === store.OWNER_USERNAME);
+        if (!owner) {
+          return sendJson(req, res, 500, { ok: false, error: 'Owner record missing.' });
+        }
+        owner.role = 'owner';
+        owner.linkedBokitCord = true;
+        owner.lastLoginAt = new Date().toISOString();
+        store.saveAllUsers(users);
+        const token = store.createSession(owner.id);
+        return sendJson(req, res, 200, {
+          ok: true,
+          token,
+          user: store.sanitizeUser(owner),
+          data: owner.data || store.defaultUserData(),
+          verifiedVia: 'bokitcord',
+        });
       } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: err.message }));
-      }
-    });
-    return;
-  }
-
-  // API endpoint for games
-  if (reqPath === '/api/games') {
-    const candidates = [
-      path.join(ROOT_DIR, 'assets', 'games.json'),
-      path.join(ROOT_DIR, 'games.json'),
-      path.join(SHARED_DIR, 'public', 'games.json')
-    ];
-    for (const c of candidates) {
-      if (fs.existsSync(c)) {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        fs.createReadStream(c).pipe(res);
-        return;
+        return sendJson(req, res, 502, {
+          ok: false,
+          error: 'Could not reach BokitCord to verify token (Games V7 continues running independently).',
+        });
       }
     }
-  }
 
-  // API endpoint for movies homepage catalog
-  if (reqPath === '/api/movies/homepage' || reqPath === '/api/movies' || reqPath === '/movies_homepage.json') {
-    const candidates = [
-      path.join(ROOT_DIR, 'movies_homepage.json'),
-      path.join(ROOT_DIR, 'assets', 'movies_homepage.json'),
-      path.join(SHARED_DIR, 'movies_homepage.json'),
-      path.join(SHARED_DIR, 'public', 'movies_homepage.json')
-    ];
-    for (const c of candidates) {
-      if (fs.existsSync(c)) {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        fs.createReadStream(c).pipe(res);
-        return;
-      }
+    if (reqPath === '/api/auth/logout' && req.method === 'POST') {
+      const token = extractToken(req);
+      if (token) store.revokeSession(token);
+      return sendJson(req, res, 200, { ok: true });
     }
-  }
 
-  // API endpoint to download any game as a single standalone HTML file
-  if (reqPath === '/api/download-game' || reqPath === '/download-game') {
-    try {
-      const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost:8080'}`);
-      const gameId = urlObj.searchParams.get('id') || urlObj.searchParams.get('game');
+    if (reqPath === '/api/auth/me' && req.method === 'GET') {
+      const ctx = getAuthContext(req);
+      if (!ctx.user) {
+        return sendJson(req, res, 200, { ok: true, authenticated: false, user: null });
+      }
+      return sendJson(req, res, 200, {
+        ok: true,
+        authenticated: true,
+        user: ctx.safeUser,
+        data: ctx.user.data || store.defaultUserData(),
+      });
+    }
+
+    // =========================================================================
+    // 4. USER ACCOUNT DATA SYNC (Favorites, Progress, Bookmarks, Settings)
+    // =========================================================================
+    if (reqPath === '/api/account/data' && req.method === 'GET') {
+      const ctx = requireAuth(req, res);
+      if (!ctx) return;
+      return sendJson(req, res, 200, { ok: true, data: ctx.user.data || store.defaultUserData() });
+    }
+
+    if (reqPath === '/api/account/data' && (req.method === 'PUT' || req.method === 'POST')) {
+      const ctx = requireAuth(req, res);
+      if (!ctx) return;
+      const body = await readJsonBody(req, 512 * 1024);
+      const users = store.getAllUsers();
+      const idx = users.findIndex((u) => u.id === ctx.user.id);
+      if (idx === -1) return sendJson(req, res, 404, { ok: false, error: 'Account not found' });
+
+      const mergeMode = body.merge === true;
+      const incoming = body.data && typeof body.data === 'object' ? body.data : body;
+      let nextData;
+      if (mergeMode) {
+        const cur = users[idx].data || store.defaultUserData();
+        const mergedInput = {
+          favorites: [...new Set([...(cur.favorites || []), ...(Array.isArray(incoming.favorites) ? incoming.favorites : [])])],
+          recentlyPlayed: [...new Set([...(Array.isArray(incoming.recentlyPlayed) ? incoming.recentlyPlayed : []), ...(cur.recentlyPlayed || [])])],
+          bookmarks: [...(cur.bookmarks || []), ...(Array.isArray(incoming.bookmarks) ? incoming.bookmarks : [])],
+          gameProgress: { ...(cur.gameProgress || {}), ...(incoming.gameProgress || {}) },
+          settings: { ...(cur.settings || {}), ...(incoming.settings || {}) },
+          musicLikes: [...(cur.musicLikes || []), ...(Array.isArray(incoming.musicLikes) ? incoming.musicLikes : [])],
+          musicPlaylists: Array.isArray(incoming.musicPlaylists) && incoming.musicPlaylists.length ? incoming.musicPlaylists : (cur.musicPlaylists || []),
+        };
+        nextData = sanitizeAccountData(mergedInput, cur);
+      } else {
+        nextData = sanitizeAccountData(incoming, users[idx].data);
+      }
+
+      users[idx].data = nextData;
+      store.saveAllUsers(users);
+      return sendJson(req, res, 200, { ok: true, data: nextData });
+    }
+
+    // =========================================================================
+    // 5. PRIVATE BUG REPORT & CONTACT FORM (Write-only public; Owner-only read)
+    // =========================================================================
+    if (reqPath === '/api/reports' && req.method === 'POST') {
+      const rl = checkRateLimit(`reports:${ip}`, 5, 15 * 60 * 1000);
+      if (!rl.allowed) {
+        return sendJson(req, res, 429, {
+          ok: false,
+          error: `You've submitted several reports recently. Please wait ${rl.retryAfterSec}s before sending another.`,
+        });
+      }
+      const body = await readJsonBody(req, 64 * 1024);
+      // Honeypot spam trap: bots fill hidden `_hp` field; silently acknowledge without storing
+      if (body._hp && String(body._hp).trim().length > 0) {
+        return sendJson(req, res, 201, { ok: true, id: 'rep_ok', message: 'Report received.' });
+      }
+
+      const subject = String(body.subject || '').trim().slice(0, 140);
+      const categoryRaw = String(body.category || 'bug').trim().toLowerCase();
+      const category = ['bug', 'feature', 'feedback'].includes(categoryRaw) ? categoryRaw : 'bug';
+      const message = String(body.message || '').trim().slice(0, 4000);
+      const contact = String(body.contact || '').trim().slice(0, 140);
+
+      if (subject.length < 3) {
+        return sendJson(req, res, 400, { ok: false, error: 'Please enter a subject (at least 3 characters).' });
+      }
+      if (message.length < 10) {
+        return sendJson(req, res, 400, { ok: false, error: 'Please describe the issue or feedback (at least 10 characters).' });
+      }
+
+      const ctx = getAuthContext(req);
+      const reports = store.getReports();
+      const entry = {
+        id: 'rep_' + crypto.randomBytes(6).toString('hex'),
+        subject,
+        category,
+        message,
+        contact,
+        status: 'open',
+        ownerNote: '',
+        submittedBy: ctx.safeUser ? ctx.safeUser.username : 'guest',
+        pageContext: String(body.pageContext || '').slice(0, 120),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      reports.unshift(entry);
+      if (reports.length > 1000) reports.length = 1000;
+      store.saveReports(reports);
+
+      return sendJson(req, res, 201, {
+        ok: true,
+        id: entry.id,
+        message: 'Thank you! Your private report has been delivered directly to the Games V7 owner.',
+      });
+    }
+
+    // OWNER-ONLY: List private bug reports
+    if (reqPath === '/api/admin/reports' && req.method === 'GET') {
+      const ctx = requireStaff(req, res, 'owner_only');
+      if (!ctx) return;
+      const statusFilter = (reqUrlObj.searchParams.get('status') || 'all').toLowerCase();
+      let reports = store.getReports();
+      if (statusFilter !== 'all') {
+        reports = reports.filter((r) => r.status === statusFilter);
+      }
+      return sendJson(req, res, 200, { ok: true, reports, total: reports.length });
+    }
+
+    // OWNER-ONLY: Update report status (open | reviewed | resolved)
+    const reportPatchMatch = reqPath.match(/^\/api\/admin\/reports\/([a-zA-Z0-9_-]+)$/);
+    if (reportPatchMatch && req.method === 'PATCH') {
+      const ctx = requireStaff(req, res, 'owner_only');
+      if (!ctx) return;
+      const reportId = reportPatchMatch[1];
+      const body = await readJsonBody(req, 32 * 1024);
+      const reports = store.getReports();
+      const idx = reports.findIndex((r) => r.id === reportId);
+      if (idx === -1) return sendJson(req, res, 404, { ok: false, error: 'Report not found' });
+
+      if (body.status && ['open', 'reviewed', 'resolved'].includes(body.status)) {
+        reports[idx].status = body.status;
+      }
+      if (typeof body.ownerNote === 'string') {
+        reports[idx].ownerNote = body.ownerNote.trim().slice(0, 500);
+      }
+      reports[idx].updatedAt = new Date().toISOString();
+      store.saveReports(reports);
+      return sendJson(req, res, 200, { ok: true, report: reports[idx] });
+    }
+
+    // =========================================================================
+    // 6. GAMES V7 MOD MENU & OWNER / CO-OWNER ADMIN API
+    // =========================================================================
+    if (reqPath === '/api/admin/overview' && req.method === 'GET') {
+      const ctx = requireStaff(req, res);
+      if (!ctx) return;
+      const users = store.getAllUsers();
+      const cfg = store.getSiteConfig();
+      const isOwner = ctx.safeUser.role === 'owner';
+      const reports = isOwner ? store.getReports() : [];
+      return sendJson(req, res, 200, {
+        ok: true,
+        role: ctx.safeUser.role,
+        permissions: ctx.safeUser.permissions,
+        stats: {
+          online: presence.getOnlineCount().online,
+          totalUsers: users.length,
+          coOwners: users.filter((u) => u.role === 'co-owner').length,
+          moderators: users.filter((u) => u.role === 'moderator').length,
+          bannedUsers: users.filter((u) => u.banned).length,
+          activeAnnouncements: (cfg.announcements || []).filter((a) => a.active !== false).length,
+          hiddenGames: (cfg.hiddenGames || []).length,
+          openReports: isOwner ? reports.filter((r) => r.status === 'open').length : null,
+        },
+        siteConfig: cfg,
+      });
+    }
+
+    if (reqPath === '/api/admin/users' && req.method === 'GET') {
+      const ctx = requireStaff(req, res);
+      if (!ctx) return;
+      const users = store.getAllUsers().map(store.sanitizeUser);
+      return sendJson(req, res, 200, { ok: true, users });
+    }
+
+    // OWNER-ONLY: Assign or revoke Co-Owner / Moderator / User roles & permissions
+    const roleMatch = reqPath.match(/^\/api\/admin\/users\/([a-zA-Z0-9_-]+)\/role$/);
+    if (roleMatch && req.method === 'PATCH') {
+      const ctx = requireStaff(req, res, 'owner_only');
+      if (!ctx) return;
+      const targetId = roleMatch[1];
+      const body = await readJsonBody(req, 32 * 1024);
+      const nextRole = String(body.role || '').trim().toLowerCase();
+      if (!['user', 'moderator', 'co-owner'].includes(nextRole)) {
+        return sendJson(req, res, 400, { ok: false, error: 'Role must be "user", "moderator", or "co-owner".' });
+      }
+      const users = store.getAllUsers();
+      const target = users.find((u) => u.id === targetId);
+      if (!target) return sendJson(req, res, 404, { ok: false, error: 'User not found.' });
+      if (target.username.toLowerCase() === store.OWNER_USERNAME || target.role === 'owner') {
+        return sendJson(req, res, 403, { ok: false, error: 'Cannot alter the primary Games V7 Owner account role.' });
+      }
+
+      const defaults = store.defaultPermissionsForRole(nextRole);
+      const customPerms = body.permissions && typeof body.permissions === 'object' ? body.permissions : {};
+      target.role = nextRole;
+      target.permissions = {
+        ...defaults,
+        manageGames: typeof customPerms.manageGames === 'boolean' ? customPerms.manageGames : defaults.manageGames,
+        manageFeatured: typeof customPerms.manageFeatured === 'boolean' ? customPerms.manageFeatured : defaults.manageFeatured,
+        manageAnnouncements: typeof customPerms.manageAnnouncements === 'boolean' ? customPerms.manageAnnouncements : defaults.manageAnnouncements,
+        moderateUsers: typeof customPerms.moderateUsers === 'boolean' ? customPerms.moderateUsers : defaults.moderateUsers,
+        // Strictly owner-only capabilities can NEVER be delegated
+        manageRoles: false,
+        viewReports: false,
+        manageSiteSettings: false,
+      };
+      store.saveAllUsers(users);
+      return sendJson(req, res, 200, { ok: true, user: store.sanitizeUser(target) });
+    }
+
+    // Staff (moderateUsers): Ban or unban lower-ranked accounts
+    const modMatch = reqPath.match(/^\/api\/admin\/users\/([a-zA-Z0-9_-]+)\/moderate$/);
+    if (modMatch && req.method === 'PATCH') {
+      const ctx = requireStaff(req, res, 'moderateUsers');
+      if (!ctx) return;
+      const targetId = modMatch[1];
+      const body = await readJsonBody(req, 32 * 1024);
+      const users = store.getAllUsers();
+      const target = users.find((u) => u.id === targetId);
+      if (!target) return sendJson(req, res, 404, { ok: false, error: 'User not found.' });
+      if (roleRank(target.role) >= roleRank(ctx.safeUser.role)) {
+        return sendJson(req, res, 403, { ok: false, error: 'Cannot moderate an account with equal or higher rank.' });
+      }
+
+      target.banned = Boolean(body.banned);
+      target.banReason = target.banned ? String(body.reason || 'Moderated by Games V7 staff').trim().slice(0, 200) : '';
+      store.saveAllUsers(users);
+      return sendJson(req, res, 200, { ok: true, user: store.sanitizeUser(target) });
+    }
+
+    // Manage Featured Games Categories
+    if (reqPath === '/api/admin/featured' && req.method === 'PUT') {
+      const ctx = requireStaff(req, res, 'manageFeatured');
+      if (!ctx) return;
+      const body = await readJsonBody(req, 128 * 1024);
+      if (!body.categories || !Array.isArray(body.categories)) {
+        return sendJson(req, res, 400, { ok: false, error: 'Expected categories array.' });
+      }
+      const cleanCategories = body.categories.slice(0, 12).map((cat, i) => ({
+        id: String(cat.id || `cat-${i + 1}`).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 48),
+        title: String(cat.title || 'Featured').trim().slice(0, 60),
+        subtitle: String(cat.subtitle || '').trim().slice(0, 120),
+        gameIds: Array.isArray(cat.gameIds)
+          ? [...new Set(cat.gameIds.map((g) => String(g).trim().slice(0, 100)).filter(Boolean))].slice(0, 24)
+          : [],
+      }));
+      const saved = store.saveSiteConfig({ featured: { categories: cleanCategories } });
+      return sendJson(req, res, 200, { ok: true, featured: saved.featured });
+    }
+
+    // Manage Announcements
+    if (reqPath === '/api/admin/announcements' && req.method === 'POST') {
+      const ctx = requireStaff(req, res, 'manageAnnouncements');
+      if (!ctx) return;
+      const body = await readJsonBody(req, 32 * 1024);
+      const title = String(body.title || 'Announcement').trim().slice(0, 100);
+      const message = String(body.message || '').trim().slice(0, 500);
+      const tone = ['info', 'success', 'warning', 'alert'].includes(body.tone) ? body.tone : 'info';
+      if (message.length < 3) {
+        return sendJson(req, res, 400, { ok: false, error: 'Announcement message is too short.' });
+      }
+      const cfg = store.getSiteConfig();
+      const item = {
+        id: 'ann_' + crypto.randomBytes(5).toString('hex'),
+        title,
+        message,
+        tone,
+        active: true,
+        author: ctx.safeUser.displayName,
+        createdAt: new Date().toISOString(),
+      };
+      const list = [item, ...(cfg.announcements || [])].slice(0, 20);
+      store.saveSiteConfig({ announcements: list });
+      return sendJson(req, res, 201, { ok: true, announcement: item, announcements: list });
+    }
+
+    const annDelMatch = reqPath.match(/^\/api\/admin\/announcements\/([a-zA-Z0-9_-]+)$/);
+    if (annDelMatch && req.method === 'DELETE') {
+      const ctx = requireStaff(req, res, 'manageAnnouncements');
+      if (!ctx) return;
+      const annId = annDelMatch[1];
+      const cfg = store.getSiteConfig();
+      const next = (cfg.announcements || []).filter((a) => a.id !== annId);
+      store.saveSiteConfig({ announcements: next });
+      return sendJson(req, res, 200, { ok: true, announcements: next });
+    }
+
+    // Co-Owner / Owner: Manage Game Catalog Visibility & Custom Entries
+    if (reqPath === '/api/admin/games' && req.method === 'PUT') {
+      const ctx = requireStaff(req, res, 'manageGames');
+      if (!ctx) return;
+      const body = await readJsonBody(req, 128 * 1024);
+      const patch = {};
+      if (Array.isArray(body.hiddenGames)) {
+        patch.hiddenGames = [...new Set(body.hiddenGames.map((id) => String(id).trim().slice(0, 120)).filter(Boolean))].slice(0, 500);
+      }
+      if (Array.isArray(body.customGames)) {
+        patch.customGames = body.customGames.slice(0, 50).map((g) => ({
+          id: String(g.id || crypto.randomBytes(4).toString('hex')).slice(0, 80),
+          title: String(g.title || 'Custom Game').trim().slice(0, 80),
+          url: String(g.url || '').trim().slice(0, 500),
+          cover: String(g.cover || '').trim().slice(0, 500),
+          system: String(g.system || 'html5').trim().slice(0, 24),
+          description: String(g.description || '').trim().slice(0, 200),
+        }));
+      }
+      const saved = store.saveSiteConfig(patch);
+      return sendJson(req, res, 200, { ok: true, hiddenGames: saved.hiddenGames, customGames: saved.customGames });
+    }
+
+    // OWNER-ONLY: Site Settings & Branding Customization
+    if (reqPath === '/api/admin/settings' && req.method === 'PUT') {
+      const ctx = requireStaff(req, res, 'owner_only');
+      if (!ctx) return;
+      const body = await readJsonBody(req, 32 * 1024);
+      const patch = {};
+      if (typeof body.siteName === 'string' && body.siteName.trim()) {
+        patch.siteName = body.siteName.trim().slice(0, 48);
+      }
+      if (typeof body.tagline === 'string') {
+        patch.tagline = body.tagline.trim().slice(0, 80);
+      }
+      if (typeof body.bannerText === 'string') {
+        patch.bannerText = body.bannerText.trim().slice(0, 240);
+      }
+      if (typeof body.maintenanceNotice === 'string') {
+        patch.maintenanceNotice = body.maintenanceNotice.trim().slice(0, 240);
+      }
+      const saved = store.saveSiteConfig(patch);
+      return sendJson(req, res, 200, { ok: true, siteConfig: saved });
+    }
+
+    // =========================================================================
+    // 7. INDEPENDENT MUSIC API (Works without BokitCord)
+    // =========================================================================
+    if (reqPath === '/api/music/recommended' && req.method === 'GET') {
+      const tracks = musicBackend.loadRecommendedCatalog();
+      return sendJson(req, res, 200, { ok: true, tracks, provider: 'gamesv7-local' });
+    }
+
+    if (reqPath === '/api/music/search' && req.method === 'GET') {
+      const q = reqUrlObj.searchParams.get('q') || '';
+      const tracks = await musicBackend.searchMusic(q);
+      return sendJson(req, res, 200, { ok: true, query: q, tracks, results: tracks, provider: 'gamesv7-independent' });
+    }
+
+    if (reqPath === '/api/music/stream' && req.method === 'GET') {
+      const id = reqUrlObj.searchParams.get('id') || '';
+      if (!id) return sendJson(req, res, 400, { ok: false, error: 'Missing ?id=' });
+      return await musicBackend.handleMusicStream(req, res, id);
+    }
+
+    // =========================================================================
+    // 8. INDEPENDENT AI ASSISTANT GATEWAY (No hardcoded keys, no BokitCord dependency)
+    // =========================================================================
+    if (reqPath === '/api/ai/health' && req.method === 'GET') {
+      const configured = Boolean(getAiApiKey());
+      return sendJson(req, res, 200, {
+        ok: true,
+        status: configured ? 'ok' : 'unconfigured',
+        configured,
+        name: 'Games V7 AI Assistant',
+        provider: AI_API_URL.includes('nvidia.com') ? 'nvidia-nim' : 'custom-openai-compatible',
+        textModel: AI_DEFAULT_MODEL,
+        visionModel: AI_VISION_MODEL,
+      });
+    }
+
+    if (reqPath === '/api/ai/chat' && req.method === 'POST') {
+      const rl = checkRateLimit(`ai:${ip}`, 30, 5 * 60 * 1000);
+      if (!rl.allowed) {
+        return sendJson(req, res, 429, { error: `AI rate limit reached. Retry in ${rl.retryAfterSec}s.` });
+      }
+      const parsed = await readJsonBody(req, 4 * 1024 * 1024);
+      const apiKey = getAiApiKey();
+      if (!apiKey) {
+        return sendJson(req, res, 503, {
+          error: 'Games V7 AI backend is not configured yet. Set AI_API_KEY (or NVIDIA_API_KEY) in the server .env file, or configure a custom AI endpoint in Settings.',
+          code: 'AI_UNCONFIGURED',
+        });
+      }
+
+      let model = parsed.model || AI_DEFAULT_MODEL;
+      const rawMessages = Array.isArray(parsed.messages) ? parsed.messages.slice(-40) : [];
+      if (!rawMessages.length) {
+        return sendJson(req, res, 400, { error: 'messages array is required' });
+      }
+
+      const hasImage = rawMessages.some(
+        (msg) => Array.isArray(msg.content) && msg.content.some((part) => part && (part.type === 'image_url' || part.image_url))
+      );
+      if (hasImage && (!model || model === AI_DEFAULT_MODEL)) {
+        model = AI_VISION_MODEL;
+      }
+
+      const payload = {
+        model,
+        messages: rawMessages.map((m) => ({ role: m.role, content: m.content })),
+        temperature: Math.min(2, Math.max(0, Number(parsed.temperature) || 0.8)),
+        top_p: Math.min(1, Math.max(0.05, Number(parsed.top_p) || 0.95)),
+        max_tokens: Math.min(16384, Math.max(64, Number(parsed.max_tokens) || 4096)),
+        stream: parsed.stream !== false,
+      };
+      if (AI_API_URL.includes('nvidia.com')) {
+        payload.chat_template_kwargs = { enable_thinking: parsed.enable_thinking !== false };
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000);
+      req.on('close', () => controller.abort());
+
+      try {
+        const upstream = await fetch(AI_API_URL, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (!upstream.ok) {
+          const errTxt = await upstream.text();
+          return sendJson(req, res, upstream.status, { error: errTxt || `Upstream AI HTTP ${upstream.status}` });
+        }
+        if (!payload.stream) {
+          const data = await upstream.json();
+          return sendJson(req, res, 200, data);
+        }
+
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream; charset=utf-8',
+          'Cache-Control': 'no-cache, no-transform',
+          Connection: 'keep-alive',
+          'X-Accel-Buffering': 'no',
+        });
+        const reader = upstream.body.getReader();
+        const decoder = new TextDecoder();
+        req.on('close', () => { try { reader.cancel(); } catch (e) {} });
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          res.write(decoder.decode(value, { stream: true }));
+        }
+        res.end();
+      } catch (e) {
+        clearTimeout(timeoutId);
+        if (!res.headersSent) {
+          return sendJson(req, res, 502, { error: e.name === 'AbortError' ? 'AI request timed out.' : e.message });
+        }
+        res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`);
+        res.end();
+      }
+      return;
+    }
+
+    // =========================================================================
+    // 9. INDEPENDENT WEB PROXY GATEWAY & WISP PING
+    // =========================================================================
+    if (reqPath === '/wisp/ping' || reqPath === '/wisp') {
+      const isHttps = req.headers['x-forwarded-proto'] === 'https';
+      return sendJson(req, res, 200, {
+        status: 'online',
+        service: 'Games V7 Proxy & Wisp Gateway',
+        protocol: 'http-gateway+wisp',
+        wispUrl: `${isHttps ? 'wss' : 'ws'}://${req.headers.host || `localhost:${PORT}`}/wisp/`,
+        timestamp: new Date().toISOString(),
+        uptime: Math.round(process.uptime()),
+      });
+    }
+
+    if (
+      reqPath.startsWith('/browser/gateway') ||
+      reqPath.startsWith('/proxy/gateway') ||
+      reqPath.startsWith('/api/proxy') ||
+      reqPath.startsWith('/api/movies/proxy')
+    ) {
+      return proxyGateway.handleProxyRequest(req, res, '/browser/gateway?url=');
+    }
+
+    if (reqPath === '/browser/core.js' || reqPath === '/core.js') {
+      res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
+      res.end('/* Games V7 Proxy Runtime Stub */ (function(){})();');
+      return;
+    }
+
+    // =========================================================================
+    // 10. GAMES CATALOG, MOVIES CATALOG, VIP CODES & STANDALONE DOWNLOAD
+    // =========================================================================
+    if (reqPath === '/api/codes/redeem' && req.method === 'POST') {
+      const body = await readJsonBody(req, 16 * 1024);
+      const code = String(body.code || '').trim().toUpperCase();
+      if (!code) return sendJson(req, res, 400, { success: false, error: 'Please enter a code.' });
+
+      // Check local Games V7 VIP codes first (independent of BokitCord)
+      const localCodes = (process.env.GAMESV7_VIP_CODES || '')
+        .split(',')
+        .map((c) => c.trim().toUpperCase())
+        .filter(Boolean);
+      if (localCodes.includes(code)) {
+        return sendJson(req, res, 200, {
+          success: true,
+          active: true,
+          plan: 'Games V7 VIP',
+          expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+          message: 'Games V7 VIP Ad-Free unlocked!',
+        });
+      }
+
+      // Optional BokitCord relay if configured and reachable
+      if (BOKITCORD_API_URL) {
+        try {
+          const r = await fetch(`${BOKITCORD_API_URL}/api/codes/redeem`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, username: body.username || 'gamesv7_user' }),
+          });
+          const data = await r.json();
+          return sendJson(req, res, r.ok ? 200 : 400, data);
+        } catch (e) {}
+      }
+
+      return sendJson(req, res, 400, {
+        success: false,
+        error: 'Invalid or expired code.',
+      });
+    }
+
+    if (reqPath === '/api/games' && req.method === 'GET') {
+      const games = loadGamesCatalog();
+      const cfg = store.getSiteConfig();
+      const hidden = new Set(cfg.hiddenGames || []);
+      const merged = [
+        ...games.filter((g) => !hidden.has(g.id || g.folder)),
+        ...(cfg.customGames || []),
+      ];
+      return sendJson(req, res, 200, merged);
+    }
+
+    if (reqPath === '/api/movies/homepage' || reqPath === '/api/movies' || reqPath === '/movies_homepage.json') {
+      const candidates = [
+        path.join(ROOT_DIR, 'movies_homepage.json'),
+        path.join(ROOT_DIR, 'assets', 'movies_homepage.json'),
+      ];
+      for (const c of candidates) {
+        if (fs.existsSync(c)) {
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=300' });
+          fs.createReadStream(c).pipe(res);
+          return;
+        }
+      }
+      return sendJson(req, res, 200, { sections: [] });
+    }
+
+    if (reqPath === '/api/download-game' || reqPath === '/download-game') {
+      const gameId = reqUrlObj.searchParams.get('id') || reqUrlObj.searchParams.get('game');
       if (!gameId) {
         res.writeHead(400, { 'Content-Type': 'text/plain' });
-        res.end('Missing ?id= parameter');
-        return;
+        return res.end('Missing ?id= parameter');
       }
       const cleanFileName = gameId.replace(/[^a-zA-Z0-9_-]/g, '_') + '.html';
       const prebuiltLocal = path.join(ROOT_DIR, 'html-games', cleanFileName);
-      const prebuiltShared = path.join(SHARED_DIR, 'html-games', cleanFileName);
 
       let outputHtml = '';
       if (fs.existsSync(prebuiltLocal)) {
         outputHtml = fs.readFileSync(prebuiltLocal, 'utf8');
-      } else if (fs.existsSync(prebuiltShared)) {
-        outputHtml = fs.readFileSync(prebuiltShared, 'utf8');
       } else {
-        const candidates = [
-          path.join(ROOT_DIR, 'games.json'),
-          path.join(ROOT_DIR, 'assets', 'games.json'),
-          path.join(SHARED_DIR, 'public', 'games.json')
-        ];
-        let gamesList = [];
-        for (const c of candidates) {
-          if (fs.existsSync(c)) {
-            try { gamesList = JSON.parse(fs.readFileSync(c, 'utf8')); break; } catch (e) {}
-          }
-        }
-        const game = gamesList.find(g => (g.id || g.folder) === gameId) || { id: gameId, folder: gameId, title: gameId };
+        const gamesList = loadGamesCatalog();
+        const game = gamesList.find((g) => (g.id || g.folder) === gameId) || { id: gameId, folder: gameId, title: gameId };
         const folder = game.folder || game.id || gameId;
         const title = game.title || game.name || gameId;
         const safeTitle = (title || 'Arcade Game').replace(/[<>&"]/g, '');
@@ -168,284 +1204,139 @@ const server = http.createServer((req, res) => {
         let inlineHtml = '';
         if (!isEmulator) {
           const localIdx = path.join(ROOT_DIR, 'games', folder, 'index.html');
-          const sharedIdx = path.join(SHARED_DIR, 'games', folder, 'index.html');
           if (fs.existsSync(localIdx)) {
             try { inlineHtml = fs.readFileSync(localIdx, 'utf8'); } catch (e) {}
-          } else if (fs.existsSync(sharedIdx)) {
-            try { inlineHtml = fs.readFileSync(sharedIdx, 'utf8'); } catch (e) {}
           }
         }
-
         outputHtml = generateServerStandaloneGameHtml({
           id: game.id || gameId,
           folder,
           title: safeTitle,
           isEmulator,
           queryStr,
-          inlineHtml
+          inlineHtml,
         });
       }
 
       res.writeHead(200, {
         'Content-Type': 'text/html; charset=utf-8',
         'Content-Disposition': `attachment; filename="${cleanFileName}"`,
-        'Access-Control-Allow-Origin': '*'
       });
-      res.end(outputHtml);
-      return;
-    } catch (err) {
-      console.error('Download game API error:', err);
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.end('Server error generating standalone HTML file');
-      return;
+      return res.end(outputHtml);
     }
-  }
 
-  // Wisp Diagnostic & Ping endpoint
-  if (reqPath === '/wisp/ping' || reqPath === '/wisp') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    const isHttps = req.headers['x-forwarded-proto'] === 'https';
-    res.end(JSON.stringify({
-      status: 'online',
-      service: 'Games V7 Wisp Server',
-      protocol: 'wisp-v1',
-      transport: 'libcurl',
-      backend: 'scramjet',
-      wispUrl: `${isHttps ? 'wss' : 'ws'}://${req.headers.host || 'localhost:8080'}/wisp/`,
-      timestamp: new Date().toISOString(),
-      uptime: Math.round(process.uptime()),
-    }));
-    return;
-  }
+    // =========================================================================
+    // 11. STATIC FILE SERVER (Games V7 directory only — path-traversal protected, gzip)
+    // =========================================================================
+    let staticPath = reqPath === '/' || reqPath === '' ? '/index.html' : reqPath;
+    const candidates = [
+      safeResolveStaticPath(ROOT_DIR, staticPath),
+      safeResolveStaticPath(ROOT_DIR, path.join('html-games', staticPath)),
+      safeResolveStaticPath(ROOT_DIR, path.join('html-games', path.basename(staticPath))),
+    ].filter(Boolean);
 
-  // PNS Runtime Core JS stub for proxied TikTok sessions
-  if (reqPath === '/browser/core.js' || reqPath === '/core.js') {
-    res.writeHead(200, {
-      'Content-Type': 'application/javascript',
-      'Access-Control-Allow-Origin': '*',
-    });
-    res.end('/* [Scramjet] PNS Runtime Core stub */ (function(){})();');
-    return;
-  }
-
-  // NVIDIA Nemotron AI Assistant Gateway
-  if (reqPath.startsWith('/api/ai/')) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', '*');
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204);
-      res.end();
-      return;
-    }
-    if (reqPath === '/api/ai/health') {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        status: 'ok',
-        name: 'Bokit AI',
-        provider: 'nvidia-nim',
-        textModel: 'nvidia/nemotron-3-ultra-550b-a55b',
-        visionModel: 'nvidia/nemotron-3.5-super-vl-120b-a12b'
-      }));
-      return;
-    }
-    if (reqPath === '/api/ai/chat' && req.method === 'POST') {
-      let bodyData = '';
-      req.on('data', chunk => bodyData += chunk);
-      req.on('end', async () => {
-        try {
-          const parsed = JSON.parse(bodyData || '{}');
-          let model = parsed.model || 'nvidia/nemotron-3-ultra-550b-a55b';
-          const rawMessages = parsed.messages || [];
-
-          // Detect multimodal image content in messages
-          const hasImage = rawMessages.some(msg => {
-            if (Array.isArray(msg.content)) {
-              return msg.content.some(part => part && (part.type === 'image_url' || part.image_url));
-            }
-            return false;
-          });
-
-          if (hasImage && (!model || model.includes('nemotron-3-ultra'))) {
-            model = 'nvidia/nemotron-3.5-super-vl-120b-a12b';
-          }
-
-          const sanitizedMessages = rawMessages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          }));
-
-          const payload = {
-            model,
-            messages: sanitizedMessages,
-            temperature: Number(parsed.temperature) || 1,
-            top_p: Number(parsed.top_p) || 0.95,
-            max_tokens: Number(parsed.max_tokens) || 16384,
-            chat_template_kwargs: { enable_thinking: parsed.enable_thinking !== false },
-            stream: parsed.stream !== false
-          };
-          const apiKey = (parsed.apiKey && String(parsed.apiKey).trim()) || process.env.NVIDIA_API_KEY || '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';
-          const upstream = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if (!upstream.ok) {
-            const errTxt = await upstream.text();
-            res.writeHead(upstream.status, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: errTxt }));
-            return;
-          }
-          if (!payload.stream) {
-            const data = await upstream.json();
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(data));
-            return;
-          }
-          res.writeHead(200, {
-            'Content-Type': 'text/event-stream; charset=utf-8',
-            'Cache-Control': 'no-cache, no-transform',
-            'Connection': 'keep-alive',
-            'X-Accel-Buffering': 'no'
-          });
-          const reader = upstream.body.getReader();
-          const decoder = new TextDecoder();
-          req.on('close', () => { try { reader.cancel(); } catch (e) {} });
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            res.write(decoder.decode(value, { stream: true }));
-          }
-          res.end();
-        } catch (e) {
-          if (!res.headersSent) {
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: e.message }));
-          } else {
-            res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`);
-            res.end();
-          }
-        }
-      });
-      return;
-    }
-  }
-
-  // Handle Proxy Gateway
-  if (reqPath.startsWith('/browser/gateway') || reqPath.startsWith('/proxy/gateway') || reqPath.startsWith('/api/proxy') || reqPath.startsWith('/api/movies/proxy')) {
-    try {
-      if (!req.originalUrl) req.originalUrl = req.url || '';
-      if (!req.query) {
-        req.query = {};
-        if (req.url && req.url.includes('?')) {
-          try {
-            const u = new URL(req.url, `http://${req.headers.host || 'localhost:8080'}`);
-            for (const [k, v] of u.searchParams.entries()) {
-              req.query[k] = v;
-            }
-          } catch (e) {}
-        }
-      }
-      const scramjetPath = path.join(SHARED_DIR, 'proxy_scramjet.js');
-      if (fs.existsSync(scramjetPath)) {
-        return require(scramjetPath).handleProxyRequest(req, res);
-      }
-    } catch (e) {
-      console.error('Proxy error in Games V7 server:', e);
-    }
-  }
-
-  // Candidate paths to search
-  const candidates = [
-    path.join(ROOT_DIR, reqPath),
-    path.join(ROOT_DIR, 'html-games', reqPath),
-    path.join(ROOT_DIR, 'html-games', path.basename(reqPath)),
-    path.join(SHARED_DIR, reqPath),
-    path.join(SHARED_DIR, 'public', reqPath),
-    path.join(SHARED_DIR, 'data', reqPath),
-    path.join(SHARED_DIR, 'html-games', reqPath),
-    path.join(SHARED_DIR, 'html-games', path.basename(reqPath))
-  ];
-
-  let filePath = null;
-  for (const c of candidates) {
-    if (fs.existsSync(c) && fs.statSync(c).isFile()) {
-      filePath = c;
-      break;
-    }
-  }
-
-  // Handle directory index.html
-  if (!filePath) {
+    let filePath = null;
     for (const c of candidates) {
-      const idx = path.join(c, 'index.html');
-      if (fs.existsSync(idx) && fs.statSync(idx).isFile()) {
-        filePath = idx;
+      if (fs.existsSync(c) && fs.statSync(c).isFile()) {
+        filePath = c;
         break;
       }
     }
-  }
+    if (!filePath) {
+      for (const c of candidates) {
+        const idx = path.join(c, 'index.html');
+        if (fs.existsSync(idx) && fs.statSync(idx).isFile()) {
+          filePath = idx;
+          break;
+        }
+      }
+    }
 
-  if (!filePath) {
-    res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(`<!DOCTYPE html><html><body style="background:#06070a;color:#fff;font-family:monospace;padding:40px;"><h2>404 Not Found</h2><p>${reqPath}</p></body></html>`);
-    return;
-  }
+    if (!filePath) {
+      res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(
+        `<!DOCTYPE html><html><body style="background:#06070a;color:#fff;font-family:monospace;padding:40px;"><h2>404 Not Found</h2><p>${String(reqPath).replace(/[<>&"]/g, '')}</p></body></html>`
+      );
+    }
 
-  const ext = path.extname(filePath).toLowerCase();
-  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const stat = fs.statSync(filePath);
+    const range = req.headers.range;
 
-  const stat = fs.statSync(filePath);
-  const range = req.headers.range;
+    // Cache-Control: short/revalidate for HTML, longer for static assets
+    const cacheControl =
+      ext === '.html' || ext === '.svg'
+        ? 'no-cache'
+        : reqUrlObj.searchParams.has('v')
+          ? 'public, max-age=86400'
+          : 'public, max-age=3600';
 
-  if (range) {
-    const parts = range.replace(/bytes=/, '').split('-');
-    const start = parseInt(parts[0], 10);
-    const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
-    const chunksize = (end - start) + 1;
+    if (range) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? Math.min(stat.size - 1, parseInt(parts[1], 10)) : stat.size - 1;
+      if (isNaN(start) || start >= stat.size || start > end) {
+        res.writeHead(416, { 'Content-Range': `bytes */${stat.size}` });
+        return res.end();
+      }
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': end - start + 1,
+        'Content-Type': contentType,
+        'Cache-Control': cacheControl,
+      });
+      if (req.method === 'HEAD') return res.end();
+      return fs.createReadStream(filePath, { start, end }).pipe(res);
+    }
 
-    res.writeHead(206, {
-      'Content-Range': `bytes ${start}-${end}/${stat.size}`,
-      'Accept-Ranges': 'bytes',
-      'Content-Length': chunksize,
-      'Content-Type': contentType
-    });
-    fs.createReadStream(filePath, { start, end }).pipe(res);
-  } else {
+    const acceptEnc = String(req.headers['accept-encoding'] || '').toLowerCase();
+    const shouldGzip =
+      req.method !== 'HEAD' &&
+      COMPRESSIBLE_EXTS.has(ext) &&
+      stat.size >= 1024 &&
+      stat.size <= 15 * 1024 * 1024 &&
+      acceptEnc.includes('gzip');
+
     const headers = {
-      'Content-Length': stat.size,
       'Content-Type': contentType,
       'Accept-Ranges': 'bytes',
-      'Access-Control-Allow-Origin': '*'
+      'Cache-Control': cacheControl,
     };
-    if (req.url.includes('download=1') || req.url.includes('download=true')) {
+    if (reqUrlObj.searchParams.get('download') === '1' || reqUrlObj.searchParams.get('download') === 'true') {
       headers['Content-Disposition'] = `attachment; filename="${path.basename(filePath)}"`;
     }
-    res.writeHead(200, headers);
-    fs.createReadStream(filePath).pipe(res);
+
+    if (shouldGzip) {
+      headers['Content-Encoding'] = 'gzip';
+      res.writeHead(200, headers);
+      fs.createReadStream(filePath).pipe(zlib.createGzip({ level: 4 })).pipe(res);
+    } else {
+      headers['Content-Length'] = stat.size;
+      res.writeHead(200, headers);
+      if (req.method === 'HEAD') return res.end();
+      fs.createReadStream(filePath).pipe(res);
+    }
+  } catch (err) {
+    console.error(`[GamesV7 Server Error] ${req.method} ${reqPath}:`, err.message);
+    if (!res.headersSent) {
+      sendJson(req, res, 500, { ok: false, error: err.message || 'Internal server error' });
+    }
   }
 });
 
-// Initialize Wisp WebSocket Server on http server if available
-try {
-  const wispPath = path.join(SHARED_DIR, 'wisp_server.js');
-  if (fs.existsSync(wispPath)) {
-    require(wispPath).createWispServer(server);
-  }
-} catch (e) {
-  console.error('[WISP ERROR]:', e);
-}
-
 server.listen(PORT, '0.0.0.0', () => {
   console.log('====================================================');
-  console.log(`  🎮 Games V7 — Skeletal Flowers Retro Arcade`);
+  console.log('  🎮 Games V7 — Skeletal Flowers Retro Arcade');
   console.log(`  🌐 Local Server:   http://localhost:${PORT}`);
   console.log(`  📡 Network Access: http://127.0.0.1:${PORT}`);
+  console.log(`  🤖 AI Gateway:     ${getAiApiKey() ? 'Configured' : 'Unconfigured (set AI_API_KEY in .env)'}`);
+  console.log(`  👑 Owner Account:  ${store.OWNER_USERNAME}`);
   console.log('====================================================');
   console.log('  Press Ctrl+C to stop the server anytime.\n');
 
-  // Open default browser if running in desktop graphical session
-  if (process.env.DISPLAY) {
+  if (process.env.DISPLAY && !process.env.NO_BROWSER_OPEN) {
     exec(`xdg-open http://localhost:${PORT}/ >/dev/null 2>&1 || true`);
   }
 });
@@ -453,7 +1344,7 @@ server.listen(PORT, '0.0.0.0', () => {
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`\n[ERROR]: Port ${PORT} is already in use by another process.`);
-    console.error(`Please run 'run.sh' which automatically frees port ${PORT}, or kill the process manually.\n`);
+    console.error(`Run './run.sh' to free port ${PORT}, or choose another PORT in .env.\n`);
     process.exit(1);
   } else {
     console.error('[SERVER ERROR]:', err);
@@ -472,7 +1363,7 @@ function generateServerStandaloneGameHtml(params) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
-  <title id="page-title">${safeTitle}</title>
+  <title id="page-title">${safeTitle} — Games V7</title>
   <link id="page-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 87.3 78'%3E%3Cpath fill='%230066da' d='m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z'/%3E%3Cpath fill='%2300ac47' d='M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44A9.06 9.06 0 0 0 0 53h27.5z'/%3E%3Cpath fill='%23ea4335' d='m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z'/%3E%3Cpath fill='%2300832d' d='M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z'/%3E%3Cpath fill='%232684fc' d='M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5L72.35 24.7c-.8-1.4-1.95-2.5-3.3-3.3L55.3 45.2z'/%3E%3Cpath fill='%23ffba00' d='m73.55 76.8-13.75-23.8H27.5l13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h23.3c1.6 0 3.15-.4 4.5-1.2z'/%3E%3C/svg%3E">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -484,50 +1375,30 @@ function generateServerStandaloneGameHtml(params) {
     @keyframes spin { to { transform: rotate(360deg); } }
     .hud-controls { position: fixed; bottom: 12px; right: 12px; display: flex; align-items: center; gap: 7px; z-index: 9999; opacity: 0.35; transition: opacity 0.2s, transform 0.2s; }
     .hud-controls:hover, .hud-controls:focus-within { opacity: 1; transform: translateY(-2px); }
-    .hud-btn, .hud-select { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 11px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 7px; color: #f1f5f9; font-size: 12px; font-weight: 500; cursor: pointer; backdrop-filter: blur(8px); text-decoration: none; user-select: none; transition: background 0.15s; }
+    .hud-btn, .hud-select { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 11px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 7px; color: #f1f5f9; font-size: 12px; font-weight: 500; cursor: pointer; backdrop-filter: blur(8px); text-decoration: none; user-select: none; }
     .hud-btn:hover { background: rgba(30, 41, 59, 0.95); border-color: rgba(255, 255, 255, 0.35); }
-    .hud-btn-direct { background: linear-gradient(135deg, rgba(255,42,75,0.3), rgba(168,85,247,0.3)); border-color: rgba(255,42,75,0.6); color: #ff9fb2; font-weight: 700; }
-    .hud-btn-direct:hover { background: linear-gradient(135deg, #ff2a4b, #a855f7); color: #fff; }
     .hud-btn-danger { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; }
-    .hud-btn-danger:hover { background: #ef4444; color: #fff; border-color: #ef4444; }
+    .hud-btn-danger:hover { background: #ef4444; color: #fff; }
     .hud-select { outline: none; font-family: inherit; background: #0f172a; }
   </style>
   <script>
-    const TAILSCALE_ORIGIN = "https://pop-leave.tailcb4af7.ts.net";
     const GAME_FOLDER = ${JSON.stringify(folder)};
     const IS_EMULATOR = ${JSON.stringify(isEmulator)};
     const QUERY_STR = ${JSON.stringify(queryStr)};
     const INLINE_B64 = ${JSON.stringify(inlineBase64)};
-
     const CLOAK_PRESETS = {
       drive: { title: "My Drive - Google Drive", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 87.3 78'%3E%3Cpath fill='%230066da' d='m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z'/%3E%3Cpath fill='%2300ac47' d='M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44A9.06 9.06 0 0 0 0 53h27.5z'/%3E%3Cpath fill='%23ea4335' d='m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l5.85 10.15z'/%3E%3Cpath fill='%2300832d' d='M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z'/%3E%3Cpath fill='%232684fc' d='M59.8 53H87.3c0-1.55-.4-3.1-1.2-4.5L72.35 24.7c-.8-1.4-1.95-2.5-3.3-3.3L55.3 45.2z'/%3E%3Cpath fill='%23ffba00' d='m73.55 76.8-13.75-23.8H27.5l13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h23.3c1.6 0 3.15-.4 4.5-1.2z'/%3E%3C/svg%3E" },
-      classroom: { title: "Classes", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%231e8e3e' d='M22 6.5C22 5.12 20.88 4 19.5 4h-15C3.12 4 2 5.12 2 6.5v11C2 18.88 3.12 20 4.5 20h15c1.38 0 2.5-1.12 2.5-2.5v-11z'/%3E%3Cpath fill='%23f9ab00' d='M20.5 5.5h-17c-.55 0-1 .45-1 1v11c0 .55.45 1 1 1h17c.55 0 1-.45 1-1v-11c0-.55-.45-1-1-1z'/%3E%3Ccircle cx='12' cy='10' r='2.2' fill='%23fff'/%3E%3Cpath fill='%23fff' d='M12 13.2c-2.4 0-4.5 1.2-4.5 2.5V17h9v-1.3c0-1.3-2.1-2.5-4.5-2.5z'/%3E%3Ccircle cx='7' cy='11' r='1.6' fill='%23fff' opacity='.8'/%3E%3Cpath fill='%23fff' opacity='.8' d='M7 13.5c-1.8 0-3.2.9-3.2 2V16h2.2v-.8c0-.6.4-1.2 1-1.7z'/%3E%3Ccircle cx='17' cy='11' r='1.6' fill='%23fff' opacity='.8'/%3E%3Cpath fill='%23fff' opacity='.8' d='M17 13.5c1.8 0 3.2.9 3.2 2V16H18v-.8c0-.6-.4-1.2-1-1.7z'/%3E%3C/svg%3E" },
-      docs: { title: "Untitled document - Google Docs", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234285F4' d='M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z'/%3E%3Cpath fill='%23A1C2FA' d='M14 2v6h6'/%3E%3Cpath fill='%23FFF' d='M8 12h8v1.5H8zm0 3h8v1.5H8zm0 3h5v1.5H8z'/%3E%3C/svg%3E" },
-      canvas: { title: "Dashboard", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23E02424' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z'/%3E%3C/svg%3E" },
-      desmos: { title: "Desmos | Graphing Calculator", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%232F7B18' d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z'/%3E%3C/svg%3E" },
-      default: { title: ${JSON.stringify(safeTitle)}, icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff2a4b'%3E%3Cpath d='M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 9 18.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z'/%3E%3C/svg%3E" }
+      classroom: { title: "Classes", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%231e8e3e' d='M22 6.5C22 5.12 20.88 4 19.5 4h-15C3.12 4 2 5.12 2 6.5v11C2 18.88 3.12 20 4.5 20h15c1.38 0 2.5-1.12 2.5-2.5v-11z'/%3E%3C/svg%3E" },
+      docs: { title: "Untitled document - Google Docs", icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%234285F4' d='M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6z'/%3E%3C/svg%3E" },
+      default: { title: ${JSON.stringify(safeTitle)}, icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff2a4b'%3E%3Cpath d='M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z'/%3E%3C/svg%3E" }
     };
-
     function setTabCloak(key) {
       const preset = CLOAK_PRESETS[key] || CLOAK_PRESETS.default;
       document.title = preset.title;
-      let favicon = document.getElementById('page-favicon');
-      if (!favicon) {
-        favicon = document.createElement('link');
-        favicon.id = 'page-favicon';
-        favicon.rel = 'icon';
-        document.head.appendChild(favicon);
-      }
-      favicon.href = preset.icon;
+      const favicon = document.getElementById('page-favicon');
+      if (favicon) favicon.href = preset.icon;
       try { localStorage.setItem('gamesv7_tab_cloak', key); } catch(e) {}
     }
-
-    (function() {
-      try {
-        const saved = localStorage.getItem('gamesv7_tab_cloak') || 'drive';
-        if (CLOAK_PRESETS[saved]) document.title = CLOAK_PRESETS[saved].title;
-      } catch(e) {}
-    })();
   </script>
 </head>
 <body>
@@ -538,292 +1409,58 @@ function generateServerStandaloneGameHtml(params) {
     </div>
     <iframe id="game-frame" src="about:blank" allow="fullscreen; gamepad; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="true"></iframe>
   </div>
-
   <div class="hud-controls">
     <select id="cloak-select" class="hud-select" onchange="setTabCloak(this.value)" title="Tab Cloak">
-      <option value="drive">🎭 Google Drive</option>
-      <option value="classroom">🎭 Google Classroom</option>
-      <option value="docs">🎭 Google Docs</option>
-      <option value="canvas">🎭 Canvas</option>
-      <option value="desmos">🎭 Desmos</option>
-      <option value="default">🎭 Cloak: Off</option>
+      <option value="drive">Google Drive</option>
+      <option value="classroom">Google Classroom</option>
+      <option value="docs">Google Docs</option>
+      <option value="default">Cloak: Off</option>
     </select>
-    <button class="hud-btn" onclick="launchAboutBlank()" title="about:blank (Hotkey: B)">
-      <span>about:blank (B)</span>
-    </button>
-    <button class="hud-btn" onclick="restartGame()" title="Reload (Hotkey: R)">
-      <span>Reload (R)</span>
-    </button>
-    <button class="hud-btn" onclick="toggleFullscreen()" title="Fullscreen (Hotkey: F)">
-      <span>Fullscreen (F)</span>
-    </button>
-    <button class="hud-btn hud-btn-danger" onclick="panicRedirect()" title="Panic (Hotkey: ~)">
-      <span>🚨 Panic (~)</span>
-    </button>
+    <button class="hud-btn" onclick="restartGame()">Reload (R)</button>
+    <button class="hud-btn" onclick="toggleFullscreen()">Fullscreen (F)</button>
+    <button class="hud-btn hud-btn-danger" onclick="panicRedirect()">Panic (~)</button>
   </div>
-
   <script>
     const frame = document.getElementById('game-frame');
     const overlay = document.getElementById('loading-overlay');
-    const cloakSelect = document.getElementById('cloak-select');
-    let effectiveGameUrl = '';
-
-    try {
-      const current = localStorage.getItem('gamesv7_tab_cloak') || 'drive';
-      if (cloakSelect && CLOAK_PRESETS[current]) cloakSelect.value = current;
-      setTabCloak(cloakSelect ? cloakSelect.value : 'drive');
-    } catch(e) {}
-
-    function makeShim(tb) {
-      return '<script>' +
-        '(function(){' +
-        'var tb=' + JSON.stringify(tb) + ';' +
-        'if(!tb.endsWith("/"))tb+="/";' +
-        'var OrigImage=window.Image;' +
-        'window.Image=function(w,h){var img=new OrigImage(w,h);img.crossOrigin="anonymous";return img;};' +
-        'var origCE=document.createElement.bind(document);' +
-        'document.createElement=function(t,o){var el=origCE(t,o);if(t&&t.toLowerCase()==="img"){try{el.crossOrigin="anonymous";}catch(e){}}return el;};' +
-        'var OrigAudio=window.Audio;' +
-        'if(OrigAudio){window.Audio=function(s){var a=new OrigAudio();try{a.crossOrigin="anonymous";}catch(e){}if(s){if(typeof s==="string"&&!/^(https?:|data:|blob:)/i.test(s)){s=new URL(s,tb).href;}a.src=s;}return a;};}' +
-        'class PatchedURL extends URL{constructor(u,b){var bStr="";if(b){bStr=(typeof b==="object"&&b.href)?b.href:String(b);}if(!bStr||bStr.indexOf("blob:")===0||bStr.indexOf("about:")===0||bStr.indexOf("file:")===0){bStr=tb;}try{super(u,bStr);}catch(e){super(u,tb);}}}' +
-        'window.URL=PatchedURL;' +
-        'var origFetch=window.fetch;' +
-        'if(origFetch){window.fetch=function(inp,init){if(typeof inp==="string"){if(!/^(https?:|data:|blob:)/i.test(inp)){inp=new URL(inp,tb).href;}}else if(inp&&typeof inp==="object"&&inp.url){if(!/^(https?:|data:|blob:)/i.test(inp.url)){inp=new Request(new URL(inp.url,tb).href,inp);}}return origFetch.call(this,inp,init);};}' +
-        'var origXhrOpen=XMLHttpRequest.prototype.open;' +
-        'XMLHttpRequest.prototype.open=function(m,u){var args=Array.prototype.slice.call(arguments);if(typeof u==="string"&&!/^(https?:|data:|blob:)/i.test(u)){args[1]=new URL(u,tb).href;}return origXhrOpen.apply(this,args);};' +
-        'var pageLoaded=(document.readyState==="complete");' +
-        'window.addEventListener("load",function(){pageLoaded=true;},{capture:true});' +
-        'var origWinAEL=window.addEventListener.bind(window);' +
-        'window.addEventListener=function(t,l,o){if(t==="load"&&(pageLoaded||document.readyState==="complete")){setTimeout(function(){try{if(typeof l==="function")l.call(window,new Event("load"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("load"));}catch(e){}},15);}return origWinAEL(t,l,o);};' +
-        'var origOnload=null;' +
-        'Object.defineProperty(window,"onload",{get:function(){return origOnload;},set:function(fn){origOnload=fn;if(pageLoaded||document.readyState==="complete"){setTimeout(function(){try{if(typeof fn==="function")fn.call(window,new Event("load"));}catch(e){}},15);}},configurable:true});' +
-        'var domReady=(document.readyState==="interactive"||document.readyState==="complete");' +
-        'document.addEventListener("DOMContentLoaded",function(){domReady=true;},{capture:true});' +
-        'var origDocAEL=document.addEventListener.bind(document);' +
-        'document.addEventListener=function(t,l,o){if(t==="DOMContentLoaded"&&(domReady||document.readyState!=="loading")){setTimeout(function(){try{if(typeof l==="function")l.call(document,new Event("DOMContentLoaded"));else if(l&&typeof l.handleEvent==="function")l.handleEvent(new Event("DOMContentLoaded"));}catch(e){}},15);}return origDocAEL(t,l,o);};' +
-        '})();<' + '/script>';
-    }
-
+    const enc = encodeURIComponent(GAME_FOLDER);
     async function resolveAndLoadGame() {
-      const enc = encodeURIComponent(GAME_FOLDER);
-      const isFile = window.location.protocol === 'file:' || (document.baseURI && document.baseURI.startsWith('file:'));
-
-      if (IS_EMULATOR) {
-        const playerCandidates = [];
-        if (!isFile) {
-          const base = document.baseURI || window.location.href;
-          playerCandidates.push(new URL('emulator/player.html', base).href);
-          playerCandidates.push(new URL('../emulator/player.html', base).href);
-        }
-        playerCandidates.push('http://localhost:8080/emulator/player.html');
-        playerCandidates.push('http://127.0.0.1:8080/emulator/player.html');
-        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html');
-        playerCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/emulator/player.html');
-        playerCandidates.push(TAILSCALE_ORIGIN + '/emulator/player.html');
-
-        for (const p of playerCandidates) {
-          try {
-            const c = new AbortController();
-            const t = setTimeout(() => c.abort(), 1200);
-            const r = await fetch(p, { signal: c.signal });
-            clearTimeout(t);
-            if (r.ok) {
-              const html = await r.text();
-              effectiveGameUrl = p;
-              const targetBase = new URL('./', p).href;
-              const baseTag = '<base href="' + targetBase + '">';
-              const shim = makeShim(targetBase);
-              const injectScript = '<script>window.__INJECTED_QUERY__ = ' + JSON.stringify(QUERY_STR) + ';<' + '/script>';
-              const full = html.includes('<head>')
-                ? html.replace('<head>', '<head>' + baseTag + shim + injectScript)
-                : (baseTag + shim + injectScript + html);
-              frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
-              return;
-            }
-          } catch(e) {}
-        }
-        frame.src = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.svg?' + QUERY_STR;
-        return;
-      }
-
-      let inlineHtml = '';
-      if (INLINE_B64) {
-        try { inlineHtml = decodeURIComponent(escape(atob(INLINE_B64))); }
-        catch(e) { try { inlineHtml = atob(INLINE_B64); } catch(e2) {} }
-      }
-
-      // Check if inlineHtml already has a hardcoded http/https <base href="...">
-      let preExistingBase = '';
-      if (inlineHtml) {
-        const baseTagIdx = inlineHtml.toLowerCase().indexOf('<base');
-        if (baseTagIdx !== -1) {
-          const snippet = inlineHtml.slice(baseTagIdx, baseTagIdx + 400);
-          const hrefIdx = snippet.toLowerCase().indexOf('href=');
-          if (hrefIdx !== -1) {
-            const q = snippet[hrefIdx + 5];
-            if (q === '"' || q === "'") {
-              const endQ = snippet.indexOf(q, hrefIdx + 6);
-              if (endQ !== -1) {
-                const val = snippet.slice(hrefIdx + 6, endQ);
-                if (val.startsWith('http://') || val.startsWith('https://')) {
-                  preExistingBase = val;
-                }
-              }
-            }
-          }
-        }
-      }
-
-      let activeBase = '';
-      let fetchedHtml = '';
-
-      if (preExistingBase) {
-        activeBase = preExistingBase;
-      } else {
-        const baseCandidates = [];
-        if (!isFile) {
-          const base = document.baseURI || window.location.href;
-          baseCandidates.push(new URL('games/' + enc + '/', base).href);
-          baseCandidates.push(new URL('../games/' + enc + '/', base).href);
-        }
-        baseCandidates.push('http://localhost:8080/games/' + enc + '/');
-        baseCandidates.push('http://127.0.0.1:8080/games/' + enc + '/');
-        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/');
-        baseCandidates.push('https://cdn.jsdelivr.net/gh/bokit-bip/gamesssv7@main/games/' + enc + '/');
-        baseCandidates.push(TAILSCALE_ORIGIN + '/games/' + enc + '/');
-
-        for (const b of baseCandidates) {
-          try {
-            const probe = b.endsWith('/') ? b + 'index.html' : b + '/index.html';
-            const c = new AbortController();
-            const t = setTimeout(() => c.abort(), 1200);
-            const res = await fetch(probe, { signal: c.signal });
-            clearTimeout(t);
-            if (res.ok) {
-              const txt = await res.text();
-              if (txt.includes('Package size exceeded') || txt.includes('Cannot find "') || txt.trim().startsWith('404')) continue;
-              activeBase = b;
-              fetchedHtml = txt;
-              break;
-            }
-          } catch(e) {}
-        }
-        if (!activeBase) {
-          activeBase = 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/';
-        }
-      }
-
-      let rawHtml = (inlineHtml && inlineHtml.length > 50) ? inlineHtml : fetchedHtml;
-
-      if (!rawHtml) {
+      const candidates = IS_EMULATOR
+        ? ['http://localhost:8080/emulator/player.html', 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/emulator/player.html']
+        : ['http://localhost:8080/games/' + enc + '/index.html', 'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/games/' + enc + '/index.html'];
+      for (const url of candidates) {
         try {
-          const probe = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
           const c = new AbortController();
-          const t = setTimeout(() => c.abort(), 2500);
-          const res = await fetch(probe, { signal: c.signal });
+          const t = setTimeout(() => c.abort(), 1500);
+          const r = await fetch(url, { signal: c.signal });
           clearTimeout(t);
-          if (res.ok) rawHtml = await res.text();
+          if (r.ok) {
+            const html = await r.text();
+            const base = new URL('./', url).href;
+            const inject = IS_EMULATOR ? '<script>window.__INJECTED_QUERY__=' + JSON.stringify(QUERY_STR) + ';<' + '/script>' : '';
+            const full = html.includes('<head>') ? html.replace('<head>', '<head><base href="' + base + '">' + inject) : ('<base href="' + base + '">' + inject + html);
+            frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
+            return;
+          }
         } catch(e) {}
       }
-
-      if (rawHtml) {
-        effectiveGameUrl = activeBase;
-        const shim = makeShim(activeBase);
-        let full = rawHtml;
-        if (!preExistingBase) {
-          const baseTag = '<base href="' + activeBase + '">';
-          full = full.includes('<head>')
-            ? full.replace('<head>', '<head>' + baseTag + shim)
-            : (baseTag + shim + full);
-        } else {
-          full = full.includes('<head>')
-            ? full.replace('<head>', '<head>' + shim)
-            : (shim + full);
-        }
-        frame.src = URL.createObjectURL(new Blob([full], { type: 'text/html' }));
-        return;
-      }
-
-      effectiveGameUrl = activeBase.endsWith('/') ? activeBase + 'index.html' : activeBase + '/index.html';
-      frame.src = effectiveGameUrl;
+      frame.src = candidates[candidates.length - 1] + (IS_EMULATOR && QUERY_STR ? '?' + QUERY_STR : '');
     }
-
     resolveAndLoadGame();
-
     frame.addEventListener('load', () => {
-      if (frame.src && frame.src !== 'about:blank' && overlay) {
+      if (frame.src !== 'about:blank' && overlay) {
         overlay.style.opacity = '0';
-        overlay.style.visibility = 'hidden';
-        setTimeout(() => overlay.remove(), 400);
+        setTimeout(() => overlay.remove(), 350);
       }
-      try {
-        frame.focus();
-        if (frame.contentWindow) frame.contentWindow.focus();
-      } catch(e) {}
     });
-
-    function restartGame() {
-      if (frame) {
-        frame.src = 'about:blank';
-        setTimeout(() => { resolveAndLoadGame(); }, 80);
-      }
-    }
-
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
-    }
-
-    function panicRedirect() {
-      window.location.replace('https://classroom.google.com');
-    }
-
-    function launchAboutBlank() {
-      const win = window.open('about:blank', '_blank');
-      if (!win) { alert('Popout blocked.'); return; }
-      const curKey = (cloakSelect && cloakSelect.value) || 'drive';
-      const preset = CLOAK_PRESETS[curKey] || CLOAK_PRESETS.drive;
-      const targetSrc = (frame && frame.src && frame.src !== 'about:blank') ? frame.src : (effectiveGameUrl || (window.location.origin + '/games/' + GAME_FOLDER + '/index.html'));
-      const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + preset.title + '</title><link rel="icon" type="image/svg+xml" href="' + preset.icon + '"><style>body,html{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#0b0e14;}iframe{width:100%;height:100%;border:none;display:block;}</style></head><body><iframe src="' + targetSrc + '" allow="fullscreen; gamepad; autoplay; clipboard-write; encrypted-media"></iframe></body></html>';
-      win.document.open();
-      win.document.write(html);
-      win.document.close();
-    }
-
+    function restartGame() { frame.src = 'about:blank'; setTimeout(resolveAndLoadGame, 80); }
+    function toggleFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); else document.exitFullscreen(); }
+    function panicRedirect() { window.location.replace('https://classroom.google.com'); }
     window.addEventListener('keydown', (e) => {
-      if (e.key === '\`' || e.key === '~') {
-        e.preventDefault();
-        panicRedirect();
-      } else if ((e.key === 'b' || e.key === 'B') && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-        e.preventDefault();
-        launchAboutBlank();
-      } else if ((e.key === 'f' || e.key === 'F') && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-        toggleFullscreen();
-      } else if ((e.key === 'r' || e.key === 'R') && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-        restartGame();
-      }
+      if (e.key === '\`' || e.key === '~') { e.preventDefault(); panicRedirect(); }
+      else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+      else if (e.key === 'r' || e.key === 'R') restartGame();
     });
-  </script>
-
-  <!-- Direct Link Ad Integration -->
-  <script>
-    (function() {
-      var opened = false;
-      function openAd() {
-        if (opened) return;
-        opened = true;
-        try { window.open('https://uplcm.com/4/11930399', '_blank', 'noopener,noreferrer'); } catch(e) {}
-        ['click', 'touchstart', 'pointerdown', 'keydown'].forEach(function(evt) {
-          window.removeEventListener(evt, openAd);
-        });
-      }
-      ['click', 'touchstart', 'pointerdown', 'keydown'].forEach(function(evt) {
-        window.addEventListener(evt, openAd, { once: true });
-      });
-    })();
   </script>
 </body>
 </html>`;

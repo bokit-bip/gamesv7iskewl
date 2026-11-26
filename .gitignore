@@ -1,0 +1,6 @@
+# Games V7 — Ignore local secrets, runtime account/report data, and OS files
+.env
+data/
+*.tmp
+.DS_Store
+node_modules/

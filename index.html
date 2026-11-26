@@ -11,12 +11,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style-v8.css?v=8.4" />
+  <link rel="stylesheet" href="style-v8.css?v=9.0" />
   <link rel="stylesheet" href="vendor/katex/katex.min.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';" />
-  <script src="assets/movies_data.js?v=8.4"></script>
-  <script src="assets/music_data.js?v=8.4"></script>
+  <script src="assets/movies_data.js?v=9.0"></script>
+  <script src="assets/music_data.js?v=9.0"></script>
 </head>
-<body>
+<body data-taskbar-pos="bottom">
   <!-- CRT Scanlines Overlay -->
   <div id="crt-overlay" class="crt-overlay"></div>
 
@@ -25,30 +25,42 @@
     <div class="nav-brand" onclick="switchTab('home')">
       <img src="assets/skull-logo.svg" class="brand-flower-icon" alt="Games V7 Logo" />
       <div class="brand-label">
-        <span class="brand-title">GAMES V7</span>
-        <span class="brand-sub">SKELETAL FLOWERS</span>
+        <span class="brand-title" id="gv7-brand-title">GAMES V7</span>
+        <span class="brand-sub" id="gv7-brand-sub">SKELETAL FLOWERS</span>
       </div>
     </div>
 
-    <nav>
+    <nav aria-label="Primary Navigation">
       <ul class="nav-tabs">
         <li><button class="nav-tab-btn active" data-tab="home" onclick="switchTab('home')">HOME</button></li>
+        <li><button class="nav-tab-btn" data-tab="featured" onclick="switchTab('featured')">FEATURED</button></li>
         <li><button class="nav-tab-btn" data-tab="games" onclick="switchTab('games')">GAMES</button></li>
         <li><button class="nav-tab-btn" data-tab="movies" onclick="switchTab('movies')">MOVIES</button></li>
         <li><button class="nav-tab-btn" data-tab="music" onclick="switchTab('music')">MUSIC</button></li>
-        <li><button class="nav-tab-btn" data-tab="ai" onclick="switchTab('ai')">BOKIT AI</button></li>
+        <li><button class="nav-tab-btn" data-tab="ai" onclick="switchTab('ai')">AI</button></li>
         <li><button class="nav-tab-btn" data-tab="proxy" onclick="switchTab('proxy')">PROXY</button></li>
-        <li><button class="nav-tab-btn" data-tab="editor" onclick="switchTab('editor')">CODE EDITOR</button></li>
+        <li><button class="nav-tab-btn" data-tab="editor" onclick="switchTab('editor')">CODE</button></li>
+        <li><button class="nav-tab-btn" data-tab="contact" onclick="switchTab('contact')">REPORT</button></li>
         <li><button class="nav-tab-btn" data-tab="settings" onclick="switchTab('settings')">SETTINGS</button></li>
       </ul>
     </nav>
 
     <div class="nav-right">
+      <div class="gv7-online-pill" id="gv7-online-pill" title="Live active visitors on Games V7">
+        <span class="gv7-online-dot" id="gv7-online-dot"></span>
+        <span id="gv7-online-count">Connecting…</span>
+      </div>
+      <button type="button" class="nav-pill-btn gv7-mod-pill hidden" id="gv7-mod-btn" onclick="window.GV7Platform && window.GV7Platform.openModMenu()" title="Games V7 Mod Menu">
+        <span>🛡️ MOD MENU</span>
+      </button>
+      <button type="button" class="nav-pill-btn gv7-account-pill" id="gv7-account-btn" onclick="window.GV7Platform && window.GV7Platform.openAuthModal()" title="Games V7 Account">
+        <span id="gv7-account-btn-label">👤 SIGN IN</span>
+      </button>
       <button class="nav-pill-btn nav-pill-vip" id="btn-gamesv7-adfree" onclick="openAdfreeModal()" title="Enter VIP / Ad-Free Code">
-        <span id="label-gamesv7-vip">👑 ENTER CODE</span>
+        <span id="label-gamesv7-vip">👑 VIP</span>
       </button>
       <button class="nav-pill-btn nav-pill-panic" onclick="triggerPanic()" title="Panic Button (Hotkey: ~)">
-        <span>🚨 PANIC (~)</span>
+        <span>🚨 PANIC</span>
       </button>
       <button class="nav-pill-btn" onclick="openAboutBlankCloak()" title="Open entire portal in about:blank">
         <span>🎭 STEALTH</span>
@@ -56,13 +68,16 @@
     </div>
   </header>
 
+  <!-- Live Site Announcements Banner (Powered by Games V7 Mod Menu) -->
+  <div id="gv7-announcements-bar" class="gv7-announcements-bar hidden" role="region" aria-label="Site Announcements"></div>
+
   <!-- RETRO SPONSOR / AD BANNER (Removed when Ad-Free Code is Active) -->
   <div id="gamesv7-ad-banner" class="gamesv7-ad-banner" onclick="handleAdBannerClick(event)" style="cursor: pointer;">
     <div class="ad-banner-inner">
       <div class="ad-badge-label">ADVERTISEMENT</div>
       <div class="ad-content-wrap">
         <span class="ad-sparkle">✨</span>
-        <span class="ad-headline"><strong>BokitCord VIP Gaming:</strong> Play hundreds of arcade titles with zero interruptions &amp; ultrafast proxy!</span>
+        <span class="ad-headline"><strong>Games V7 VIP Pass:</strong> Enjoy ad-free arcade gaming across all 270+ retro &amp; modern titles!</span>
         <button class="btn-ad-upgrade" onclick="openAdfreeModal()">Go Ad-Free with Code 👑</button>
       </div>
       <button class="ad-close-hint" onclick="openAdfreeModal()" title="Remove ads with code">&times;</button>
@@ -103,11 +118,14 @@
               </div>
             </div>
 
-            <!-- Collections Button with Chromatic Aberration Arrow -->
-            <div>
-              <button class="retro-btn-collections" onclick="switchTab('games')" title="Browse All 220+ Games">
-                <span>COLLECTIONS</span>
+            <!-- Collections & Featured CTA Row -->
+            <div class="hero-cta-row">
+              <button class="retro-btn-collections" onclick="switchTab('featured')" title="Explore Featured Games">
+                <span>FEATURED GAMES</span>
                 <img src="assets/arrow_svg.svg" alt="Arrow" class="retro-arrow-icon" />
+              </button>
+              <button class="gv7-hero-secondary-btn" onclick="switchTab('games')" title="Browse All Games">
+                BROWSE ALL GAMES
               </button>
             </div>
           </div>
@@ -160,6 +178,29 @@
               <span class="stat-label">Live Code IDE</span>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         1.5 FEATURED GAMES TAB — CURATED SPOTLIGHT & CATEGORIES
+         ==================================================================== -->
+    <section id="featured-view" class="tab-view" aria-label="Featured Games">
+      <div class="gv7-page-shell">
+        <header class="gv7-featured-hero">
+          <div>
+            <span class="gv7-eyebrow">// CURATED GAMES V7 SPOTLIGHT</span>
+            <h2 class="gv7-section-heading">Featured Games</h2>
+            <p class="gv7-section-lead">Hand-picked arcade classics, retro console legends, and fan favorites ready to launch instantly.</p>
+          </div>
+          <div class="gv7-featured-hero-actions">
+            <button type="button" class="gv7-btn gv7-btn-primary" onclick="switchTab('games')">Browse Full Catalog</button>
+            <button type="button" class="gv7-btn gv7-btn-ghost" onclick="window.GV7Platform && window.GV7Platform.playRandomFeatured()">🎲 Surprise Me</button>
+          </div>
+        </header>
+        <div id="gv7-featured-cat-pills" class="gv7-featured-cat-pills"></div>
+        <div id="gv7-featured-container" class="gv7-featured-container">
+          <div class="gv7-loading-inline">Loading featured games…</div>
         </div>
       </div>
     </section>
@@ -824,110 +865,105 @@
             </div>
           </div>
           <div class="ai-footer-hint">
-            <span>Model: nvidia/nemotron-3-ultra-550b-a55b</span>
+            <span>Games V7 Independent AI Gateway</span>
             <span>•</span>
-            <span>Vision: Nemotron 3.5 Super VL</span>
-            <span>•</span>
-            <span>Reasoning Stream Enabled</span>
+            <span>Configure API in Server .env or Settings</span>
           </div>
         </footer>
       </div>
     </section>
-      </div>
-    </section>
 
     <!-- ====================================================================
-         3. PROXY TAB — STEALTH WEB BROWSER
+         3. REDESIGNED PROXY TAB — MODERN MULTI-TAB WEB BROWSER
          ==================================================================== -->
-    <section id="proxy-view" class="tab-view">
-      <div class="proxy-omnibar-box">
-        <span style="color:#10b981;font-size:16px;">🔒</span>
-        <input type="text" id="proxy-url-input" class="proxy-input" placeholder="Enter URL or search term (e.g. google.com, youtube.com)..." />
-        <select id="proxy-gateway-select" class="proxy-gateway-dropdown" title="Select unblocker gateway">
-          <option value="tomp" selected>🌐 Tomp Cloud (Public)</option>
-          <option value="bokit">⚡ Bokit Relay (Tailscale)</option>
-          <option value="ruby">💎 Ruby Edge Proxy</option>
-          <option value="mercury">🪐 Mercury Workshop</option>
-          <option value="direct">↗️ Direct Web Embed</option>
-        </select>
-        <button class="btn-proxy-go" onclick="launchProxyUrl()">ENTER ▶</button>
-        <button type="button" class="btn-proxy-ctrl" id="btn-ping-wisp" onclick="openWispPingModal()" title="Ping Wisp Servers (Latency Test)">⚡ PING WISP</button>
-        <button type="button" class="btn-proxy-ctrl" id="btn-proxy-fullscreen" onclick="toggleProxyFullscreen()" title="Toggle Fullscreen (F)">⛶ FULLSCREEN</button>
-        <div class="wisp-status-badge" id="wisp-status-pill" onclick="openWispPingModal()" title="Click to test &amp; configure Wisp server latency">
-          <span class="wisp-indicator-dot online"></span>
-          <span class="wisp-label">Wisp:</span>
-          <span class="wisp-ms" id="wisp-ping-val">--ms</span>
-        </div>
-      </div>
-
-      <div class="proxy-bookmarks-grid">
-        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://google.com')">
-          <span class="bookmark-icon">🌐</span>
-          <span class="bookmark-name">Google</span>
-          <span class="bookmark-desc">Search</span>
-        </div>
-        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://youtube.com')">
-          <span class="bookmark-icon">▶️</span>
-          <span class="bookmark-name">YouTube</span>
-          <span class="bookmark-desc">Videos</span>
-        </div>
-        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://discord.com')">
-          <span class="bookmark-icon">💬</span>
-          <span class="bookmark-name">Discord</span>
-          <span class="bookmark-desc">Chat</span>
-        </div>
-        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://www.tiktok.com/explore')">
-          <span class="bookmark-icon">🎵</span>
-          <span class="bookmark-name">TikTok</span>
-          <span class="bookmark-desc">Trending</span>
-        </div>
-        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://poki.com')">
-          <span class="bookmark-icon">🎮</span>
-          <span class="bookmark-name">Poki</span>
-          <span class="bookmark-desc">Web Games</span>
-        </div>
-        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://crazygames.com')">
-          <span class="bookmark-icon">🕹️</span>
-          <span class="bookmark-name">CrazyGames</span>
-          <span class="bookmark-desc">Online</span>
-        </div>
-        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://chess.com')">
-          <span class="bookmark-icon">♟️</span>
-          <span class="bookmark-name">Chess</span>
-          <span class="bookmark-desc">Board Game</span>
-        </div>
-        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://wikipedia.org')">
-          <span class="bookmark-icon">📚</span>
-          <span class="bookmark-name">Wikipedia</span>
-          <span class="bookmark-desc">Encyclopedia</span>
-        </div>
-        <div class="proxy-bookmark-card" onclick="openPresetProxy('https://github.com')">
-          <span class="bookmark-icon">🐙</span>
-          <span class="bookmark-name">GitHub</span>
-          <span class="bookmark-desc">Code</span>
-        </div>
-        <div class="proxy-bookmark-card" onclick="launchDaydream()">
-          <span class="bookmark-icon">✨</span>
-          <span class="bookmark-name">DayDream X</span>
-          <span class="bookmark-desc">ServiceWorker</span>
-        </div>
-      </div>
-
-      <!-- Proxy Viewport Container with floating header controls -->
-      <div id="proxy-viewport-container" class="proxy-viewport-wrapper">
-        <div class="proxy-viewport-header" id="proxy-viewport-header">
-          <div class="proxy-vp-title">
-            <span class="proxy-vp-indicator">●</span>
-            <span id="proxy-vp-active-url">Stealth Browser Active</span>
-          </div>
-          <div class="proxy-vp-controls">
-            <button class="proxy-vp-btn" onclick="proxyFrameReload()" title="Reload (R)">🔄 RELOAD</button>
-            <button class="proxy-vp-btn" onclick="toggleProxyFullscreen()" title="Toggle Fullscreen (F)">⛶ FULLSCREEN</button>
-            <button class="proxy-vp-btn" onclick="proxyFramePopout()" title="Pop out into new tab">↗ POPOUT</button>
-            <button class="proxy-vp-btn proxy-vp-close" onclick="closeProxyFrame()" title="Close viewport">✖ CLOSE</button>
+    <section id="proxy-view" class="tab-view" aria-label="Games V7 Web Proxy">
+      <div class="gv7-browser-shell">
+        <!-- Multi-Tab Strip -->
+        <div class="gv7-browser-tabstrip">
+          <div id="gv7-proxy-tabs" class="gv7-proxy-tabs" role="tablist"></div>
+          <button type="button" id="gv7-proxy-new-tab" class="gv7-proxy-newtab-btn" title="New Browser Tab">+</button>
+          <div class="gv7-browser-tabstrip-right">
+            <div class="wisp-status-badge" id="wisp-status-pill" onclick="openWispPingModal()" title="Test &amp; configure Wisp server latency">
+              <span class="wisp-indicator-dot online"></span>
+              <span class="wisp-label">Wisp:</span>
+              <span class="wisp-ms" id="wisp-ping-val">--ms</span>
+            </div>
           </div>
         </div>
-        <iframe id="proxy-frame" class="proxy-viewport-frame" allow="fullscreen; autoplay; encrypted-media"></iframe>
+
+        <!-- Browser Navigation & Omnibox Toolbar -->
+        <div class="gv7-browser-toolbar">
+          <div class="gv7-browser-nav-btns">
+            <button type="button" id="gv7-proxy-back" class="gv7-browser-icon-btn" title="Back" disabled>◀</button>
+            <button type="button" id="gv7-proxy-fwd" class="gv7-browser-icon-btn" title="Forward" disabled>▶</button>
+            <button type="button" id="gv7-proxy-reload" class="gv7-browser-icon-btn" title="Reload Tab">↻</button>
+            <button type="button" id="gv7-proxy-home" class="gv7-browser-icon-btn" title="New Tab / Speed Dial">⌂</button>
+          </div>
+
+          <div class="gv7-browser-omnibox">
+            <span class="gv7-omnibox-lock" title="Proxied Connection">🔒</span>
+            <input type="text" id="proxy-url-input" class="proxy-input" placeholder="Search or enter website URL (e.g. wikipedia.org, example.com)..." autocomplete="off" spellcheck="false" />
+            <button type="button" id="gv7-proxy-bookmark-cur" class="gv7-omnibox-star" title="Bookmark current site">☆</button>
+          </div>
+
+          <div class="gv7-browser-actions">
+            <select id="proxy-gateway-select" class="proxy-gateway-dropdown" title="Select Proxy Gateway">
+              <option value="gamesv7" selected>⚡ Games V7 Built-In</option>
+              <option value="tomp">🌐 Tomp Cloud</option>
+              <option value="ruby">💎 Ruby Edge</option>
+              <option value="mercury">🪐 Mercury</option>
+              <option value="direct">↗️ Direct Embed</option>
+              <option value="bokit">🔗 Optional Relay</option>
+            </select>
+            <button type="button" class="btn-proxy-go" onclick="launchProxyUrl()">GO</button>
+            <button type="button" class="gv7-browser-icon-btn" id="btn-proxy-fullscreen" onclick="toggleProxyFullscreen()" title="Fullscreen">⛶</button>
+            <button type="button" class="gv7-browser-icon-btn" onclick="proxyFramePopout()" title="Pop out">↗</button>
+          </div>
+        </div>
+
+        <!-- Subtle Top Loading Progress Bar -->
+        <div id="gv7-proxy-progress" class="gv7-proxy-progress"></div>
+
+        <!-- Clean Inline Error State -->
+        <div id="gv7-proxy-error" class="gv7-proxy-error hidden"></div>
+
+        <!-- Customizable Quick Bookmarks / Speed Dial (Shown on New Tab or Home) -->
+        <div id="gv7-proxy-speeddial" class="gv7-proxy-speeddial">
+          <div class="gv7-speeddial-header">
+            <div>
+              <h3>Games V7 Stealth Browser</h3>
+              <p>Fast multi-tab browsing powered by Games V7's built-in independent proxy gateway.</p>
+            </div>
+            <button type="button" id="gv7-btn-add-bookmark" class="gv7-btn gv7-btn-ghost">+ Add Bookmark</button>
+          </div>
+
+          <form id="gv7-bookmark-form" class="gv7-bookmark-form hidden">
+            <input type="text" id="gv7-bm-name" placeholder="Name (e.g. Wikipedia)" required maxlength="40" />
+            <input type="text" id="gv7-bm-url" placeholder="URL (e.g. https://wikipedia.org)" required maxlength="300" />
+            <input type="text" id="gv7-bm-icon" placeholder="Icon" value="🌐" maxlength="4" style="max-width:68px;text-align:center;" />
+            <button type="submit" class="gv7-btn gv7-btn-primary">Save</button>
+            <button type="button" id="gv7-bm-cancel" class="gv7-btn gv7-btn-ghost">Cancel</button>
+          </form>
+
+          <div id="gv7-proxy-bookmarks-grid" class="proxy-bookmarks-grid"></div>
+        </div>
+
+        <!-- Proxy Viewport Container -->
+        <div id="proxy-viewport-container" class="proxy-viewport-wrapper">
+          <div class="proxy-viewport-header" id="proxy-viewport-header">
+            <div class="proxy-vp-title">
+              <span class="proxy-vp-indicator">●</span>
+              <span id="proxy-vp-active-url">Games V7 Stealth Browser</span>
+            </div>
+            <div class="proxy-vp-controls">
+              <button type="button" class="proxy-vp-btn" onclick="proxyFrameReload()" title="Reload">↻ Reload</button>
+              <button type="button" class="proxy-vp-btn" onclick="toggleProxyFullscreen()" title="Fullscreen">⛶ Fullscreen</button>
+              <button type="button" class="proxy-vp-btn" onclick="proxyFramePopout()" title="Pop out">↗ Popout</button>
+              <button type="button" class="proxy-vp-btn proxy-vp-close" onclick="closeProxyFrame()" title="Return to Speed Dial">⌂ Home</button>
+            </div>
+          </div>
+          <iframe id="proxy-frame" class="proxy-viewport-frame" allow="fullscreen; autoplay; encrypted-media"></iframe>
+        </div>
       </div>
     </section>
 
@@ -987,68 +1023,213 @@
     </section>
 
     <!-- ====================================================================
-         5. SETTINGS TAB — TAB CLOAKING & CONTROLS
+         4.5 PRIVATE BUG REPORT & CONTACT TAB (OWNER-ONLY INBOX)
          ==================================================================== -->
-    <section id="settings-view" class="tab-view">
-      <div class="settings-card">
-        <h2 class="settings-section-title">TAB CLOAKING & STEALTH CONTROLS</h2>
-
-        <!-- Cloak Presets -->
-        <div class="settings-row">
-          <div class="settings-meta">
-            <span class="settings-label">🎭 Tab Cloak Preset</span>
-            <span class="settings-subtext">Disguises the browser tab's title and favicon to appear as an educational or productive app in your history and tabs.</span>
+    <section id="contact-view" class="tab-view" aria-label="Bug Report and Contact">
+      <div class="gv7-page-shell gv7-contact-shell">
+        <div class="gv7-contact-card">
+          <div class="gv7-contact-header">
+            <span class="gv7-eyebrow">// PRIVATE OWNER INBOX</span>
+            <h2 class="gv7-section-heading">Bug Reports &amp; Feedback</h2>
+            <p class="gv7-section-lead">
+              Spot a broken game, proxy issue, or have a suggestion for Games V7? Send a private message directly to the official Games V7 owner.
+            </p>
+            <div class="gv7-privacy-callout">
+              🔒 <strong>Private Submission:</strong> Reports are stored securely on the Games V7 server and are visible <strong>only</strong> to the official Games V7 owner account.
+            </div>
           </div>
-          <select id="settings-cloak-select" class="settings-select" onchange="applyTabCloak(this.value)">
-            <option value="drive">🎭 Google Drive</option>
-            <option value="classroom">🎭 Google Classroom</option>
-            <option value="docs">🎭 Google Docs</option>
-            <option value="canvas">🎭 Canvas LMS</option>
-            <option value="desmos">🎭 Desmos Calculator</option>
-            <option value="default">🎭 Cloak Off (Games V7)</option>
-          </select>
+
+          <form id="gv7-report-form" class="gv7-form-stack">
+            <!-- Spam protection honeypot (hidden from human visitors) -->
+            <input type="text" id="gv7-report-hp" name="_hp" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;opacity:0;pointer-events:none;" aria-hidden="true" />
+
+            <div class="gv7-form-grid-2">
+              <div class="gv7-field">
+                <label for="gv7-report-category">Category</label>
+                <select id="gv7-report-category" class="gv7-input">
+                  <option value="bug">🐛 Bug Report</option>
+                  <option value="feature">💡 Feature Suggestion</option>
+                  <option value="feedback">💬 General Feedback</option>
+                </select>
+              </div>
+              <div class="gv7-field">
+                <label for="gv7-report-contact">Contact Info <span class="gv7-optional">(Optional)</span></label>
+                <input type="text" id="gv7-report-contact" class="gv7-input" placeholder="Discord handle, email, or username" maxlength="140" />
+              </div>
+            </div>
+
+            <div class="gv7-field">
+              <label for="gv7-report-subject">Subject</label>
+              <input type="text" id="gv7-report-subject" class="gv7-input" placeholder="Short summary (e.g. Slope game stuck on loading screen)" required minlength="3" maxlength="140" />
+            </div>
+
+            <div class="gv7-field">
+              <label for="gv7-report-message">Message</label>
+              <textarea id="gv7-report-message" class="gv7-input gv7-textarea" rows="5" placeholder="Describe what happened, which game or tab you were using, or share your suggestion..." required minlength="10" maxlength="4000"></textarea>
+            </div>
+
+            <div id="gv7-report-feedback" class="gv7-feedback-box hidden" role="status"></div>
+
+            <div class="gv7-form-actions">
+              <button type="submit" id="gv7-report-submit" class="gv7-btn gv7-btn-primary">Send Private Report</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         5. SETTINGS TAB — TASKBAR, ACCOUNTS, INTEGRATIONS & CLOAKING
+         ==================================================================== -->
+    <section id="settings-view" class="tab-view" aria-label="Settings">
+      <div class="gv7-settings-stack">
+
+        <!-- Card 1: Taskbar Position & Layout -->
+        <div class="settings-card">
+          <h2 class="settings-section-title">TASKBAR &amp; WORKSPACE LAYOUT</h2>
+          <div class="settings-row gv7-settings-row-stack">
+            <div class="settings-meta">
+              <span class="settings-label">🧭 Taskbar Position</span>
+              <span class="settings-subtext">Dock the Games V7 quick-launch taskbar along the Bottom, Left side, or Right side. Your layout adjusts automatically so games and modals are never covered.</span>
+            </div>
+            <div class="gv7-pos-selector" id="gv7-taskbar-pos-selector" role="radiogroup" aria-label="Taskbar Position">
+              <button type="button" class="gv7-pos-option active" data-pos="bottom">
+                <span class="gv7-pos-preview gv7-pos-preview-bottom"></span>
+                <span>Bottom</span>
+              </button>
+              <button type="button" class="gv7-pos-option" data-pos="left">
+                <span class="gv7-pos-preview gv7-pos-preview-left"></span>
+                <span>Left Side</span>
+              </button>
+              <button type="button" class="gv7-pos-option" data-pos="right">
+                <span class="gv7-pos-preview gv7-pos-preview-right"></span>
+                <span>Right Side</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- Panic Hotkey -->
-        <div class="settings-row">
-          <div class="settings-meta">
-            <span class="settings-label">🚨 Emergency Panic Hotkey</span>
-            <span class="settings-subtext">Press this key anytime to instantly leave the site and redirect to a safe educational page. Default: <code>~</code> (Tilde).</span>
+        <!-- Card 2: Games V7 Account & Cloud Sync -->
+        <div class="settings-card">
+          <h2 class="settings-section-title">GAMES V7 ACCOUNT &amp; CLOUD SYNC</h2>
+          <div id="gv7-settings-account-box" class="gv7-settings-account-box">
+            <div class="gv7-settings-account-info">
+              <strong id="gv7-settings-account-title">Guest Mode (Local Storage)</strong>
+              <span id="gv7-settings-account-sub" class="settings-subtext">Create an optional free account to sync favorites, bookmarks, taskbar position, and settings across devices.</span>
+            </div>
+            <div class="gv7-settings-account-actions">
+              <button type="button" id="gv7-settings-btn-login" class="gv7-btn gv7-btn-primary" onclick="window.GV7Platform && window.GV7Platform.openAuthModal('login')">Sign In / Register</button>
+              <button type="button" id="gv7-settings-btn-import" class="gv7-btn gv7-btn-ghost hidden" onclick="window.GV7Platform && window.GV7Platform.importLocalToAccount()">Import Local Data</button>
+              <button type="button" id="gv7-settings-btn-sync" class="gv7-btn gv7-btn-ghost hidden" onclick="window.GV7Platform && window.GV7Platform.syncAccountNow()">Sync Now</button>
+              <button type="button" id="gv7-settings-btn-logout" class="gv7-btn gv7-btn-danger hidden" onclick="window.GV7Platform && window.GV7Platform.logout()">Log Out</button>
+            </div>
           </div>
-          <input type="text" id="panic-url-input" class="settings-select" value="https://classroom.google.com" placeholder="Redirect URL..." />
         </div>
 
-        <!-- About:Blank Stealth Launcher -->
-        <div class="settings-row">
-          <div class="settings-meta">
-            <span class="settings-label">🛡️ Launch in about:blank</span>
-            <span class="settings-subtext">Opens Games V7 inside a clean <code>about:blank</code> popup tab, completely hiding this URL from browser history and web inspection extensions.</span>
+        <!-- Card 3: Independent Backend & Provider Configuration -->
+        <div class="settings-card">
+          <h2 class="settings-section-title">INDEPENDENT SERVICES &amp; INTEGRATIONS</h2>
+          <p class="settings-subtext" style="margin-bottom:16px;">Games V7 runs independently of BokitCord. Leave fields blank to use Games V7's built-in backend, or connect your own independent endpoints below.</p>
+
+          <div class="settings-row">
+            <div class="settings-meta">
+              <span class="settings-label">🖥️ Games V7 Backend URL</span>
+              <span class="settings-subtext">Used when loading from <code>index.svg</code> / CDN. Leave blank when running on your own Games V7 server.</span>
+            </div>
+            <input type="text" id="gv7-cfg-api-origin" class="settings-select gv7-cfg-input" placeholder="e.g. http://localhost:8080" />
           </div>
-          <button class="btn-settings-action" onclick="openAboutBlankCloak()">OPEN ABOUT:BLANK</button>
+
+          <div class="settings-row">
+            <div class="settings-meta">
+              <span class="settings-label">🤖 Custom AI Chat Endpoint</span>
+              <span class="settings-subtext">Connect any independent OpenAI-compatible AI proxy endpoint (never store private keys in the browser).</span>
+            </div>
+            <input type="text" id="gv7-cfg-ai-endpoint" class="settings-select gv7-cfg-input" placeholder="Default: /api/ai/chat" />
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-meta">
+              <span class="settings-label">🎵 Custom Music Provider URL</span>
+              <span class="settings-subtext">Optional external music backend origin. Leave blank to use Games V7's independent music engine.</span>
+            </div>
+            <input type="text" id="gv7-cfg-music-provider" class="settings-select gv7-cfg-input" placeholder="Default: Games V7 Music" />
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-meta">
+              <span class="settings-label">🔗 Optional BokitCord Relay URL</span>
+              <span class="settings-subtext">Optional external relay fallback only if you want to link a BokitCord instance. Not required for Games V7.</span>
+            </div>
+            <input type="text" id="gv7-cfg-bokit-relay" class="settings-select gv7-cfg-input" placeholder="Optional (leave blank)" />
+          </div>
+
+          <div class="gv7-form-actions" style="margin-top:16px;">
+            <button type="button" class="gv7-btn gv7-btn-primary" id="gv7-btn-save-integrations">Save Service Settings</button>
+            <button type="button" class="gv7-btn gv7-btn-ghost" id="gv7-btn-reset-integrations">Reset to Defaults</button>
+          </div>
         </div>
 
-        <!-- Visual Effects Toggles -->
-        <div class="settings-row">
-          <div class="settings-meta">
-            <span class="settings-label">📺 CRT Scanline Raster Filter</span>
-            <span class="settings-subtext">Toggle retro scanlines and cathode-ray tube raster effect across the interface.</span>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="toggle-crt-scanlines" checked onchange="toggleCrtEffect(this.checked)" />
-            <span class="slider"></span>
-          </label>
-        </div>
+        <!-- Card 4: Existing Tab Cloaking & Retro FX -->
+        <div class="settings-card">
+          <h2 class="settings-section-title">TAB CLOAKING &amp; STEALTH CONTROLS</h2>
 
-        <!-- Audio Beeps Toggle -->
-        <div class="settings-row">
-          <div class="settings-meta">
-            <span class="settings-label">🔊 Vintage Synth Audio FX</span>
-            <span class="settings-subtext">Synthesize classic 8-bit click and navigation sounds using the Web Audio API.</span>
+          <!-- Cloak Presets -->
+          <div class="settings-row">
+            <div class="settings-meta">
+              <span class="settings-label">🎭 Tab Cloak Preset</span>
+              <span class="settings-subtext">Disguises the browser tab's title and favicon to appear as an educational or productive app in your history and tabs.</span>
+            </div>
+            <select id="settings-cloak-select" class="settings-select" onchange="applyTabCloak(this.value)">
+              <option value="drive">🎭 Google Drive</option>
+              <option value="classroom">🎭 Google Classroom</option>
+              <option value="docs">🎭 Google Docs</option>
+              <option value="canvas">🎭 Canvas LMS</option>
+              <option value="desmos">🎭 Desmos Calculator</option>
+              <option value="default">🎭 Cloak Off (Games V7)</option>
+            </select>
           </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="toggle-retro-audio" checked onchange="toggleAudioBeeps(this.checked)" />
-            <span class="slider"></span>
-          </label>
+
+          <!-- Panic Hotkey -->
+          <div class="settings-row">
+            <div class="settings-meta">
+              <span class="settings-label">🚨 Emergency Panic Hotkey</span>
+              <span class="settings-subtext">Press this key anytime to instantly leave the site and redirect to a safe educational page. Default: <code>~</code> (Tilde).</span>
+            </div>
+            <input type="text" id="panic-url-input" class="settings-select" value="https://classroom.google.com" placeholder="Redirect URL..." />
+          </div>
+
+          <!-- About:Blank Stealth Launcher -->
+          <div class="settings-row">
+            <div class="settings-meta">
+              <span class="settings-label">🛡️ Launch in about:blank</span>
+              <span class="settings-subtext">Opens Games V7 inside a clean <code>about:blank</code> popup tab, completely hiding this URL from browser history and web inspection extensions.</span>
+            </div>
+            <button class="btn-settings-action" onclick="openAboutBlankCloak()">OPEN ABOUT:BLANK</button>
+          </div>
+
+          <!-- Visual Effects Toggles -->
+          <div class="settings-row">
+            <div class="settings-meta">
+              <span class="settings-label">📺 CRT Scanline Raster Filter</span>
+              <span class="settings-subtext">Toggle retro scanlines and cathode-ray tube raster effect across the interface.</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-crt-scanlines" checked onchange="toggleCrtEffect(this.checked)" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Audio Beeps Toggle -->
+          <div class="settings-row">
+            <div class="settings-meta">
+              <span class="settings-label">🔊 Vintage Synth Audio FX</span>
+              <span class="settings-subtext">Synthesize classic 8-bit click and navigation sounds using the Web Audio API.</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-retro-audio" checked onchange="toggleAudioBeeps(this.checked)" />
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
       </div>
     </section>
@@ -1293,8 +1474,214 @@
     </div>
   </div>
 
+  <!-- ====================================================================
+       MODERN RESPONSIVE TASKBAR (Bottom / Left / Right via Settings)
+       ==================================================================== -->
+  <aside id="gv7-taskbar" class="gv7-taskbar" aria-label="Games V7 Taskbar">
+    <div class="gv7-taskbar-group">
+      <button type="button" class="gv7-taskbar-btn active" data-tab="home" onclick="switchTab('home')" title="Home">
+        <span class="gv7-tb-icon">🏠</span><span class="gv7-tb-label">Home</span>
+      </button>
+      <button type="button" class="gv7-taskbar-btn" data-tab="featured" onclick="switchTab('featured')" title="Featured Games">
+        <span class="gv7-tb-icon">⭐</span><span class="gv7-tb-label">Featured</span>
+      </button>
+      <button type="button" class="gv7-taskbar-btn" data-tab="games" onclick="switchTab('games')" title="All Games">
+        <span class="gv7-tb-icon">🎮</span><span class="gv7-tb-label">Games</span>
+      </button>
+      <button type="button" class="gv7-taskbar-btn" data-tab="movies" onclick="switchTab('movies')" title="Movies &amp; TV">
+        <span class="gv7-tb-icon">🎬</span><span class="gv7-tb-label">Movies</span>
+      </button>
+      <button type="button" class="gv7-taskbar-btn" data-tab="music" onclick="switchTab('music')" title="Music">
+        <span class="gv7-tb-icon">🎵</span><span class="gv7-tb-label">Music</span>
+      </button>
+      <button type="button" class="gv7-taskbar-btn" data-tab="ai" onclick="switchTab('ai')" title="AI Assistant">
+        <span class="gv7-tb-icon">🤖</span><span class="gv7-tb-label">AI</span>
+      </button>
+      <button type="button" class="gv7-taskbar-btn" data-tab="proxy" onclick="switchTab('proxy')" title="Web Proxy">
+        <span class="gv7-tb-icon">🌐</span><span class="gv7-tb-label">Proxy</span>
+      </button>
+      <button type="button" class="gv7-taskbar-btn" data-tab="editor" onclick="switchTab('editor')" title="Code Sandbox">
+        <span class="gv7-tb-icon">💻</span><span class="gv7-tb-label">Code</span>
+      </button>
+      <button type="button" class="gv7-taskbar-btn" data-tab="contact" onclick="switchTab('contact')" title="Report a Bug or Send Feedback">
+        <span class="gv7-tb-icon">📩</span><span class="gv7-tb-label">Report</span>
+      </button>
+      <button type="button" class="gv7-taskbar-btn" data-tab="settings" onclick="switchTab('settings')" title="Settings">
+        <span class="gv7-tb-icon">⚙️</span><span class="gv7-tb-label">Settings</span>
+      </button>
+    </div>
+    <div class="gv7-taskbar-divider"></div>
+    <div class="gv7-taskbar-group gv7-taskbar-utils">
+      <button type="button" class="gv7-taskbar-btn gv7-tb-mod hidden" id="gv7-tb-mod-btn" onclick="window.GV7Platform && window.GV7Platform.openModMenu()" title="Games V7 Mod Menu">
+        <span class="gv7-tb-icon">🛡️</span><span class="gv7-tb-label">Mod</span>
+      </button>
+      <button type="button" class="gv7-taskbar-btn" id="gv7-tb-account-btn" onclick="window.GV7Platform && window.GV7Platform.openAuthModal()" title="Account">
+        <span class="gv7-tb-icon">👤</span><span class="gv7-tb-label" id="gv7-tb-account-label">Account</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ====================================================================
+       FIRST-TIME VISITOR WELCOME SCREEN (Shown once, optional account)
+       ==================================================================== -->
+  <div id="gv7-welcome-overlay" class="gv7-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="gv7-welcome-title">
+    <div class="gv7-modal-card gv7-welcome-card">
+      <div class="gv7-welcome-badge">
+        <img src="assets/skull-logo.svg" alt="Games V7" class="gv7-welcome-logo" />
+        <span>GAMES V7 // SKELETAL FLOWERS</span>
+      </div>
+      <h2 id="gv7-welcome-title" class="gv7-welcome-title">Welcome to Games V7</h2>
+      <p class="gv7-welcome-desc">
+        Your independent retro arcade &amp; web suite featuring <strong>270+ playable games</strong>, classic console emulators, a fast multi-tab stealth proxy, cinema, music, AI assistant, and live code sandbox.
+      </p>
+      <div class="gv7-welcome-perks">
+        <div class="gv7-perk-item"><span>⭐</span><div><strong>Save Favorites &amp; Progress</strong><p>Keep your favorite games, bookmarks, and preferences synced across devices.</p></div></div>
+        <div class="gv7-perk-item"><span>🧭</span><div><strong>Custom Workspace</strong><p>Position the taskbar on the Bottom, Left, or Right and keep it saved automatically.</p></div></div>
+        <div class="gv7-perk-item"><span>🔓</span><div><strong>Always Optional</strong><p>No sign-up required — jump straight in as a guest anytime.</p></div></div>
+      </div>
+      <div class="gv7-welcome-actions">
+        <button type="button" id="gv7-welcome-register" class="gv7-btn gv7-btn-primary">Create Free Account</button>
+        <button type="button" id="gv7-welcome-login" class="gv7-btn gv7-btn-ghost">Sign In</button>
+        <button type="button" id="gv7-welcome-guest" class="gv7-btn gv7-btn-subtle">Continue as Guest →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       OPTIONAL ACCOUNT & AUTHENTICATION MODAL
+       ==================================================================== -->
+  <div id="gv7-auth-modal" class="gv7-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="gv7-auth-title">
+    <div class="gv7-modal-card gv7-auth-card">
+      <div class="gv7-modal-header">
+        <div>
+          <h3 id="gv7-auth-title">Games V7 Account</h3>
+          <p class="gv7-modal-sub">Optional cloud sync for favorites, bookmarks &amp; settings</p>
+        </div>
+        <button type="button" class="gv7-modal-close" onclick="window.GV7Platform && window.GV7Platform.closeAuthModal()" aria-label="Close">&times;</button>
+      </div>
+
+      <!-- Logged-in Summary View -->
+      <div id="gv7-auth-profile-view" class="hidden">
+        <div class="gv7-profile-banner">
+          <div class="gv7-profile-avatar" id="gv7-profile-avatar">U</div>
+          <div>
+            <div class="gv7-profile-name-row">
+              <strong id="gv7-profile-display">Username</strong>
+              <span id="gv7-profile-role-badge" class="gv7-role-badge">USER</span>
+            </div>
+            <div id="gv7-profile-username" class="gv7-profile-handle">@username</div>
+          </div>
+        </div>
+        <div class="gv7-profile-actions">
+          <button type="button" class="gv7-btn gv7-btn-primary" onclick="window.GV7Platform && window.GV7Platform.syncAccountNow()">☁️ Sync Data Now</button>
+          <button type="button" class="gv7-btn gv7-btn-ghost" onclick="window.GV7Platform && window.GV7Platform.importLocalToAccount()">📥 Import Local Data</button>
+          <button type="button" id="gv7-profile-mod-btn" class="gv7-btn gv7-btn-ghost hidden" onclick="window.GV7Platform && (window.GV7Platform.closeAuthModal(), window.GV7Platform.openModMenu())">🛡️ Open Mod Menu</button>
+          <button type="button" class="gv7-btn gv7-btn-danger" onclick="window.GV7Platform && window.GV7Platform.logout()">Log Out</button>
+        </div>
+      </div>
+
+      <!-- Guest Auth Tabs View -->
+      <div id="gv7-auth-forms-view">
+        <div class="gv7-auth-tabs" role="tablist">
+          <button type="button" class="gv7-auth-tab active" data-auth-tab="login">Log In</button>
+          <button type="button" class="gv7-auth-tab" data-auth-tab="register">Create Account</button>
+          <button type="button" class="gv7-auth-tab" data-auth-tab="owner">Owner (Bokit)</button>
+        </div>
+
+        <div id="gv7-auth-error" class="gv7-feedback-box error hidden"></div>
+
+        <!-- Login Form -->
+        <form id="gv7-form-login" class="gv7-form-stack">
+          <div class="gv7-field">
+            <label for="gv7-login-user">Username</label>
+            <input type="text" id="gv7-login-user" class="gv7-input" placeholder="Enter username" required autocomplete="username" />
+          </div>
+          <div class="gv7-field">
+            <label for="gv7-login-pass">Password</label>
+            <input type="password" id="gv7-login-pass" class="gv7-input" placeholder="Enter password" required autocomplete="current-password" />
+          </div>
+          <button type="submit" class="gv7-btn gv7-btn-primary">Log In to Games V7</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="gv7-form-register" class="gv7-form-stack hidden">
+          <div class="gv7-field">
+            <label for="gv7-reg-user">Username</label>
+            <input type="text" id="gv7-reg-user" class="gv7-input" placeholder="3–24 letters, numbers, _ . -" required minlength="3" maxlength="24" autocomplete="username" />
+          </div>
+          <div class="gv7-field">
+            <label for="gv7-reg-display">Display Name <span class="gv7-optional">(Optional)</span></label>
+            <input type="text" id="gv7-reg-display" class="gv7-input" placeholder="Shown on your profile" maxlength="32" />
+          </div>
+          <div class="gv7-field">
+            <label for="gv7-reg-pass">Password</label>
+            <input type="password" id="gv7-reg-pass" class="gv7-input" placeholder="At least 6 characters" required minlength="6" maxlength="128" autocomplete="new-password" />
+          </div>
+          <label class="gv7-checkbox-row">
+            <input type="checkbox" id="gv7-reg-import" checked />
+            <span>Import my current local favorites, bookmarks &amp; settings</span>
+          </label>
+          <button type="submit" class="gv7-btn gv7-btn-primary">Create Account</button>
+        </form>
+
+        <!-- Official Bokit Owner Bridge Form -->
+        <form id="gv7-form-owner" class="gv7-form-stack hidden">
+          <div class="gv7-privacy-callout">
+            👑 <strong>Official Bokit Owner Verification:</strong> Verify ownership using a valid session token from the official <code>bokit</code> account on BokitCord (verified server-side), or log in with your local Owner password on the Log In tab.
+          </div>
+          <div class="gv7-field">
+            <label for="gv7-owner-bc-token">BokitCord Session Token</label>
+            <input type="password" id="gv7-owner-bc-token" class="gv7-input" placeholder="Paste official Bokit BokitCord token" required autocomplete="off" />
+          </div>
+          <button type="submit" class="gv7-btn gv7-btn-primary">Verify Official Bokit Owner</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       GAMES V7 MOD MENU (Role-Gated: Moderator / Co-Owner / Owner Only)
+       ==================================================================== -->
+  <div id="gv7-mod-modal" class="gv7-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="gv7-mod-title">
+    <div class="gv7-modal-card gv7-mod-card">
+      <div class="gv7-modal-header">
+        <div>
+          <div class="gv7-mod-title-row">
+            <h3 id="gv7-mod-title">🛡️ Games V7 Mod Menu</h3>
+            <span id="gv7-mod-role-pill" class="gv7-role-badge">STAFF</span>
+          </div>
+          <p class="gv7-modal-sub">Server-verified administration tools for Games V7</p>
+        </div>
+        <button type="button" class="gv7-modal-close" onclick="window.GV7Platform && window.GV7Platform.closeModMenu()" aria-label="Close">&times;</button>
+      </div>
+
+      <div class="gv7-mod-layout">
+        <nav class="gv7-mod-sidebar" id="gv7-mod-sidebar" aria-label="Mod Menu Sections">
+          <div class="gv7-mod-group-label">Staff Tools</div>
+          <button type="button" class="gv7-mod-nav-btn active" data-mod-tab="overview">📊 Overview</button>
+          <button type="button" class="gv7-mod-nav-btn" data-mod-tab="announcements" data-req-perm="manageAnnouncements">📢 Announcements</button>
+          <button type="button" class="gv7-mod-nav-btn" data-mod-tab="featured" data-req-perm="manageFeatured">⭐ Featured Games</button>
+          <button type="button" class="gv7-mod-nav-btn" data-mod-tab="users" data-req-perm="moderateUsers">👥 User Moderation</button>
+
+          <div class="gv7-mod-group-label" data-req-perm="manageGames">Co-Owner Tools</div>
+          <button type="button" class="gv7-mod-nav-btn" data-mod-tab="games" data-req-perm="manageGames">🎮 Game Catalog</button>
+
+          <div class="gv7-mod-group-label" data-owner-only="true">Owner Only</div>
+          <button type="button" class="gv7-mod-nav-btn" data-mod-tab="roles" data-owner-only="true">👑 Roles &amp; Co-Owners</button>
+          <button type="button" class="gv7-mod-nav-btn" data-mod-tab="reports" data-owner-only="true">📩 Bug Reports</button>
+          <button type="button" class="gv7-mod-nav-btn" data-mod-tab="site" data-owner-only="true">🎨 Site Customization</button>
+        </nav>
+
+        <div class="gv7-mod-body" id="gv7-mod-body">
+          <div class="gv7-loading-inline">Loading Mod Menu…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="vendor/katex/katex.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js';"></script>
-  <script src="app.js?v=8.4"></script>
+  <script src="app.js?v=9.0"></script>
+  <script src="gv7-platform.js?v=9.0"></script>
   <!-- GAMES V7 VIP / AD-FREE REDEMPTION MODAL -->
   <div id="modal-gamesv7-adfree" class="retro-modal-backdrop hidden" onclick="if(event.target===this)closeAdfreeModal()">
     <div class="retro-modal-box">
@@ -1396,7 +1783,21 @@
       function onFirstUserGesture(e) {
         if (firstClickDone) return;
         if (isAdFree()) return;
-        if (e && e.target && (e.target.closest('#modal-gamesv7-adfree') || e.target.closest('#btn-gamesv7-adfree') || e.target.closest('.btn-ad-upgrade') || e.target.closest('.ad-close-hint'))) {
+        if (e && e.target && (
+          e.target.closest('#modal-gamesv7-adfree') ||
+          e.target.closest('#btn-gamesv7-adfree') ||
+          e.target.closest('.btn-ad-upgrade') ||
+          e.target.closest('.ad-close-hint') ||
+          e.target.closest('#gv7-welcome-overlay') ||
+          e.target.closest('#gv7-auth-modal') ||
+          e.target.closest('#gv7-mod-modal') ||
+          e.target.closest('#gv7-taskbar') ||
+          e.target.closest('#top-nav') ||
+          e.target.closest('#contact-view') ||
+          e.target.closest('#settings-view') ||
+          e.target.closest('#proxy-view') ||
+          e.target.closest('#featured-view')
+        )) {
           return;
         }
         firstClickDone = true;
