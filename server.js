@@ -949,60 +949,101 @@ const server = http.createServer(async (req, res) => {
       return sendJson(req, res, 200, { ok: true, siteConfig: saved });
     }
 
+    // Helper to relay Music, AI, and Movies endpoints directly to BokitCord
+    function relayToBokitCord(onUnavailable) {
+      const bokitBase = (BOKITCORD_API_URL || 'https://pop-leave.tailcb4af7.ts.net').replace(/\/+$/, '');
+      const targetUrl = `${bokitBase}${req.url.replace(/^\/games-v7/, '')}`;
+      try {
+        const parsed = new URL(targetUrl);
+        const client = parsed.protocol === 'https:' ? https : http;
+        const fwdHeaders = {
+          'User-Agent': req.headers['user-agent'] || 'GamesV7-BokitCordRelay/1.0',
+          Accept: req.headers.accept || '*/*',
+        };
+        if (req.headers.range) fwdHeaders.Range = req.headers.range;
+        if (req.headers['content-type']) fwdHeaders['Content-Type'] = req.headers['content-type'];
+        if (req.headers['content-length']) fwdHeaders['Content-Length'] = req.headers['content-length'];
+        if (req.headers.authorization) fwdHeaders.Authorization = req.headers.authorization;
+
+        const upReq = client.request(
+          {
+            hostname: parsed.hostname,
+            port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+            path: parsed.pathname + parsed.search,
+            method: req.method,
+            headers: fwdHeaders,
+            timeout: 90000,
+          },
+          (upRes) => {
+            const outHeaders = {
+              'Access-Control-Allow-Origin': req.headers.origin || '*',
+              'Access-Control-Allow-Credentials': 'true',
+            };
+            const skip = new Set(['connection', 'transfer-encoding', 'keep-alive', 'access-control-allow-origin', 'access-control-allow-credentials']);
+            for (const [k, v] of Object.entries(upRes.headers)) {
+              if (!skip.has(k.toLowerCase())) outHeaders[k] = v;
+            }
+            res.writeHead(upRes.statusCode || 200, outHeaders);
+            upRes.pipe(res);
+          }
+        );
+
+        upReq.on('timeout', () => upReq.destroy(new Error('BokitCord upstream timed out')));
+        upReq.on('error', (err) => {
+          if (typeof onUnavailable === 'function') {
+            return onUnavailable(err);
+          }
+          if (!res.headersSent) {
+            sendJson(req, res, 502, { ok: false, error: `BokitCord backend unreachable: ${err.message}` });
+          }
+        });
+        res.on('close', () => { if (!res.writableEnded && !upReq.destroyed) upReq.destroy(); });
+
+        if (req.method === 'GET' || req.method === 'HEAD') {
+          upReq.end();
+        } else {
+          req.pipe(upReq);
+        }
+      } catch (err) {
+        if (!res.headersSent) sendJson(req, res, 500, { ok: false, error: err.message });
+      }
+    }
+
     // =========================================================================
-    // 7. INDEPENDENT MUSIC API (BokitCord-Parity yt-dlp Search, Stream & MP3 Download)
+    // 7. MUSIC API (Relayed to BokitCord, with local fallback if BokitCord is offline)
     // =========================================================================
-    if (reqPath === '/api/music/catalog' && req.method === 'GET') {
-      const genre = reqUrlObj.searchParams.get('genre') || 'all';
-      const search = reqUrlObj.searchParams.get('search') || '';
-      const tracks = musicBackend.getFilteredCatalog(genre, search);
-      return sendJson(req, res, 200, tracks);
-    }
-
-    if (reqPath === '/api/music/recommended' && req.method === 'GET') {
-      const tracks = musicBackend.loadRecommendedCatalog();
-      return sendJson(req, res, 200, tracks);
-    }
-
-    if (reqPath === '/api/music/search' && req.method === 'GET') {
-      const q = reqUrlObj.searchParams.get('q') || reqUrlObj.searchParams.get('query') || '';
-      const tracks = await musicBackend.searchMusic(q);
-      return sendJson(req, res, 200, tracks);
-    }
-
-    if (reqPath === '/api/music/stream' && req.method === 'GET') {
-      const id = reqUrlObj.searchParams.get('id') || '';
-      const rawUrl = reqUrlObj.searchParams.get('url') || null;
-      return await musicBackend.handleMusicStream(req, res, id, rawUrl);
-    }
-
-    if (reqPath === '/api/music/download' && req.method === 'GET') {
-      return await musicBackend.handleMusicDownload(req, res, {
-        id: reqUrlObj.searchParams.get('id') || '',
-        url: reqUrlObj.searchParams.get('url') || null,
-        title: reqUrlObj.searchParams.get('title') || 'Track',
-        artist: reqUrlObj.searchParams.get('artist') || 'Artist',
+    if (reqPath.startsWith('/api/music')) {
+      return relayToBokitCord(async (err) => {
+        if (reqPath === '/api/music/catalog' && req.method === 'GET') {
+          return sendJson(req, res, 200, musicBackend.getFilteredCatalog(reqUrlObj.searchParams.get('genre') || 'all', reqUrlObj.searchParams.get('search') || ''));
+        }
+        if (reqPath === '/api/music/recommended' && req.method === 'GET') {
+          return sendJson(req, res, 200, musicBackend.loadRecommendedCatalog());
+        }
+        if (reqPath === '/api/music/search' && req.method === 'GET') {
+          const tracks = await musicBackend.searchMusic(reqUrlObj.searchParams.get('q') || reqUrlObj.searchParams.get('query') || '');
+          return sendJson(req, res, 200, tracks);
+        }
+        if (reqPath === '/api/music/stream' && req.method === 'GET') {
+          return await musicBackend.handleMusicStream(req, res, reqUrlObj.searchParams.get('id') || '', reqUrlObj.searchParams.get('url') || null);
+        }
+        if (reqPath === '/api/music/download' && req.method === 'GET') {
+          return await musicBackend.handleMusicDownload(req, res, {
+            id: reqUrlObj.searchParams.get('id') || '',
+            url: reqUrlObj.searchParams.get('url') || null,
+            title: reqUrlObj.searchParams.get('title') || 'Track',
+            artist: reqUrlObj.searchParams.get('artist') || 'Artist',
+          });
+        }
+        if (!res.headersSent) sendJson(req, res, 502, { ok: false, error: `BokitCord Music unreachable: ${err.message}` });
       });
     }
 
     // =========================================================================
-    // 8. INDEPENDENT AI ASSISTANT GATEWAY (BokitCord-Parity NVIDIA NIM / Nemotron)
+    // 8. AI ASSISTANT API (Relayed to BokitCord)
     // =========================================================================
-    if (reqPath === '/api/ai/health' && req.method === 'GET') {
-      return sendJson(req, res, 200, aiBackend.getHealthPayload());
-    }
-
-    if (reqPath === '/api/ai/models' && req.method === 'GET') {
-      return sendJson(req, res, 200, aiBackend.getModelsPayload());
-    }
-
-    if (reqPath === '/api/ai/chat' && req.method === 'POST') {
-      const rl = checkRateLimit(`ai:${ip}`, 30, 5 * 60 * 1000);
-      if (!rl.allowed) {
-        return sendJson(req, res, 429, { error: `AI rate limit reached. Retry in ${rl.retryAfterSec}s.` });
-      }
-      const parsed = await readJsonBody(req, 4 * 1024 * 1024);
-      return await aiBackend.handleAiChat(req, res, parsed, sendJson);
+    if (reqPath.startsWith('/api/ai')) {
+      return relayToBokitCord();
     }
 
     // =========================================================================
@@ -1032,72 +1073,23 @@ const server = http.createServer(async (req, res) => {
     // 9.5 MOVIES TAB RELAY (Backed by BokitCord Movies Engine)
     // =========================================================================
     if (reqPath.startsWith('/api/movies')) {
-      const bokitMoviesBase = (BOKITCORD_API_URL || 'https://pop-leave.tailcb4af7.ts.net').replace(/\/+$/, '');
-      const targetUrl = `${bokitMoviesBase}${req.url.replace(/^\/games-v7/, '')}`;
-      try {
-        const parsed = new URL(targetUrl);
-        const client = parsed.protocol === 'https:' ? https : http;
-        const fwdHeaders = {
-          'User-Agent': req.headers['user-agent'] || 'GamesV7-MoviesRelay/1.0',
-          Accept: req.headers.accept || '*/*',
-        };
-        if (req.headers.range) fwdHeaders.Range = req.headers.range;
-        if (req.headers['content-type']) fwdHeaders['Content-Type'] = req.headers['content-type'];
-        if (req.headers.authorization) fwdHeaders.Authorization = req.headers.authorization;
-
-        const upReq = client.request(
-          {
-            hostname: parsed.hostname,
-            port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
-            path: parsed.pathname + parsed.search,
-            method: req.method,
-            headers: fwdHeaders,
-            timeout: 25000,
-          },
-          (upRes) => {
-            const outHeaders = {
-              'Access-Control-Allow-Origin': req.headers.origin || '*',
-              'Access-Control-Allow-Credentials': 'true',
-            };
-            const skip = new Set(['connection', 'transfer-encoding', 'keep-alive', 'access-control-allow-origin', 'access-control-allow-credentials']);
-            for (const [k, v] of Object.entries(upRes.headers)) {
-              if (!skip.has(k.toLowerCase())) outHeaders[k] = v;
-            }
-            res.writeHead(upRes.statusCode || 200, outHeaders);
-            upRes.pipe(res);
-          }
-        );
-
-        upReq.on('timeout', () => upReq.destroy(new Error('BokitCord Movies upstream timed out')));
-        upReq.on('error', (err) => {
-          // Graceful fallback to local cached homepage JSON if BokitCord is unreachable
-          if (reqPath === '/api/movies/homepage' || reqPath === '/api/movies') {
-            const fallbackFiles = [
-              path.join(ROOT_DIR, 'movies_homepage.json'),
-              path.join(ROOT_DIR, 'assets', 'movies_homepage.json'),
-            ];
-            for (const f of fallbackFiles) {
-              if (fs.existsSync(f)) {
-                res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-                return fs.createReadStream(f).pipe(res);
-              }
+      return relayToBokitCord((err) => {
+        if (reqPath === '/api/movies/homepage' || reqPath === '/api/movies') {
+          const fallbackFiles = [
+            path.join(ROOT_DIR, 'movies_homepage.json'),
+            path.join(ROOT_DIR, 'assets', 'movies_homepage.json'),
+          ];
+          for (const f of fallbackFiles) {
+            if (fs.existsSync(f)) {
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              return fs.createReadStream(f).pipe(res);
             }
           }
-          if (!res.headersSent) {
-            sendJson(req, res, 502, { ok: false, error: `BokitCord Movies backend unreachable: ${err.message}` });
-          }
-        });
-        req.on('close', () => { if (!upReq.destroyed && !res.writableEnded) upReq.destroy(); });
-
-        if (req.method === 'GET' || req.method === 'HEAD') {
-          upReq.end();
-        } else {
-          req.pipe(upReq);
         }
-        return;
-      } catch (err) {
-        return sendJson(req, res, 500, { ok: false, error: err.message });
-      }
+        if (!res.headersSent) {
+          sendJson(req, res, 502, { ok: false, error: `BokitCord Movies backend unreachable: ${err.message}` });
+        }
+      });
     }
 
     if (reqPath === '/browser/core.js' || reqPath === '/core.js') {

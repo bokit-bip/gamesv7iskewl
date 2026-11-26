@@ -6301,15 +6301,16 @@
       return;
     }
 
-    // 2. Fetch from Games V7 independent backend or local assets (zero BokitCord dependency)
+    // 2. Fetch from BokitCord Music backend (or custom provider override / local fallback)
     const customMusicBase = (function() {
       try { return (localStorage.getItem('gamesv7_music_provider') || '').trim().replace(/\/+$/, ''); } catch (e) { return ''; }
     })();
-    const apiBase = getGamesV7ApiOrigin();
+    const bokitOrigin = getServerOrigin();
     const candidates = [];
     if (customMusicBase) candidates.push(`${customMusicBase}/api/music/recommended`);
-    if (apiBase) candidates.push(`${apiBase}/api/music/recommended`);
+    if (bokitOrigin) candidates.push(`${bokitOrigin}/api/music/recommended`);
     candidates.push(
+      'https://pop-leave.tailcb4af7.ts.net/api/music/recommended',
       'assets/recommended_music.json',
       './assets/recommended_music.json',
       'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/assets/recommended_music.json'
@@ -6354,16 +6355,16 @@
 
     const qLower = query.toLowerCase();
 
-    // Try Games V7 independent music backend or custom configured music provider first
+    // Use BokitCord Music backend (or custom provider override)
     let networkTracks = null;
     const customMusicBase = (function() {
       try { return (localStorage.getItem('gamesv7_music_provider') || '').trim().replace(/\/+$/, ''); } catch (e) { return ''; }
     })();
-    const apiBase = getGamesV7ApiOrigin();
+    const bokitOrigin = getServerOrigin();
     const searchEndpoints = [];
     if (customMusicBase) searchEndpoints.push(`${customMusicBase}/api/music/search?q=${encodeURIComponent(query)}`);
-    if (apiBase) searchEndpoints.push(`${apiBase}/api/music/search?q=${encodeURIComponent(query)}`);
-    searchEndpoints.push('/api/music/search?q=' + encodeURIComponent(query));
+    if (bokitOrigin) searchEndpoints.push(`${bokitOrigin}/api/music/search?q=${encodeURIComponent(query)}`);
+    searchEndpoints.push('https://pop-leave.tailcb4af7.ts.net/api/music/search?q=' + encodeURIComponent(query));
 
     for (const url of searchEndpoints) {
       try {
@@ -6491,7 +6492,7 @@
     const customMusicBase = (function() {
       try { return (localStorage.getItem('gamesv7_music_provider') || '').trim().replace(/\/+$/, ''); } catch (e) { return ''; }
     })();
-    const musicBase = customMusicBase || getGamesV7ApiOrigin();
+    const musicBase = customMusicBase || getServerOrigin() || 'https://pop-leave.tailcb4af7.ts.net';
     if (rawUrl && rawUrl.startsWith('/')) {
       return `${musicBase}${rawUrl}`;
     }
@@ -7668,8 +7669,8 @@
         const custom = (localStorage.getItem('gamesv7_ai_endpoint') || '').trim();
         if (custom) return custom;
       } catch (e) {}
-      const apiOrigin = getGamesV7ApiOrigin();
-      return `${apiOrigin}/api/ai/chat`;
+      const bokitOrigin = getServerOrigin() || 'https://pop-leave.tailcb4af7.ts.net';
+      return `${bokitOrigin}/api/ai/chat`;
     }
 
     setGv7AiStatus('busy', 'Thinking…');
@@ -7824,10 +7825,11 @@
           setLabel('#10b981', 'Custom API');
           return;
         }
-        const res = await fetch(`${getGamesV7ApiOrigin()}/api/ai/health`);
+        const bokitOrigin = getServerOrigin() || 'https://pop-leave.tailcb4af7.ts.net';
+        const res = await fetch(`${bokitOrigin}/api/ai/health`);
         if (res.ok) {
           const info = await res.json();
-          if (info.configured) setLabel('#10b981', 'Ready');
+          if (info.configured || info.hasKey || info.status === 'ok') setLabel('#10b981', 'Ready');
           else setLabel('#f59e0b', 'Needs API Key');
           return;
         }
