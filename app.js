@@ -2463,16 +2463,18 @@
       .replace(/'/g, '&#039;');
   }
 
+  const BOKITCORD_MOVIES_ORIGIN = 'https://pop-leave.tailcb4af7.ts.net';
+
   function getServerOrigin() {
-    const gv7Origin = getGamesV7ApiOrigin();
-    if (gv7Origin) return gv7Origin;
     try {
-      const custom = localStorage.getItem('gamesv7_movie_proxy') || localStorage.getItem('gamesv7_bokitcord_relay');
+      const custom = localStorage.getItem('gamesv7_movie_proxy') || localStorage.getItem('gamesv7_bokitcord_relay') || localStorage.getItem('bokit_proxy_server');
       if (custom && custom.trim()) {
         return custom.trim().replace(/\/+$/, '');
       }
     } catch (e) {}
-    return '';
+    const gv7Origin = getGamesV7ApiOrigin();
+    if (gv7Origin) return gv7Origin;
+    return BOKITCORD_MOVIES_ORIGIN;
   }
 
   function isServerHosted() {
@@ -3183,14 +3185,16 @@
     let data = window.__EMBEDDED_MOVIES__ || null;
 
     if (!data) {
+      const moviesOrigin = getServerOrigin();
       const candidates = [
+        `${moviesOrigin}/api/movies/homepage`,
+        `${BOKITCORD_MOVIES_ORIGIN}/api/movies/homepage`,
         'assets/movies_homepage.json',
         './assets/movies_homepage.json',
         'movies_homepage.json',
         './movies_homepage.json',
         'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/assets/movies_homepage.json',
-        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/movies_homepage.json',
-        '/api/movies/homepage'
+        'https://cdn.jsdelivr.net/gh/bokit-bip/gamesv7iskewl@main/movies_homepage.json'
       ];
       for (const p of candidates) {
         try {
@@ -4696,7 +4700,7 @@
     if (currentPlaybackMovie) {
       updateServerStatusDot('testing');
       try {
-        let srcUrl = `/api/movies/sources?id=${encodeURIComponent(currentPlaybackMovie.id)}&server=${encodeURIComponent(chosen.id)}`;
+        let srcUrl = `${getServerOrigin()}/api/movies/sources?id=${encodeURIComponent(currentPlaybackMovie.id)}&server=${encodeURIComponent(chosen.id)}`;
         if (currentPlaybackSeason) {
           srcUrl += `&s=${currentPlaybackSeason}&e=${currentPlaybackEpisode || 1}&type=series`;
         }
@@ -5304,7 +5308,7 @@
     el.statusTelemetryTbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:12px;color:#94a3b8;">Inspecting provider "${escapeHtml(provider)}" with ID ${escapeHtml(id)}...</td></tr>`;
 
     try {
-      const res = await fetch(`/api/movies/diagnostics/${encodeURIComponent(provider)}/${encodeURIComponent(id)}`);
+      const res = await fetch(`${getServerOrigin()}/api/movies/diagnostics/${encodeURIComponent(provider)}/${encodeURIComponent(id)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const d = await res.json();
 
@@ -5349,7 +5353,7 @@
 
   async function loadProviderStatusData() {
     try {
-      const res = await fetch('/api/movies/debug');
+      const res = await fetch(`${getServerOrigin()}/api/movies/debug`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       renderProviderStatusData(data);
@@ -5370,7 +5374,7 @@
     }
 
     try {
-      const res = await fetch('/api/movies/providers/health', { method: 'POST' });
+      const res = await fetch(`${getServerOrigin()}/api/movies/providers/health`, { method: 'POST' });
       const healthList = await res.json();
       await loadProviderStatusData();
     } catch (e) {

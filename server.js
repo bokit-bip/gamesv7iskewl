@@ -1023,10 +1023,81 @@ const server = http.createServer(async (req, res) => {
     if (
       reqPath.startsWith('/browser/gateway') ||
       reqPath.startsWith('/proxy/gateway') ||
-      reqPath.startsWith('/api/proxy') ||
-      reqPath.startsWith('/api/movies/proxy')
+      reqPath.startsWith('/api/proxy')
     ) {
       return proxyGateway.handleProxyRequest(req, res, '/browser/gateway?url=');
+    }
+
+    // =========================================================================
+    // 9.5 MOVIES TAB RELAY (Backed by BokitCord Movies Engine)
+    // =========================================================================
+    if (reqPath.startsWith('/api/movies')) {
+      const bokitMoviesBase = (BOKITCORD_API_URL || 'https://pop-leave.tailcb4af7.ts.net').replace(/\/+$/, '');
+      const targetUrl = `${bokitMoviesBase}${req.url.replace(/^\/games-v7/, '')}`;
+      try {
+        const parsed = new URL(targetUrl);
+        const client = parsed.protocol === 'https:' ? https : http;
+        const fwdHeaders = {
+          'User-Agent': req.headers['user-agent'] || 'GamesV7-MoviesRelay/1.0',
+          Accept: req.headers.accept || '*/*',
+        };
+        if (req.headers.range) fwdHeaders.Range = req.headers.range;
+        if (req.headers['content-type']) fwdHeaders['Content-Type'] = req.headers['content-type'];
+        if (req.headers.authorization) fwdHeaders.Authorization = req.headers.authorization;
+
+        const upReq = client.request(
+          {
+            hostname: parsed.hostname,
+            port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+            path: parsed.pathname + parsed.search,
+            method: req.method,
+            headers: fwdHeaders,
+            timeout: 25000,
+          },
+          (upRes) => {
+            const outHeaders = {
+              'Access-Control-Allow-Origin': req.headers.origin || '*',
+              'Access-Control-Allow-Credentials': 'true',
+            };
+            const skip = new Set(['connection', 'transfer-encoding', 'keep-alive', 'access-control-allow-origin', 'access-control-allow-credentials']);
+            for (const [k, v] of Object.entries(upRes.headers)) {
+              if (!skip.has(k.toLowerCase())) outHeaders[k] = v;
+            }
+            res.writeHead(upRes.statusCode || 200, outHeaders);
+            upRes.pipe(res);
+          }
+        );
+
+        upReq.on('timeout', () => upReq.destroy(new Error('BokitCord Movies upstream timed out')));
+        upReq.on('error', (err) => {
+          // Graceful fallback to local cached homepage JSON if BokitCord is unreachable
+          if (reqPath === '/api/movies/homepage' || reqPath === '/api/movies') {
+            const fallbackFiles = [
+              path.join(ROOT_DIR, 'movies_homepage.json'),
+              path.join(ROOT_DIR, 'assets', 'movies_homepage.json'),
+            ];
+            for (const f of fallbackFiles) {
+              if (fs.existsSync(f)) {
+                res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                return fs.createReadStream(f).pipe(res);
+              }
+            }
+          }
+          if (!res.headersSent) {
+            sendJson(req, res, 502, { ok: false, error: `BokitCord Movies backend unreachable: ${err.message}` });
+          }
+        });
+        req.on('close', () => { if (!upReq.destroyed && !res.writableEnded) upReq.destroy(); });
+
+        if (req.method === 'GET' || req.method === 'HEAD') {
+          upReq.end();
+        } else {
+          req.pipe(upReq);
+        }
+        return;
+      } catch (err) {
+        return sendJson(req, res, 500, { ok: false, error: err.message });
+      }
     }
 
     if (reqPath === '/browser/core.js' || reqPath === '/core.js') {
@@ -1088,7 +1159,7 @@ const server = http.createServer(async (req, res) => {
       return sendJson(req, res, 200, merged);
     }
 
-    if (reqPath === '/api/movies/homepage' || reqPath === '/api/movies' || reqPath === '/movies_homepage.json') {
+    if (reqPath === '/movies_homepage.json') {
       const candidates = [
         path.join(ROOT_DIR, 'movies_homepage.json'),
         path.join(ROOT_DIR, 'assets', 'movies_homepage.json'),

@@ -217,7 +217,7 @@ function ensureBootstrap() {
     };
     users.unshift(owner);
     writeJsonAtomic(FILES.users, users);
-  } else if (process.env.GAMESV7_OWNER_PASSWORD && !owner.passwordHash) {
+  } else if (process.env.GAMESV7_OWNER_PASSWORD && !verifyPassword(process.env.GAMESV7_OWNER_PASSWORD, owner.passwordHash)) {
     owner.passwordHash = hashPassword(process.env.GAMESV7_OWNER_PASSWORD);
     writeJsonAtomic(FILES.users, users);
   }
