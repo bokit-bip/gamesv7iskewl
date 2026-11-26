@@ -63,12 +63,10 @@ const store = require('./backend/store');
 const presence = require('./backend/presence');
 const proxyGateway = require('./backend/proxy');
 const musicBackend = require('./backend/music');
+const aiBackend = require('./backend/ai');
 
 const PORT = parseInt(process.env.PORT, 10) || 8080;
 const BOKITCORD_API_URL = (process.env.BOKITCORD_API_URL || '').trim().replace(/\/+$/, '');
-const AI_API_URL = (process.env.AI_API_URL || 'https://integrate.api.nvidia.com/v1/chat/completions').trim();
-const AI_DEFAULT_MODEL = (process.env.AI_MODEL || 'nvidia/nemotron-3-ultra-550b-a55b').trim();
-const AI_VISION_MODEL = (process.env.AI_VISION_MODEL || 'nvidia/nemotron-3.5-super-vl-120b-a12b').trim();
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -267,7 +265,7 @@ function fetchJsonUrl(targetUrl, headers = {}, timeoutMs = 6000) {
 }
 
 function getAiApiKey() {
-  return (process.env.AI_API_KEY || process.env.NVIDIA_API_KEY || '').trim();
+  return aiBackend.getAiConfig().apiKey;
 }
 
 function sanitizeAccountData(input, existing = store.defaultUserData()) {
@@ -952,39 +950,50 @@ const server = http.createServer(async (req, res) => {
     }
 
     // =========================================================================
-    // 7. INDEPENDENT MUSIC API (Works without BokitCord)
+    // 7. INDEPENDENT MUSIC API (BokitCord-Parity yt-dlp Search, Stream & MP3 Download)
     // =========================================================================
+    if (reqPath === '/api/music/catalog' && req.method === 'GET') {
+      const genre = reqUrlObj.searchParams.get('genre') || 'all';
+      const search = reqUrlObj.searchParams.get('search') || '';
+      const tracks = musicBackend.getFilteredCatalog(genre, search);
+      return sendJson(req, res, 200, tracks);
+    }
+
     if (reqPath === '/api/music/recommended' && req.method === 'GET') {
       const tracks = musicBackend.loadRecommendedCatalog();
-      return sendJson(req, res, 200, { ok: true, tracks, provider: 'gamesv7-local' });
+      return sendJson(req, res, 200, tracks);
     }
 
     if (reqPath === '/api/music/search' && req.method === 'GET') {
-      const q = reqUrlObj.searchParams.get('q') || '';
+      const q = reqUrlObj.searchParams.get('q') || reqUrlObj.searchParams.get('query') || '';
       const tracks = await musicBackend.searchMusic(q);
-      return sendJson(req, res, 200, { ok: true, query: q, tracks, results: tracks, provider: 'gamesv7-independent' });
+      return sendJson(req, res, 200, tracks);
     }
 
     if (reqPath === '/api/music/stream' && req.method === 'GET') {
       const id = reqUrlObj.searchParams.get('id') || '';
-      if (!id) return sendJson(req, res, 400, { ok: false, error: 'Missing ?id=' });
-      return await musicBackend.handleMusicStream(req, res, id);
+      const rawUrl = reqUrlObj.searchParams.get('url') || null;
+      return await musicBackend.handleMusicStream(req, res, id, rawUrl);
+    }
+
+    if (reqPath === '/api/music/download' && req.method === 'GET') {
+      return await musicBackend.handleMusicDownload(req, res, {
+        id: reqUrlObj.searchParams.get('id') || '',
+        url: reqUrlObj.searchParams.get('url') || null,
+        title: reqUrlObj.searchParams.get('title') || 'Track',
+        artist: reqUrlObj.searchParams.get('artist') || 'Artist',
+      });
     }
 
     // =========================================================================
-    // 8. INDEPENDENT AI ASSISTANT GATEWAY (No hardcoded keys, no BokitCord dependency)
+    // 8. INDEPENDENT AI ASSISTANT GATEWAY (BokitCord-Parity NVIDIA NIM / Nemotron)
     // =========================================================================
     if (reqPath === '/api/ai/health' && req.method === 'GET') {
-      const configured = Boolean(getAiApiKey());
-      return sendJson(req, res, 200, {
-        ok: true,
-        status: configured ? 'ok' : 'unconfigured',
-        configured,
-        name: 'Games V7 AI Assistant',
-        provider: AI_API_URL.includes('nvidia.com') ? 'nvidia-nim' : 'custom-openai-compatible',
-        textModel: AI_DEFAULT_MODEL,
-        visionModel: AI_VISION_MODEL,
-      });
+      return sendJson(req, res, 200, aiBackend.getHealthPayload());
+    }
+
+    if (reqPath === '/api/ai/models' && req.method === 'GET') {
+      return sendJson(req, res, 200, aiBackend.getModelsPayload());
     }
 
     if (reqPath === '/api/ai/chat' && req.method === 'POST') {
@@ -993,88 +1002,7 @@ const server = http.createServer(async (req, res) => {
         return sendJson(req, res, 429, { error: `AI rate limit reached. Retry in ${rl.retryAfterSec}s.` });
       }
       const parsed = await readJsonBody(req, 4 * 1024 * 1024);
-      const apiKey = getAiApiKey();
-      if (!apiKey) {
-        return sendJson(req, res, 503, {
-          error: 'Games V7 AI backend is not configured yet. Set AI_API_KEY (or NVIDIA_API_KEY) in the server .env file, or configure a custom AI endpoint in Settings.',
-          code: 'AI_UNCONFIGURED',
-        });
-      }
-
-      let model = parsed.model || AI_DEFAULT_MODEL;
-      const rawMessages = Array.isArray(parsed.messages) ? parsed.messages.slice(-40) : [];
-      if (!rawMessages.length) {
-        return sendJson(req, res, 400, { error: 'messages array is required' });
-      }
-
-      const hasImage = rawMessages.some(
-        (msg) => Array.isArray(msg.content) && msg.content.some((part) => part && (part.type === 'image_url' || part.image_url))
-      );
-      if (hasImage && (!model || model === AI_DEFAULT_MODEL)) {
-        model = AI_VISION_MODEL;
-      }
-
-      const payload = {
-        model,
-        messages: rawMessages.map((m) => ({ role: m.role, content: m.content })),
-        temperature: Math.min(2, Math.max(0, Number(parsed.temperature) || 0.8)),
-        top_p: Math.min(1, Math.max(0.05, Number(parsed.top_p) || 0.95)),
-        max_tokens: Math.min(16384, Math.max(64, Number(parsed.max_tokens) || 4096)),
-        stream: parsed.stream !== false,
-      };
-      if (AI_API_URL.includes('nvidia.com')) {
-        payload.chat_template_kwargs = { enable_thinking: parsed.enable_thinking !== false };
-      }
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 90000);
-      req.on('close', () => controller.abort());
-
-      try {
-        const upstream = await fetch(AI_API_URL, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-
-        if (!upstream.ok) {
-          const errTxt = await upstream.text();
-          return sendJson(req, res, upstream.status, { error: errTxt || `Upstream AI HTTP ${upstream.status}` });
-        }
-        if (!payload.stream) {
-          const data = await upstream.json();
-          return sendJson(req, res, 200, data);
-        }
-
-        res.writeHead(200, {
-          'Content-Type': 'text/event-stream; charset=utf-8',
-          'Cache-Control': 'no-cache, no-transform',
-          Connection: 'keep-alive',
-          'X-Accel-Buffering': 'no',
-        });
-        const reader = upstream.body.getReader();
-        const decoder = new TextDecoder();
-        req.on('close', () => { try { reader.cancel(); } catch (e) {} });
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          res.write(decoder.decode(value, { stream: true }));
-        }
-        res.end();
-      } catch (e) {
-        clearTimeout(timeoutId);
-        if (!res.headersSent) {
-          return sendJson(req, res, 502, { error: e.name === 'AbortError' ? 'AI request timed out.' : e.message });
-        }
-        res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`);
-        res.end();
-      }
-      return;
+      return await aiBackend.handleAiChat(req, res, parsed, sendJson);
     }
 
     // =========================================================================

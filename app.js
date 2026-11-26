@@ -6538,7 +6538,12 @@
       const p = audio.play();
       if (p !== undefined) {
         p.catch(err => {
-          console.warn('[GamesV7 Music] Primary stream failed, trying fallback provider:', err);
+          console.warn('[GamesV7 Music] Primary stream failed, trying fallback:', err);
+          if (track.audioUrl && streamUrl !== track.audioUrl) {
+            audio.src = track.audioUrl;
+            audio.play().catch(() => {});
+            return;
+          }
           if (String(track.id || '').startsWith('itunes_')) {
             if (statusBanner) {
               statusBanner.className = 'music-status-banner error';
@@ -6552,7 +6557,7 @@
           audio.play().catch(() => {
             if (statusBanner) {
               statusBanner.className = 'music-status-banner error';
-              statusBanner.textContent = 'Music provider unavailable right now. Search for any song to stream independent previews, or set a custom Music Provider in Settings.';
+              statusBanner.textContent = 'Audio playback failed right now. Try another track or configure a Music Provider in Settings.';
               statusBanner.classList.remove('hidden');
             }
           });
